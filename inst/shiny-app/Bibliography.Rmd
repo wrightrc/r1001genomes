@@ -1,0 +1,13 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+<h3>Bibliography</h3>
+<hr />
+<h5>Alonso-Blanko, C. et al. 1,135 Genomes Reveal the Global Pattern of Polymorphism in Arabidopsis thaliana. Cell. 2016 Jul 14;166(2):481-491. 
+<h5><a href="http://1001genomes.org/" target="_blank" rel="noopener" title="http://1001genomes.org/">1001genomes.org</a></h5>
+<h5>Nei, M.; Masatoshi Nei; Wen-Hsiung Li (October 1, 1979). 'Mathematical Model for Studying Genetic Variation in Terms of Restriction Endonucleases'. PNAS. 76 (10): 5269–73.</h5>
+<h5></h5>
+<h5></h5>

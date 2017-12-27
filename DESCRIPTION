@@ -1,0 +1,24 @@
+Package: r1001genomes
+Type: Package
+Title: Access and analyze the 1001 genomes Arabidopsis resequencing dataset
+Version: 0.1.0
+Authors@R: c(person("Morgan O.", "Hamm", email = "mohamm@gmail.com", 
+        role = "aut"), person("R. Clay", "Wright", email =
+        "wright.clay@gmail.com", role = c("aut", "cre")))
+Maintainer: R. Clay Wright <wright.clay@gmail.com>
+Description: This web app and open source software package for the R 
+        programming language was built to facilitate exploration of the 
+        naturally occuring sequence diversity for your favorite gene or 
+        gene family in Arabidopsis thaliana. We hope this web app will 
+        help plant biologists without bioinformatics experience access 
+        the 1001 genomes project’s rich catalog of natural variation and 
+        formulate hypotheses and identify new alleles in their favorite 
+        gene family.
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 3.4), vcfR, plyr, biomaRt, VariantAnnotation, stringr, biomaRt, ggplot2, reshape2,
+         dplyr, ggmap, shiny, leaflet, RColorBrewer, shinythemes, 
+         shinycssloaders, ggthemes, formattable, DT
+License: Artistic-2.0
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1
