@@ -92,7 +92,7 @@ downloadData <- function (fName, strainStr, regionStr,
 #' @return a vcfR object of teh combined vcf file
 #' @export
 #'
-#' @examples \code{my.VCF <- downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")}
+#' @examples my.VCF <- downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
 downloadMerge <- function (fName, strainVect, regionStr) {
   strains <- as.character(strainVect)
   # the URL to download the VCF for all 1135 strains is too long so we have to split it into two sets
@@ -109,15 +109,15 @@ downloadMerge <- function (fName, strainVect, regionStr) {
   downloadData(tempFile2, strainString, regionStr)
   #
   #load the two temporary vcf files then delete the temp files
-  data1 <- read.vcfR(tempFile1, verbose=FALSE, convertNA=TRUE)
+  data1 <- vcfR::read.vcfR(tempFile1, verbose=FALSE, convertNA=TRUE)
   if (file.exists(tempFile1)) file.remove(tempFile1)
 
-  data2 <- read.vcfR(tempFile2, verbose=FALSE, convertNA=TRUE)
+  data2 <- vcfR::read.vcfR(tempFile2, verbose=FALSE, convertNA=TRUE)
   if (file.exists(tempFile2)) file.remove(tempFile2)
 
   #combine the two gt fields, and write a new combined vcf file.
   data1@gt <- cbind(data1@gt, data2@gt[,-1])
-  write.vcf(data1, fName)
+  vcfR::write.vcf(data1, fName)
 
   return (data1)  #return the vcfR object of the combined .vcf
 }
@@ -133,6 +133,7 @@ downloadMerge <- function (fName, strainVect, regionStr) {
 #'
 #' @return new tidyVCF object with added columns for the parsed effect fields
 #' @export
+#' @import plyr
 #'
 #' @examples
 parseEFF <- function (tidyVCF){
@@ -165,9 +166,9 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
 
   effect <- unique(data$EFF)
   # split by comma to generate a vector of different effects
-  effect <- str_split(effect, pattern=",", simplify=TRUE)
+  effect <- stringr::str_split(effect, pattern=",", simplify=TRUE)
   # split by "(", "|", and ")" to separate fields
-  effect <- data.frame(str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE)
+  effect <- data.frame(stringr::str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE)
   # remove last column of empty strings ""found after ")"
   effect <- effect[, 1:12, drop=FALSE]
   # add column names to effects
@@ -208,7 +209,7 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
   VCF.out <- downloadMerge(fName, strains, regionString)
 
   if (tidy == TRUE){
-    VCF.out <- vcfR2tidy(VCF.out, single_frame = TRUE, info_fields = c("AC", "EFF"), format_fields = ("GT"))
+    VCF.out <- vcfR::vcfR2tidy(VCF.out, single_frame = TRUE, info_fields = c("AC", "EFF"), format_fields = ("GT"))
     VCF.out$dat <- VCF.out$dat[!(is.na(VCF.out$dat$gt_GT)), ]
   }
 
@@ -230,6 +231,7 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
 #'
 #' @return
 #' @export
+#' @import plyr
 #'
 #' @examples
 VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
@@ -257,6 +259,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #'
 #' @return
 #' @export
+#' @import plyr
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
@@ -317,7 +320,7 @@ diversity_calc <- function (GT_freq){
   result <- (sum(GT_freq)**2 - sum(GT_freq**2))/(sum(GT_freq)**2)
 }
 
-#' calculates site nucleotide diversity for each site
+#' Calculate nucleotide diversity for each position in the coding sequence
 #'
 #' @param tidyVCF the $dat field of a tidyVCF object
 #'
@@ -328,10 +331,10 @@ diversity_calc <- function (GT_freq){
 Nucleotide_diversity <- function (tidyVCF){
   data <- unique(tidyVCF[, c("POS", "gt_GT", "Indiv")])
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
-  GT_Frequencies <- group_by(GT_Frequencies, POS)
-  diversityByPOS <- summarise(GT_Frequencies, Diversity = diversity_calc(freq))
+  GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
+  diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = diversity_calc(freq))
 
-  output <- merge(tidyVCF, diversityByPOS, by="POS")
+  output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
   if (!is.null(attr(tidyVCF, "transcript_ID"))) {
     # if the input had the "transcript_ID" attribute, pass it to the output
     attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
@@ -352,7 +355,7 @@ codonNumberKernel <- function (SNPData) {
   # add the codon number to a dataframe containing a "Amino_Acid_Change"
   # use with ddply()
   changeStr <- SNPData$Amino_Acid_Change[grepl( "p.", SNPData$Amino_Acid_Change)][1]
-  codonNumber <- str_extract_all(str_extract_all(changeStr, "p.[A-z]{3}[0-9]*")[[1]], "[0-9]+")[[1]]
+  codonNumber <- stringr::str_extract_all(stringr::str_extract_all(changeStr, "p.[A-z]{3}[0-9]*")[[1]], "[0-9]+")[[1]]
   codonNumber <- as.numeric(codonNumber)
   rows <- nrow(SNPData)
   return (cbind(SNPData, "Codon_Number"=codonNumber))
@@ -491,7 +494,7 @@ get_coding_diversity <- function(data){
                                                         "Amino_Acid_Change",
                                                         "Diversity") ])
   #add codon number to unique_coding_variants
-  unique_coding_variants <-ddply(unique_coding_variants, .fun=codonNumberKernel,
+  unique_coding_variants <-plyr::ddply(unique_coding_variants, .fun=codonNumberKernel,
                                  .variables=c("POS", "Amino_Acid_Change"))
   return(unique_coding_variants)
 }
@@ -502,6 +505,8 @@ get_coding_diversity <- function(data){
 #'
 #' @return
 #' @export
+#' @import ggplot2
+#' @import ggthemes
 #'
 #' @examples
 plot_coding_diversity <- function(unique_coding_variants){
@@ -510,12 +515,13 @@ plot_coding_diversity <- function(unique_coding_variants){
     geom_point(size = 4) +
     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-    ylab("nucleotide diversity, log scale") + ggthemes::theme_few(base_size = 18) + scale_color_colorblind()
+    ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
+    scale_color_colorblind()
   return(plot)
 }
 
 
-#' Title
+#' Add accession metadata to a dataset containing ecotype IDs
 #'
 #' @param data
 #' @param Ecotype_column
@@ -550,6 +556,7 @@ add_ecotype_details <- function(data, Ecotype_column="Indiv") {
 #'  has a single text string detailing all the variants from data within that
 #'  accession
 #' @export
+#' @import plyr
 #'
 #' @examples
 label_bySNPs <- function(data, collapse=TRUE) {

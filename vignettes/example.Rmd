@@ -237,7 +237,7 @@ YFG_VCF <- VCFList(geneInfo = geneInfo, by = "transcript", tidy = TRUE)
 ```
 
 We now have a list of very long data frames with all the information on SNPs inside, but much of the details on the effects of these polymorphisms are contained in a single column labeld 'EFF' as a long text string, making it hard to filter and process the data by the individual attributes within that text string.
-the `parseEFF` function will separate indiual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
+The `parseEFF` function will separate indiual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
 ```{r}
 YFG_VCF <- llply(YFG_VCF, parseEFF)
 ```
@@ -370,6 +370,8 @@ head(AFB2_missense)
 ```
 Now we can plot the variants. In the app we use the Leaflet package to provide an interactive plot. We can also do this within R.
 ```{r}
+#load the leaflet package 
+library(leaflet)
 AFB2_missense <- rbind(AFB2_missense[is.na(AFB2_missense$SNPs), ],
                        AFB2_missense[!is.na(AFB2_missense$SNPs), ])
 
@@ -377,7 +379,7 @@ AFB2_missense <- rbind(AFB2_missense[is.na(AFB2_missense$SNPs), ],
     AFB2_missense$popup <- paste("EcoID:",  AFB2_missense$Indiv,"Name:", AFB2_missense$Name, " SNPs:", AFB2_missense$SNPs)
 
     # create the color pallet for the map points
-    pal <- brewer.pal(8, "Set1")
+    pal <- RColorBrewer::brewer.pal(8, "Set1")
     pallet <- colorFactor(palette=pal, domain=AFB2_missense$SNPs)
 map <- leaflet()
     map <- addProviderTiles(map, providers$Stamen.TonerLite,
@@ -411,13 +413,17 @@ map <- leaflet()
 You can also use the `ggmap` function from the package of the same name to create maps. The "ggrepel" package also helps to handle overlapping labels.
 
 ```{r}
-europe <- get_map(location = 'europe', zoom = 4)
-michigan <- get_map(location = 'michigan', zoom = 5)
+library(ggplot2)
+library(ggmap)
 library(ggrepel)
 
-ggmap(europe) +  xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "darkgrey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "204", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), fill = "white", box.padding = unit(.4, "lines"), point.padding = unit(0.5, "lines"), label.padding = unit(.15, "lines"), segment.size = 1, nudge_x = 0.5, nudge_y = 0.5) 
+europe <- get_map(location = 'europe', zoom = 4)
+michigan <- get_map(location = 'michigan', zoom = 5)
 
-ggmap(michigan) +  xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "grey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "516", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), fill = "white", box.padding = unit(.4, "lines"), point.padding = unit(0.5, "lines"), label.padding = unit(.15, "lines"), segment.size = 1, nudge_x = 0.5, nudge_y = 0.5) 
+
+ggmap(europe) + xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "darkgrey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "204", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), fill = "white", point.padding = unit(0.5, "lines"), segment.size = 1) 
+
+ggmap(michigan) + xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "darkgrey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "516", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), point.padding = unit(0.5, "lines"), segment.size = 1) 
 
 ```
 
@@ -428,7 +434,7 @@ ggmap(michigan) +  xlab('longitude') + ylab('latitude') + geom_point(data = AFB2
 </div><!--panel end------------------------------------------------------------>
 <!--=========================================================================-->
 
-
+# References
 
 
 

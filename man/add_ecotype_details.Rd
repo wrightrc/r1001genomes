@@ -2,7 +2,7 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{add_ecotype_details}
 \alias{add_ecotype_details}
-\title{Title}
+\title{Add accession metadata to a dataset containing ecotype IDs}
 \usage{
 add_ecotype_details(data, Ecotype_column = "Indiv")
 }
@@ -10,5 +10,5 @@ add_ecotype_details(data, Ecotype_column = "Indiv")
 \item{Ecotype_column}{}
 }
 \description{
-Title
+Add accession metadata to a dataset containing ecotype IDs
 }

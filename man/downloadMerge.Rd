@@ -22,5 +22,5 @@ a vcfR object of teh combined vcf file
 Download two vcf files from 1001genomes.org and merge their contents
 }
 \examples{
-\\code{my.VCF <- downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")}
+my.VCF <- downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
 }

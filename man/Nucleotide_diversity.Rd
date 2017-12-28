@@ -2,7 +2,7 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{Nucleotide_diversity}
 \alias{Nucleotide_diversity}
-\title{calculates site nucleotide diversity for each site}
+\title{Calculate nucleotide diversity for each position in the coding sequence}
 \usage{
 Nucleotide_diversity(tidyVCF)
 }
@@ -10,5 +10,5 @@ Nucleotide_diversity(tidyVCF)
 \item{tidyVCF}{the $dat field of a tidyVCF object}
 }
 \description{
-calculates site nucleotide diversity for each site
+Calculate nucleotide diversity for each position in the coding sequence
 }

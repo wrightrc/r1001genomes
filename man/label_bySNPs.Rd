@@ -2,13 +2,20 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{label_bySNPs}
 \alias{label_bySNPs}
-\title{Title}
+\title{Label accessions with the variants they contain}
 \usage{
 label_bySNPs(data, collapse = TRUE)
 }
 \arguments{
-\item{collapse}{}
+\item{data}{a data frame of variants with a column named "Indiv"}
+
+\item{collapse}{should each accession will be a single line}
+}
+\value{
+a df with a single row per accession, with a new column "SNPs" that
+ has a single text string detailing all the variants from data within that
+ accession
 }
 \description{
-Title
+Label accessions with the variants they contain
 }
