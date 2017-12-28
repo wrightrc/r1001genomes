@@ -541,12 +541,14 @@ add_ecotype_details <- function(data, Ecotype_column="Indiv") {
 #   return(indivGT)
 # }
 
-#' Title
+#' Label
 #'
-#' @param data
-#' @param collapse
+#' @param data a data frame of variants with a column named "Indiv"
+#' @param collapse should each accession will be a single line
 #'
-#' @return
+#' @return a df with a single row per accession, with a new column "SNPs" that
+#'  has a single text string detailing all the variants from data within that
+#'  accession
 #' @export
 #'
 #' @examples
