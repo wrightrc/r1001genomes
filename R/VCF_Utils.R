@@ -541,7 +541,7 @@ add_ecotype_details <- function(data, Ecotype_column="Indiv") {
 #   return(indivGT)
 # }
 
-#' Label
+#' Label accessions with the variants they contain
 #'
 #' @param data a data frame of variants with a column named "Indiv"
 #' @param collapse should each accession will be a single line
