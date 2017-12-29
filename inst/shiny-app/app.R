@@ -4,6 +4,7 @@ library(leaflet)
 library(RColorBrewer)
 library(shinythemes)
 library(r1001genomes)
+library(knitr)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -53,6 +54,10 @@ CSSCode <- tags$head(tags$style(
    ")
 
 ))
+
+
+rmdfiles <- c("Bibliography.rmd")
+sapply(rmdfiles, knit, quiet = TRUE)
 
 
 ui <- function(request){ fluidPage(
@@ -277,7 +282,7 @@ ui <- function(request){ fluidPage(
              ),
              column(6,
                     tags$div(class="output-format",
-                             includeMarkdown("Bibliography.Rmd")
+                             includeHTML("Bibliography.html")
                     )
              )
 
