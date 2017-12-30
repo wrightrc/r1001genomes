@@ -1,0 +1,40 @@
+ToDo
+===============================================
+Shiny app / Package
+===============================================
+Little fixes
+- clean up function names (all underscores)
+- "Diversity plot" handling for premature stops (and frame shifts)?
+- update comments and documentation in code (mainly VCF_Utils.R)
+- Add tair symbols throughout
+- clean up tables (shorter column names, round to 3-5 decimals, etc)
+- add unique allele counts table on tab1
+
+
+New Functionalities
+- add tab for alignments
+- add import custom GFF button on tab1 
+- hover-over/readme for each tab and table
+- ability to get all accessions with a mutation
+- Search by tair_symbol
+- map accessions from multiple genes at once (checkboxes for genes and variants)
+- show diversity on a histogram of genome wide stats
+
+===============================================
+DONE!!!
+===============================================
+- about tab, with bibliography glossary...
+- All mentions of ecotype changed to accession
+- make download buttons more descriptive about what is being downloaded
+- add download button for "gene_info" table
+- add radio button for coding/missense/non-coding to "SNP map"
+- Highlight all accessions containing the same SNP when selecting in "SNP map" [layer select tool allows isolating one or more SNPs]
+- add exclude NA accessions checkbox to "SNP map" [layer select tool, bottom left corner of map]
+- make diversity filter slider logrithmic on map tab
+- make table in map output a searchable table [done, as well as on plotting tab]
+- add a filter to the map page to select specific SNPs after submitting gene, but before generating map.
+
+
+
+
+
