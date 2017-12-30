@@ -65,17 +65,17 @@ library(dplyr)
 
 # Introduction
 
-This web app and open source software package for the R programming language was built to facilitate exploration of the naturally occuring sequence diversity for your favorite gene or gene family. We hope this product will help plant biologists without bioinformatics experience access the 1001 genomes project’s rich catalog of natural variation, formulate hypotheses and identify new interesting alleles in their favorite gene family.
+This web app and open source software package for the R programming language was built to facilitate exploration of the naturally occurring sequence diversity for your favorite gene or gene family. We hope this product will help plant biologists without bioinformatics experience access the 1001 genomes project’s rich catalog of natural variation, formulate hypotheses and identify new interesting alleles in their favorite gene family.
 
-The 1001 genomes dataset was collected with the intention of genome scale analyses, such as genome wide association studies, in which a particular phenotype is quantified for all of the accessions and sequence variants that are associated with phenotypic variation are identified. [In recent work](https://doi.org/10.1534/genetics.117.3000), we have utilized this rich dataset in a different manner to measure the effects of coding sequence variation on protein functional variation and phenotypic variation . This work has expanded the sequence-function-phenotype map for the auxin-signaling F-box gene family, and this product will facilitate similar analysis other genes, gene families, and genomic regions.
+The 1001 genomes dataset was collected with the intention of genome scale analyses, such as genome wide association studies, in which a particular phenotype is quantified for all of the accessions and sequence variants that are associated with phenotypic variation are identified. [In recent work](https://doi.org/10.1534/genetics.117.3000), we have utilized this rich dataset in a different manner to measure the effects of coding sequence variation on protein functional variation and phenotypic variation. This work has expanded the sequence-function-phenotype map for the auxin-signaling F-box gene family, and this product will facilitate similar analysis other genes, gene families, and genomic regions.
 
 So pick out your favorite gene, gene family or genomic region and follow the steps in this guide to analyze how it varies in plants collected from all over the world. For this example we will be using the auxin-signaling F-box genes, *TIR1* and *AFB2* which have the TAIR locus IDs [AT3G62980](https://www.arabidopsis.org/servlets/TairObject?id=39952&type=locus) and [AT3G26810](https://www.arabidopsis.org/servlets/TairObject?id=38086&type=locus). Click on one of the previous links to search TAIR for the TAIR IDs of your favorite genes.
 
 ***
-Before digging into the data, make some hypotheses about what genes, domains and/or postions in your 
+Before digging into the data, make some hypotheses about what genes, domains and/or positions in your 
 favorite gene family might be under different evolutionary pressures. We can make some inferences about the evolutionary pressure acting on particular genes based on the sequence and geographic diversity observed in the 1001 genomes dataset. Thomas Mitchell-Olds and Johanna Schmitt published an excellent overview of the evolutionary inference from natural genetic diversity in *A. thaliana* [@mitchell-olds_genetic_2006]. We can calculate genetic diversity as the average number of nucleotide differences per site between two DNA sequences in all possible pairs in the sample population, and is denoted by $\pi$. 
 
-However, evolutionary pressures potentially exert influence across all levels of biology, nucleotides, genes, genomes, phenotypes, organisms and populations.  This makes any inference from study of genetic diversity contingent on potentially unknown effects of epistasis between genes, population structure, environment, and many other effectors. Additionally, as an agricultural tag-along, much of the genetic variation in *A. thaliana* is due to admixture between populations as the result of human influence migration. So keep in mind throughout this analysis the limitations of examining a single snapshot in time of a potentially biased collection of frequently self-fertizilizing organisms that were dispersed by human migration. Because of these limitations, infering theories about how evolutionary forces are acting on your favorite genes is very uncertain business. However, if we assume a few things we can make some speculations.  
+However, evolutionary pressures potentially exert influence across all levels of biology, nucleotides, genes, genomes, phenotypes, organisms and populations.  This makes any inference from study of genetic diversity contingent on potentially unknown effects of epistasis between genes, population structure, environment, and many other effectors. Additionally, as an agricultural tag-along, much of the genetic variation in *A. thaliana* is due to admixture between populations as the result of human influence migration. So keep in mind throughout this analysis the limitations of examining a single snapshot in time of a potentially biased collection of frequently self-fertilizing organisms that were dispersed by human migration. Because of these limitations, inferring theories about how evolutionary forces are acting on your favorite genes is very uncertain business. However, if we assume a few things we can make some speculations.  
 
 Assumptions:  
 1. Polymorphisms in the dataset are not *completely* detrimental to organismal fitness.  
@@ -95,10 +95,10 @@ If evolutionary pressure is very weak on a gene its sequence might change with n
 Beyond purifying selection and drift it is very difficult to make any strong inferences on the population as a whole. However there are two more types of selective pressure, balancing or neutral selection and positive or directional selection.
 
 ### Balancing selection
-Genes of high diversity may be under balancing selection, also called neutral divergence. Balancing selection maintains multiple variants for long evolutionary times because different alleles provide selective advantages in different environments or genetic backgrounds. This results in high diversity at the particular site under selection and increased diversity at closely linked neutral sites due to genetic hitchhiking with this allele under balancing selction.  
+Genes of high diversity may be under balancing selection, also called neutral divergence. Balancing selection maintains multiple variants for long evolutionary times because different alleles provide selective advantages in different environments or genetic backgrounds. This results in high diversity at the particular site under selection and increased diversity at closely linked neutral sites due to genetic hitchhiking with this allele under balancing selection.  
   
 ### Directional selection  
-If a polymorphism (or allele) is associated with a phenotype that provides an organims with a fitness advantage this phenotype and associated allele may be experiencing directional or positive selection. Positive/directional selection results in an increase in the prevalence of the advantageous allele within the population over time. Directional selection is one of the most difficult things to infer and is a very active area of research. Directional selection, like stabilizing selection is associated with reduced genetic diversity within the population under selection. However, unlike stabilizing selection the gene under directional selection will potentially have two major alleles that provide adaptive potential to different environments or genetic backgrounds.   
+If a polymorphism (or allele) is associated with a phenotype that provides an organism with a fitness advantage this phenotype and associated allele may be experiencing directional or positive selection. Positive/directional selection results in an increase in the prevalence of the advantageous allele within the population over time. Directional selection is one of the most difficult things to infer and is a very active area of research. Directional selection, like stabilizing selection is associated with reduced genetic diversity within the population under selection. However, unlike stabilizing selection the gene under directional selection will potentially have two major alleles that provide adaptive potential to different environments or genetic backgrounds.   
 
 
 # Hypothesize
@@ -107,11 +107,11 @@ Here are some questions to help you get started:
 
 What structure/function knowledge is there?  
 What is each domain in the protein doing?  
-Are there any postions that are of vital importance?  
+Are there any positions that are of vital importance?  
   
 Is there a published protein sequence alignment of your gene family?  
-What postions in the protein family are highly conserved?  
-What postions are highly variable?  
+What positions in the protein family are highly conserved?  
+What positions are highly variable?  
 
 Is there a published phylogenetic tree of your gene family?  
 What are the most recently duplicated sister gene pairs?  
@@ -131,7 +131,7 @@ We would also expect the residues of the LRR that contact auxin and the Aux/IAA 
 ## Using the App 
 
 
-In addition to calling the functions of the r1001genomes package in R directly. there is also a GUI provided in the form of a Shiny app. This app can perform some of the analysis tasks the package is capable of performing, without the need to have knowledge of programming in R. 
+In addition to calling the functions of the r1001genomes package in R directly. There is also a GUI provided in the form of a Shiny app. This app can perform some of the analysis tasks the package is capable of performing, without the need to have knowledge of programming in R. 
 
 In this vignette panels like this one are used to show examples of using the app to achieve similar results as using  the R function calls directly in this vignette. Screenshots will usually be provided to make it clear what section or tab we are talking about  
 
@@ -142,7 +142,7 @@ knitr::asis_output("
 ```
 ## Starting the web app
 
-to start the Shiny app, run the following command:
+To start the Shiny app, run the following command:
 ```{r, eval=FALSE}
 run1001genomes()
 ```
@@ -150,7 +150,7 @@ The app should appear in a new window, and look similar to the image above.
 </div><!--panel end------------------------------------------------------------>
 <div  class="using-R-insert"><!--panel start----------------------------------->
 ## Using R
-in these lighter colored panels, the equivalent R code will be displayed.
+In these lighter colored panels, the equivalent R code will be displayed.
 </div><!--panel end------------------------------------------------------------>
 <!--=========================================================================--> 
 
@@ -173,7 +173,7 @@ The app will download the gene model information as soon as you click submit. Co
 
 The app may take a little while to process after clicking the submit button on the first tab, especially if you have a long list of genes, but once this process is complete on the first tab, the data for these genes will be already loaded for the subsequent tabs. 
 
-Once the loading process has finished, the first table you should see scrolling down the SNP Stats tab is the Gene Information table. it should look similar to the table produced in the "Using R" section below.
+Once the loading process has finished, the first table you should see scrolling down the SNP Stats tab is the Gene Information table. It should look similar to the table produced in the "Using R" section below.
 </div><!--panel end------------------------------------------------------------>
 <div  class="using-R-insert"><!--panel start----------------------------------->
 ## Using R
@@ -194,7 +194,7 @@ datatable(geneInfo[, -c(5,6,9)], colnames = c("tair locus", "symbol", "transcrip
 </div><!--panel end------------------------------------------------------------>
 <!--=========================================================================-->
 
-Do you have a spreasheet of loci?  
+Do you have a spreadsheet of loci?  
   
 Here is some quick code to make a text string you can copy and paste into the app gene input box.  
 ```{r}
@@ -236,14 +236,14 @@ our VCF to a tidy data frame by setting the `tidy` argument to `TRUE`.
 YFG_VCF <- VCFList(geneInfo = geneInfo, by = "transcript", tidy = TRUE)
 ```
 
-We now have a list of very long data frames with all the information on SNPs inside, but much of the details on the effects of these polymorphisms are contained in a single column labeld 'EFF' as a long text string, making it hard to filter and process the data by the individual attributes within that text string.
-The `parseEFF` function will separate indiual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
+We now have a list of very long data frames with all the information on SNPs inside, but much of the details on the effects of these polymorphisms are contained in a single column labeled 'EFF' as a long text string, making it hard to filter and process the data by the individual attributes within that text string.
+The `parseEFF` function will separate individual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
 ```{r}
 YFG_VCF <- llply(YFG_VCF, parseEFF)
 ```
 
 
-To generate the three tables of polymorphism stats the app calls the function `polymorphRow`. in R we can do the same thing.
+To generate the three tables of polymorphism stats the app calls the function `polymorphRow`. In R we can do the same thing.
 ```{r, cache=TRUE}
 #TIR1_AFB2_table <- polymorphTable(geneInfo = geneInfo, strains = strains)
 YFG_VCF <- llply(YFG_VCF, Nucleotide_diversity)
@@ -251,7 +251,7 @@ TIR1_AFB2_table <- ldply(YFG_VCF, polymorphRow, geneInfo = geneInfo, .id = "Tran
 
 ```
 
-Before displaing this table we will again clean it up a bit.
+Before displaying this table we will again clean it up a bit.
 
 ```{r}
 formatRound(datatable(TIR1_AFB2_table[,c(1:6,8)],
@@ -293,12 +293,12 @@ This was expected, as *TIR1* mutants have a strong loss of auxin sensitivity whe
   
 # Diversity within each gene  
 
-Now we'll move on to the second "Diversity Plot" tab. This tab will calculate the diversity at each position within the coding sequence of each gene. In addition to calculating the nucleotide diversity of a whole sequence, like the transcipt of a gene, we can also calculate the diversity statistic for each position along the reference genome. This could be useful if you suspect a particular region of your gene may be more important to function or more sensitive to nucelotide or amino acid changes. 
+Now we'll move on to the second "Diversity Plot" tab. This tab will calculate the diversity at each position within the coding sequence of each gene. In addition to calculating the nucleotide diversity of a whole sequence, like the transcript of a gene, we can also calculate the diversity statistic for each position along the reference genome. This could be useful if you suspect a particular region of your gene may be more important to function or more sensitive to nucleotide  or amino acid changes. 
 
 <!--=========================================================================-->
 <div  class="using-app-insert"><!--panel start--------------------------------->
 ## Diversity Plot
-The second tab of the app, labeld "Diversity Plot" allows you to plot the nucleotide diversity for each of the genes you selected in the "SNP Stats" tab.  
+The second tab of the app, labeled "Diversity Plot" allows you to plot the nucleotide diversity for each of the genes you selected in the "SNP Stats" tab.  
 ```{r, echo=FALSE}
 imagePath <- "Screenshots/Tab_2_Select_Gene.PNG"
 knitr::include_graphics(imagePath)
@@ -330,7 +330,7 @@ lapply(YFG_Coding_Diversity, plot_coding_diversity)
 
 ## Results
 Do these values match your hypotheses? Is there anything unexpected?  
-In *AFB2* there are five alleles with diversity greater than 1E-2 and 20 alleles with diversity greater than 3E-3. *TIR1* has two alleles with diversity greater than 1E-2 and nine allese with diversity greater than 3E-3. This high number of high frequency alleles in the population suggests that *AFB2* is more likely to be under drift or balancing selection relative to *TIR1* or that *TIR1* is under stronger purifying selection than *AFB2*. It is important to consider however that sampling bias in certain geographic populations could affect these hypotheses. To get some idea of if this is true we will look at the geographic distribution of these alleles.   
+In *AFB2* there are five alleles with diversity greater than 1E-2 and 20 alleles with diversity greater than 3E-3. *TIR1* has two alleles with diversity greater than 1E-2 and nine alleles with diversity greater than 3E-3. This high number of high frequency alleles in the population suggests that *AFB2* is more likely to be under drift or balancing selection relative to *TIR1* or that *TIR1* is under stronger purifying selection than *AFB2*. It is important to consider however that sampling bias in certain geographic populations could affect these hypotheses. To get some idea of if this is true we will look at the geographic distribution of these alleles.   
 
 
 <!--================== TEMPLATE START =======================================-->
