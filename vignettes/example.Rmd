@@ -299,7 +299,7 @@ Now we'll move on to the second "Diversity Plot" tab. This tab will calculate th
 <div  class="using-app-insert"><!--panel start--------------------------------->
 ## Diversity Plot
 The second tab of the app, labeld "Diversity Plot" allows you to plot the nucleotide diversity for each of the genes you selected in the "SNP Stats" tab.  
-```{r}
+```{r, echo=FALSE}
 imagePath <- "Screenshots/Tab_2_Select_Gene.PNG"
 knitr::include_graphics(imagePath)
 knitr::asis_output("
