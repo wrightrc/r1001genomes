@@ -56,10 +56,6 @@ CSSCode <- tags$head(tags$style(
 ))
 
 
-rmdfiles <- c("Bibliography.rmd")
-sapply(rmdfiles, knit, quiet = TRUE)
-
-
 ui <- function(request){ fluidPage(
 
   tags$head(tags$style(
