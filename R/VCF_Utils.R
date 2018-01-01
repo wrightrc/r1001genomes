@@ -1,3 +1,17 @@
+# clean up object names to be consistent with bioconductor style (camelCaps)
+# diversity_calc -> calcDiversity
+# GT_freq -> GTfreq
+# get_coding_diversity -> getCodingDiv
+# plot_coding_diversity -> plotCodingDiv
+# unique_coding_variants -> uniqueCodingVars
+# add_ecotype_details -> addAccDetails
+# Ecotype_column -> ecotypeColumn
+# label_bySNPs -> labelBySNPs
+# label_by_SNPs_kernel -> labelBySNPsKernel
+
+
+
+
 ### LIBRARIES ==================================================================
 
 #library(VariantAnnotation)
@@ -310,14 +324,14 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
 
 #' Title
 #'
-#' @param GT_freq
+#' @param GTfreq
 #'
 #' @return
 #' @export
 #'
 #' @examples
-diversity_calc <- function (GT_freq){
-  result <- (sum(GT_freq)**2 - sum(GT_freq**2))/(sum(GT_freq)**2)
+calcDiversity <- function (GTfreq){
+  result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
 
 #' Calculate nucleotide diversity for each position in the coding sequence
@@ -332,7 +346,7 @@ Nucleotide_diversity <- function (tidyVCF){
   data <- unique(tidyVCF[, c("POS", "gt_GT", "Indiv")])
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
-  diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = diversity_calc(freq))
+  diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
 
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
   if (!is.null(attr(tidyVCF, "transcript_ID"))) {
@@ -480,7 +494,7 @@ polymorphRow <- function (data, geneInfo=NULL) {
 #' @export
 #'
 #' @examples
-get_coding_diversity <- function(data){
+getCodingDiv <- function(data){
   #input is tidy tibble/df with EFF field parsed and diversity calculated:
   # eg.
   # myvcf <- VCFByTranscript(geneInfo[1, ], strains)
@@ -490,18 +504,18 @@ get_coding_diversity <- function(data){
 
   coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant"), ]   #"stop_gained", "frameshift_variant"
   #extract uniuqe position and effect
-  unique_coding_variants <- unique(coding_variants[ , c("POS", "Effect",
+  uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
                                                         "Amino_Acid_Change",
                                                         "Diversity") ])
-  #add codon number to unique_coding_variants
-  unique_coding_variants <-plyr::ddply(unique_coding_variants, .fun=codonNumberKernel,
+  #add codon number to uniqueCodingVars
+  uniqueCodingVars <-plyr::ddply(uniqueCodingVars, .fun=codonNumberKernel,
                                  .variables=c("POS", "Amino_Acid_Change"))
-  return(unique_coding_variants)
+  return(uniqueCodingVars)
 }
 
 #' Title
 #'
-#' @param unique_coding_variants
+#' @param uniqueCodingVars
 #'
 #' @return
 #' @export
@@ -509,9 +523,9 @@ get_coding_diversity <- function(data){
 #' @import ggthemes
 #'
 #' @examples
-plot_coding_diversity <- function(unique_coding_variants){
+plotCodingDiv <- function(uniqueCodingVars){
   #plot the diversity
-  plot <- ggplot(unique_coding_variants, aes(x=Codon_Number,y=Diversity, colour=Effect, shape = Effect)) +
+  plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=Effect, shape = Effect)) +
     geom_point(size = 4) +
     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
@@ -524,16 +538,16 @@ plot_coding_diversity <- function(unique_coding_variants){
 #' Add accession metadata to a dataset containing ecotype IDs
 #'
 #' @param data
-#' @param Ecotype_column
+#' @param ecotypeColumn
 #'
 #' @return
 #' @export
 #'
 #' @examples
-add_ecotype_details <- function(data, Ecotype_column="Indiv") {
+addAccDetails <- function(data, ecotypeColumn="Indiv") {
   # add ecotype details (location, collector, sequencer) to any df containing an "Indiv" column
   ecoIDs <- r1001genomes::accessions
-  return(merge(data, ecoIDs, by.x=Ecotype_column, by.y="Ecotype.ID", all.y=TRUE))
+  return(merge(data, ecoIDs, by.x=ecotypeColumn, by.y="Ecotype.ID", all.y=TRUE))
 }
 
 
@@ -559,13 +573,13 @@ add_ecotype_details <- function(data, Ecotype_column="Indiv") {
 #' @import plyr
 #'
 #' @examples
-label_bySNPs <- function(data, collapse=TRUE) {
+labelBySNPs <- function(data, collapse=TRUE) {
   # creates a df with a single row per individual, with a new column "SNPs" that
   # has a single text string detailing the
 
-  output <- ddply(data, .variables="Indiv", .fun=label_by_SNPs_kernel, collapse=collapse)
+  output <- ddply(data, .variables="Indiv", .fun=labelBySNPsKernel, collapse=collapse)
 
-  output <- add_ecotype_details(output)
+  output <- addAccDetails(output)
   return(output)
 }
 
@@ -580,7 +594,7 @@ label_bySNPs <- function(data, collapse=TRUE) {
 #' @export
 #'
 #' @examples
-label_by_SNPs_kernel <- function(indivData, collapse=TRUE) {
+labelBySNPsKernel <- function(indivData, collapse=TRUE) {
   #if collapse == TRUE, each accession will be a single line.
 
   # store ecotypeID as a single value
@@ -606,26 +620,4 @@ label_by_SNPs_kernel <- function(indivData, collapse=TRUE) {
 }
 
 
-
-#' Title
-#'
-#' @param Accession_Data
-#'
-#' @return
-#' @export
-#'
-#' @examples
-map_test <- function(Accession_Data) {
-  europe <- get_map(location = 'europe', zoom = 4)
-  michigan <- get_map(location = 'michigan', zoom = 5)
-
-  # organize data so NAs are plotted first (grey) then non NA data is plotted on top.
-  Accession_Data <- rbind(Accession_Data[is.na(Accession_Data$SNPs), ], Accession_Data[!is.na(Accession_Data$SNPs), ])
-
-  map <- ggmap(europe) +   xlab('longitude') + ylab('latitude') +
-        geom_point(data = Accession_Data,
-               aes(x = Long, y = Lat, color=SNPs))
-  print(map)
-  return(map)
-}
 

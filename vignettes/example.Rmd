@@ -318,11 +318,11 @@ Below the plot is a data table with the data provided for all points on the plot
 <div  class="using-R-insert"><!--panel start----------------------------------->
 
 ## Using R
-The app uses the function `get_coding_diversity` to calculate the diversity stat at each nucleotide position of the coding sequence, then uses the function `plot_coding_diversity` to plot that information for a single gene. 
+The app uses the function `getCodingDiv` to calculate the diversity stat at each nucleotide position of the coding sequence, then uses the function `plotCodingDiv` to plot that information for a single gene. 
 
 ```{r}
-YFG_Coding_Diversity <- llply(YFG_VCF, get_coding_diversity)
-lapply(YFG_Coding_Diversity, plot_coding_diversity)
+YFG_Coding_Diversity <- llply(YFG_VCF, getCodingDiv)
+lapply(YFG_Coding_Diversity, plotCodingDiv)
 
 ```
 
@@ -362,10 +362,10 @@ AFB2_missense <- YFG_VCF$AT3G26810.1 %>%
                   Effect == "missense_variant")
 head(AFB2_missense)
 ```
-The accession (as ecotype ID) is in the "Indiv" column of this data frame. Now we will need to attach the accession name, latitude, longitude and other data to this data frame. We'll do this with the `add_ecotype_details` function. The metadata is also available as an included dataset in the r1001genomes package called `accessions`. 
+The accession (as ecotype ID) is in the "Indiv" column of this data frame. Now we will need to attach the accession name, latitude, longitude and other data to this data frame. We'll do this with the `addAccDetails` function. The metadata is also available as an included dataset in the r1001genomes package called `accessions`. 
 
 ```{r}
-AFB2_missense <- label_bySNPs(AFB2_missense)
+AFB2_missense <- labelBySNPs(AFB2_missense)
 head(AFB2_missense)
 ```
 Now we can plot the variants. In the app we use the Leaflet package to provide an interactive plot. We can also do this within R.

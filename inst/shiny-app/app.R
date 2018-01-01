@@ -1,3 +1,14 @@
+
+diversity_calc -> calcDiversity
+GT_freq -> GTfreq
+get_coding_diversity -> getCodingDiv
+plot_coding_diversity -> plotCodingDiv
+unique_coding_variants -> uniqueCodingVars
+add_ecotype_details -> addAccDetails
+Ecotype_column -> ecotypeColumn
+label_bySNPs -> labelBySNPs
+label_by_SNPs_kernel -> labelBySNPsKernel
+
 library(shiny)
 library(biomaRt)
 library(leaflet)
@@ -321,8 +332,8 @@ parseInput <- function (textIn) {
 
 
 
-# plotPi <- function(unique_coding_variants) {
-#   plot <- ggplot(unique_coding_variants, aes(x=Codon_Number,y=Diversity, colour=Effect)) +
+# plotPi <- function(uniqueCodingVars) {
+#   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=Effect)) +
 #     geom_point() +
 #     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
 #     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
@@ -495,7 +506,7 @@ server <- function(input, output){
     #SNP reactive data
   tab2.tableData <- eventReactive(input$tab2.Submit, {
     tab2data <- all.VCFList()[[input$tab2.transcript_ID]]
-    coding_variants <- get_coding_diversity(tab2data)
+    coding_variants <- getCodingDiv(tab2data)
     return(coding_variants)
   })
 
@@ -512,7 +523,7 @@ server <- function(input, output){
     }
   )
 
-  output$diversityPlot <- renderPlot(plot_coding_diversity(tab2.tableData()))
+  output$diversityPlot <- renderPlot(plotCodingDiv(tab2.tableData()))
     #plot output
 
   output$info <- renderPrint({
@@ -591,7 +602,7 @@ server <- function(input, output){
   })
 
   tab3.mutationList <- reactive({
-    mutList <- label_bySNPs(tab3.filteredByDiv(), collapse=FALSE)$SNPs
+    mutList <- labelBySNPs(tab3.filteredByDiv(), collapse=FALSE)$SNPs
     mutList <- unique(mutList[!is.na(mutList)])
     return(mutList)
   })
@@ -616,13 +627,13 @@ server <- function(input, output){
     # start with the data filtered by the diversity slider and type buttons
     data <- tab3.filteredByDiv()
     # label by SNPs creates column SNPs with text strings formatted [transcriptID|AA_Change]
-    data <- label_bySNPs(data, collapse=FALSE)
+    data <- labelBySNPs(data, collapse=FALSE)
     # filter on selected SNPs
     data <- data[data$SNPs %in% input$tab3.allele_select, ]
     # combine mutations to single row (this is slow)
     data <- ddply(data, "Indiv", summarise, SNPs=paste(SNPs, collapse=","))
     # add back ecotype details
-    data <- add_ecotype_details(data)
+    data <- addAccDetails(data)
 
     return(data)
   })

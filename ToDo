@@ -3,7 +3,7 @@ ToDo
 Shiny app / Package
 ===============================================
 Little fixes
-- clean up function names (all underscores)
+- clean up object names to be consistent with bioconductor style (camelCaps)
 - "Diversity plot" handling for premature stops (and frame shifts)?
 - update comments and documentation in code (mainly VCF_Utils.R)
 - Add tair symbols throughout
