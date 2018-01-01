@@ -1,14 +1,3 @@
-
-diversity_calc -> calcDiversity
-GT_freq -> GTfreq
-get_coding_diversity -> getCodingDiv
-plot_coding_diversity -> plotCodingDiv
-unique_coding_variants -> uniqueCodingVars
-add_ecotype_details -> addAccDetails
-Ecotype_column -> ecotypeColumn
-label_bySNPs -> labelBySNPs
-label_by_SNPs_kernel -> labelBySNPsKernel
-
 library(shiny)
 library(biomaRt)
 library(leaflet)
