@@ -3,16 +3,17 @@ title: "Example gene-wise analysis of the 1001 genomes data set"
 author: "R. Clay Wright"
 date: "`r Sys.Date()`"
 output: 
-   rmarkdown::html_vignette: 
+   html_document:
      toc: true
-     number_sections: true
+   rmarkdown::html_vignette: 
+      toc: true
 bibliography: references.bib
 csl: apa.csl
+link-citations: true
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
@@ -65,23 +66,24 @@ library(dplyr)
 
 # Introduction
 
-This web app and open source software package for the R programming language was built to facilitate exploration of the naturally occurring sequence diversity for your favorite gene or gene family. We hope this product will help plant biologists without bioinformatics experience access the 1001 genomes project’s rich catalog of natural variation, formulate hypotheses and identify new interesting alleles in their favorite gene family.
+This web app and open source software package for the R programming language was built to facilitate exploration of the naturally occurring sequence diversity for your favorite gene or gene family. We hope this app will help plant biologists without bioinformatics experience access the 1001 genomes project’s rich catalog of natural variation, formulate hypotheses and identify new interesting alleles in their favorite gene family.
 
 The 1001 genomes dataset was collected with the intention of genome scale analyses, such as genome wide association studies, in which a particular phenotype is quantified for all of the accessions and sequence variants that are associated with phenotypic variation are identified. [In recent work](https://doi.org/10.1534/genetics.117.3000), we have utilized this rich dataset in a different manner to measure the effects of coding sequence variation on protein functional variation and phenotypic variation. This work has expanded the sequence-function-phenotype map for the auxin-signaling F-box gene family, and this product will facilitate similar analysis other genes, gene families, and genomic regions.
 
 So pick out your favorite gene, gene family or genomic region and follow the steps in this guide to analyze how it varies in plants collected from all over the world. For this example we will be using the auxin-signaling F-box genes, *TIR1* and *AFB2* which have the TAIR locus IDs [AT3G62980](https://www.arabidopsis.org/servlets/TairObject?id=39952&type=locus) and [AT3G26810](https://www.arabidopsis.org/servlets/TairObject?id=38086&type=locus). Click on one of the previous links to search TAIR for the TAIR IDs of your favorite genes.
 
 ***
+## Molecular Evolution
 Before digging into the data, make some hypotheses about what genes, domains and/or positions in your 
-favorite gene family might be under different evolutionary pressures. We can make some inferences about the evolutionary pressure acting on particular genes based on the sequence and geographic diversity observed in the 1001 genomes dataset. Thomas Mitchell-Olds and Johanna Schmitt published an excellent overview of the evolutionary inference from natural genetic diversity in *A. thaliana* [@mitchell-olds_genetic_2006]. We can calculate genetic diversity as the average number of nucleotide differences per site between two DNA sequences in all possible pairs in the sample population, and is denoted by $\pi$. 
+favorite gene family might be under different evolutionary pressures. We can make some inferences about the evolutionary pressure acting on particular genes based on the sequence and geographic diversity observed in the 1001 genomes dataset. Thomas Mitchell-Olds and Johanna Schmitt published an excellent overview of the evolutionary inference from natural genetic diversity in *A. thaliana* [@mitchell-olds_genetic_2006]. We can calculate a measure of genetic diversity as the average number of nucleotide differences per site between two DNA sequences in all possible pairs in the sample population, and is denoted by $\pi$. 
 
-However, evolutionary pressures potentially exert influence across all levels of biology, nucleotides, genes, genomes, phenotypes, organisms and populations.  This makes any inference from study of genetic diversity contingent on potentially unknown effects of epistasis between genes, population structure, environment, and many other effectors. Additionally, as an agricultural tag-along, much of the genetic variation in *A. thaliana* is due to admixture between populations as the result of human influence migration. So keep in mind throughout this analysis the limitations of examining a single snapshot in time of a potentially biased collection of frequently self-fertilizing organisms that were dispersed by human migration. Because of these limitations, inferring theories about how evolutionary forces are acting on your favorite genes is very uncertain business. However, if we assume a few things we can make some speculations.  
+Evolutionary pressures potentially exert influence across all levels of biology, nucleotides, genes, genomes, phenotypes, organisms and populations.  This makes any inference from study of genetic diversity contingent on potentially unknown effects of epistasis between genes, population structure, environment, and many other effectors. Additionally, as an agricultural tag-along, much of the genetic variation in *A. thaliana* is due to admixture between populations as the result of human influenced migration. So keep in mind throughout this analysis the limitations of examining a single snapshot in time of a potentially biased collection of frequently self-fertilizing organisms that were dispersed by human migration. Because of these limitations, inferring theories about how evolutionary forces are acting on your favorite genes is very uncertain business. However, if we assume a few things we can make some speculations.  
 
 Assumptions:  
 1. Polymorphisms in the dataset are not *completely* detrimental to organismal fitness.  
 2. Most nonsynonymous polymorphisms in a gene result in a reduction in function.  
 
-Now, taking a gene-centric view of evolution, here are some of the evolutionary pressures, or types of natural selection, that we might observe: 
+Now, taking a gene-centric view of evolution, here are some of the evolutionary pressures, or types of natural selection, that the genes we are analyzing may be experiencing and what effects these pressures have on genetic diversity. 
 
 
 ### Purifying selection  
@@ -94,15 +96,16 @@ If evolutionary pressure is very weak on a gene its sequence might change with n
 
 Beyond purifying selection and drift it is very difficult to make any strong inferences on the population as a whole. However there are two more types of selective pressure, balancing or neutral selection and positive or directional selection.
 
-### Balancing selection
-Genes of high diversity may be under balancing selection, also called neutral divergence. Balancing selection maintains multiple variants for long evolutionary times because different alleles provide selective advantages in different environments or genetic backgrounds. This results in high diversity at the particular site under selection and increased diversity at closely linked neutral sites due to genetic hitchhiking with this allele under balancing selection.  
-  
 ### Directional selection  
-If a polymorphism (or allele) is associated with a phenotype that provides an organism with a fitness advantage this phenotype and associated allele may be experiencing directional or positive selection. Positive/directional selection results in an increase in the prevalence of the advantageous allele within the population over time. Directional selection is one of the most difficult things to infer and is a very active area of research. Directional selection, like stabilizing selection is associated with reduced genetic diversity within the population under selection. However, unlike stabilizing selection the gene under directional selection will potentially have two major alleles that provide adaptive potential to different environments or genetic backgrounds.   
+If a polymorphism (or allele) is associated with a phenotype that provides an organism with a fitness advantage this phenotype and associated allele may be experiencing directional or positive selection. Positive/directional selection results in an increase in the prevalence of the advantageous allele within the population over time. Directional selection is very difficult to infer and is a very active area of research. Directional selection, like stabilizing selection is associated with reduced genetic diversity within the population under selection. However, unlike stabilizing selection the gene under directional selection will potentially have two major alleles that provide adaptive potential to different environments or genetic backgrounds. 
+
+### Balancing selection
+Genes of high diversity may also be under balancing selection, also called neutral divergence. Balancing selection maintains multiple variants for long evolutionary times because different alleles provide selective advantages in different environments or genetic backgrounds. This results in high diversity at the particular site under selection and increased diversity at closely linked neutral sites due to genetic hitchhiking with this allele under balancing selection.  
+
 
 
 # Hypothesize
-Now go read/collect the literature about your family and make some hypotheses!  
+Now go collect and read the literature about your family and make some hypotheses!  
 Here are some questions to help you get started:  
 
 What structure/function knowledge is there?  
@@ -121,7 +124,7 @@ Do the genetics suggest these pairs are redundant?
   
 ## For example
 In TIR1 and AFB2 there are 2 domains. The F-box domain interacts with the SCF components [@gray_identification_1999], and the LRR domain binds auxin and Aux/IAA proteins [@kepinski_auxininduced_2004]. The F-box is roughly 40 amino acids and wraps tightly around the SKP1 component of the SCF complex. The LRR is greater than 500 amino acids and binds auxin in a pocket formed by a horseshoe shaped chain of LRRs [@tan_mechanism_2007]. The outside of this horseshoe shape does not have any known interactions other than a dimerization interface [@dezfulian_oligomerization_2016]. Because the F-box domain must interact with the SCF complex for TIR1/AFB2 to perform their known function, we might expect the F-box to be highly conserved. The small size of the F-box also helps strengthen this hypothesis. The LRR domain is much larger and may have differing specificities for Aux/IAAs, so we might expect it to be more diverse. 
-We would also expect the residues of the LRR that contact auxin and the Aux/IAA degron to be highly conserved. 
+We would also expect the residues of the LRR that contact auxin and the Aux/IAA degron to be highly conserved as they are key to the function of these proteins. 
 
 ***
 
