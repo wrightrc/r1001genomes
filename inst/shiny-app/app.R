@@ -5,6 +5,7 @@ library(RColorBrewer)
 library(shinythemes)
 library(r1001genomes)
 library(knitr)
+library(stringr)
 
 CSSCode <- tags$head(tags$style(
    HTML("
