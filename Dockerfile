@@ -1,7 +1,7 @@
 FROM rocker/verse:latest
 ## Installs R, Rstudio, tidyverse, tex, pandoc and other markdown dependencies
 
-## Add lines from bioc 
+## Add lines from bioc
 
 RUN apt-get update && \
     apt-get -y  install --fix-missing gdb libxml2-dev python-pip libmariadb-client-lgpl-dev
@@ -42,11 +42,11 @@ ADD install.R /tmp/
 # invalidates cache every 24 hours
 ADD http://master.bioconductor.org/todays-date /tmp/
 
-# Install bioMart, VariantAnnotation and vcfR 
+# Install bioMart, VariantAnnotation and vcfR
 RUN R -f /tmp/install.R
 
 # Install r1001genomes from github repo
-RUN R -e 'devtools::install_github("wrightrc/r1001genomes")'
+RUN R -e 'devtools::install_github("wrightrc/r1001genomes", build_vignettes = TRUE)'
 
 # Add files to the image
 #ADD . /home/rstudio/
