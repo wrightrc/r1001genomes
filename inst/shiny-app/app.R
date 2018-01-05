@@ -113,9 +113,9 @@ ui <- function(request){ fluidPage(
           DT::dataTableOutput("tab1.SNPcounts"),
           tags$h4("Unique Allele Counts"),
           HTML("<h5>
-              This table <i>WILL</i> provide counts of unique alleles by gene structure.
+              This table provides counts of unique alleles by gene structure.
                </h5>"),
-### Need to build unique allele table
+          DT::dataTableOutput("tab1.SNPcountsUnique"),
           tags$h4("Nucleotide Diversity Statistics"),
           HTML("<h5>
                This table provides for each given gene the nucleotide diversity as Nei and Li's <i>&pi;</i> (the average number of nucleotide differences per site between all possible pairs of sequence) at synonymous (pi_s) and missense (pi_n) sites.
@@ -369,8 +369,6 @@ server <- function(input, output){
   output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,9)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
   output$tab1.genes_tableB <- renderTable(all.Genes()[, -c(5,6,9)])
 
-  #SNPStats <- reactive({polymorphTable(tab1.Genes(), strains)})
-
   all.VCFList <- eventReactive( input$STATS_submit, {
 
     if(input$STATS_quick_demo) {
@@ -391,24 +389,44 @@ server <- function(input, output){
                      setProgress(value=1)
     })
 
-
-
     return(output)
   })
 
-  SNPStats <- reactive({ ldply(all.VCFList(), polymorphRow, geneInfo=all.Genes(), .id="transcript_ID") })
+  tab1.nonUniqueVariants <- reactive({
+    ldply(all.VCFList(), variantCounts, unique=FALSE, .id="transcript_ID")
+  })
 
-  #output$SNPStats_Table <- renderTable(SNPStats())
+  tab1.uniqueVariants <- reactive({
+    ldply(all.VCFList(), variantCounts, unique=TRUE, .id="transcript_ID")
+  })
+
+  tab1.divStats <- reactive({
+    ldply(all.VCFList(), diversityStats, geneInfo=all.Genes(), .id="transcript_ID")
+  })
+
+  SNPStats <- reactive({
+    cbind(tab1.nonUniqueVariants(), tab1.uniqueVariants(), tab1.divStats())
+  })
 
   output$tab1.SNPcounts <- DT::renderDataTable(
-    DT::datatable(SNPStats()[,1:8],
+    DT::datatable(tab1.nonUniqueVariants(),
                   colnames = c("transcript", "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
                                "upstream", "coding \n total"),
                   rownames = FALSE,
     options=list(paging=FALSE, searching=FALSE)))
+
+  output$tab1.SNPcountsUnique <- DT::renderDataTable(
+    DT::datatable(tab1.uniqueVariants(),
+                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                               "coding \n synonymous", "coding \n missense",
+                               "upstream", "coding \n total"),
+                  rownames = FALSE,
+                  options=list(paging=FALSE, searching=FALSE)))
+
+
   output$tab1.Diversity_table <- DT::renderDataTable(
-    DT::formatRound(DT::datatable(SNPStats()[, c(1,9:13)],
+    DT::formatRound(DT::datatable(tab1.divStats(),
                   #
                   colnames = c("transcript",
                                "&pi;<sub>N</sub>",
