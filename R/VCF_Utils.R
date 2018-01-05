@@ -662,4 +662,5 @@ alignCDS <- function(IDs) {
 
 CDSAlignment
 CDSVariants <-
+BrowseSeqs(CDSAlignment[[2]])
 BrowseSeqs(myXStringSet = AAAlign, colorPatterns = TRUE, patterns = list())
