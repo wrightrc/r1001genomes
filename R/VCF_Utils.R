@@ -431,6 +431,79 @@ polymorphTable <- function (geneInfo, strains) {
 }
 
 
+#' counts number of variants in certain affect categories
+#' use with ldply() on VCFList objects to create a table.
+#'
+#' @param data tidyVCF with 'EFF' field parsed
+#' @param unique logical, if true only unique variants will be counted
+#'
+#' @return
+#' @export
+#'
+#' @examples
+variantCounts <- function(data, unique=TRUE) {
+  effects <- c("5_prime_UTR_variant",
+               "intron_variant",
+               "3_prime_UTR_variant",
+               "synonymous_variant",
+               "missense_variant",
+               "upstream_gene_variant")
+
+  if (unique == TRUE){
+    # if unique is true, only count rows with unique combination of positon and genotype.
+    variant_counts <- plyr::count(unique(data[, c("POS", "gt_GT", "Effect")]), "Effect")
+  } else{
+    variant_counts <- plyr::count(data, "Effect")
+  }
+
+  tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+
+  for (effect in effects){
+    if (effect %in% variant_counts$Effect){
+      tableData[effect] <- variant_counts[variant_counts$Effect %in% effect, "freq"]
+    } else {
+      tableData[effect] <- 0
+    }
+  }
+
+  tableData$coding_total <- tableData$missense_variant + tableData$synonymous_variant
+
+  return(tableData)
+}
+
+
+#' calculate nucleotide diversity statsistics for a gene/transcript
+#' use with ldply() on VCFList objects to create a table.
+#'
+#' @param data tidyVCF with 'EFF' field parsed and diversity calculated by position
+#' @param geneInfo
+#'
+#' @return a row with nucleotide diversity statistics of the transcript.
+#' @export
+#'
+#' @examples
+diversityStats <- function(data, geneInfo=NULL) {
+  tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+
+  #nucleotide diversity sums:
+  reducedData <- unique(data[, c("POS", "Effect", "Diversity")])
+  AA_Length <- unique(data$Amino_Acid_Length)
+  AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
+
+  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
+  tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
+  tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
+
+  tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant") , c("POS", "Diversity")])$Diversity) / (3*AA_Length)
+
+  if (!is.null(geneInfo)){
+    transcript_length <- geneInfo$transcript_length[geneInfo$transcript_ID == attr(data,"transcript_ID")]
+    tableData$Pi_transcript <- sum(unique(reducedData[, c("POS", "Diversity")])$Diversity) / transcript_length
+  }
+
+  return(tableData)
+}
+
 
 
 #' Title
