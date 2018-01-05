@@ -620,4 +620,46 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 }
 
 
+#' Make an alignment of Coding sequences
+#'
+#' @param IDs
+#'
+#' @return aligned CDS and amino acid sequences as a list of XStringSet objects
+#' @export
+#' @import GenomicFeatures
+#'
+#' @examples
+alignCDS <- function(IDs) {
+  #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
+  Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
+  #use_package("GenomicFeatures", "imports")
+  #use_package("rtracklayer", "imports")
+  gr <- rtracklayer::import(system.file("extdata",
+            "Araport11_GFF3_genes_transposons.201606.gff.gz",
+            package = "r1001genomes"))
+  gr_sub <-   gr[which(grepl(pattern = paste(IDs, collapse = "|"),
+                             x = mcols(gr)$ID)),]
+  txdb <- makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
+  CDSseqs <- extractTranscriptSeqs(Athaliana,
+                                   cdsBy(txdb, by = 'tx', use.names = TRUE))
+  CDSseqs.xstop <- subseq(CDSseqs, start = rep(1,length(CDSseqs)),
+                          end = nchar(CDSseqs)-3)
+  CDSseqs.xstop
+  #use_package("DECIPHER", "imports")
+  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs, type = "both")
+  CDSAlignment
+  return(CDSAlignment)
+}
 
+# from BrowseSeqs documentation
+# I think I can use patterns to highlight synonymous and nonsynonymous variants
+# "If patterns is a list of matrices,
+# then it must contain one element per sequence."
+# Each matrix is interpreted as providing the fraction
+# red, blue, and green for each letter in the sequence.
+# so make a 3xlength matrix with 1 in appropriate rows to match color
+
+
+CDSAlignment
+CDSVariants <-
+BrowseSeqs(myXStringSet = AAAlign, colorPatterns = TRUE, patterns = list())
