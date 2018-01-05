@@ -405,7 +405,11 @@ server <- function(input, output){
   })
 
   SNPStats <- reactive({
-    cbind(tab1.nonUniqueVariants(), tab1.uniqueVariants(), tab1.divStats())
+    # rename column names on unique variant counts.
+    uniqueVariantsRenamed <- tab1.uniqueVariants()
+    colnames(uniqueVariantsRenamed) <- paste(colnames(uniqueVariantsRenamed),
+                                             "unique", sep="_")
+    cbind(tab1.nonUniqueVariants(), uniqueVariantsRenamed[, -1], tab1.divStats()[, -1])
   })
 
   output$tab1.SNPcounts <- DT::renderDataTable(
@@ -440,7 +444,7 @@ server <- function(input, output){
 
   output$tab1.downloadStats <- downloadHandler(
     filename=function(){
-      paste("SNPStats-", Sys.Date(), ".csv", sep="")
+      paste("SNPStats-", Sys.time(), ".csv", sep="")
     },
     content = function(file) {
       write.csv(SNPStats(), file, row.names=FALSE)
@@ -449,7 +453,7 @@ server <- function(input, output){
 
   output$tab1.downloadGeneInfo <- downloadHandler(
     filename=function(){
-      paste("GeneInfo-", Sys.Date(), ".csv", sep="")
+      paste("GeneInfo-", Sys.time(), ".csv", sep="")
     },
     content = function(file) {
       write.csv(all.Genes(), file, row.names=FALSE)
@@ -520,7 +524,7 @@ server <- function(input, output){
 
   output$tab2.downloadSNPData <- downloadHandler(
     filename=function(){
-      paste("SNPData-", Sys.Date(), ".csv", sep="")
+      paste("SNPData-", Sys.time(), ".csv", sep="")
     },
     content = function(file) {
       write.csv(tab2.tableData(), file, row.names=FALSE)
@@ -691,7 +695,7 @@ server <- function(input, output){
 
   output$tab3.downloadMapData <- downloadHandler(
     filename=function(){
-      paste("MapData-", Sys.Date(), ".csv", sep="")
+      paste("MapData-", Sys.time(), ".csv", sep="")
     },
     content = function(file) {
       write.csv(tab3.labeled(), file, row.names=FALSE)
