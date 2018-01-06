@@ -8,7 +8,11 @@ getGeneInfo(genes, firstOnly = TRUE, inputType = "tair_locus",
   useCache = TRUE)
 }
 \arguments{
-\item{useCache}{}
+\item{genes}{a character vector of tair IDs of the genes to retrieve}
+
+\item{firstOnly}{logical, if true only return transcript IDs containing ".1"}
+
+\item{useCache}{logical, read from and write to a file of cached genes?}
 }
 \description{
 Get the start and end position of each transcript of a set of

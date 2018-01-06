@@ -13,6 +13,11 @@ VCFByTranscript(geneInfo, strains, tidy = TRUE, dataOnly = TRUE)
 
 \item{tidy}{logical, if true VCF will be provided in tidyVCF format, see
 vcfR documentation}
+
+\item{dataOnly}{logical, if true only return the $dat field of the VCF, (drop the metadata)}
+}
+\value{
+the VCF, in the format as requested by the parameters of the function
 }
 \description{
 download VCF, optionally in tidyVCF format

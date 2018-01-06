@@ -2,13 +2,17 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{polymorphRow}
 \alias{polymorphRow}
-\title{Title}
+\title{create a row of statistics for a given tidyVCF dataframe including non unique
+variant counts and nucleotide diversity values.}
 \usage{
 polymorphRow(data, geneInfo = NULL)
 }
 \arguments{
-\item{geneInfo}{}
+\item{data}{tidyVCF}
+
+\item{geneInfo}{geneInfo dataframe containing a row for the provided tidyVCF gene}
 }
 \description{
-Title
+create a row of statistics for a given tidyVCF dataframe including non unique
+variant counts and nucleotide diversity values.
 }
