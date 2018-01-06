@@ -366,10 +366,7 @@ server <- function(input, output){
     return(output)
   })
 
-  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,9)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
-  output$tab1.genes_tableB <- renderTable(all.Genes()[, -c(5,6,9)])
-
-  #SNPStats <- reactive({polymorphTable(tab1.Genes(), strains)})
+  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
 
   all.VCFList <- eventReactive( input$STATS_submit, {
 
