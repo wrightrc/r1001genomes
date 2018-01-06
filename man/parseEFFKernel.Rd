@@ -2,13 +2,20 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{parseEFFKernel}
 \alias{parseEFFKernel}
-\title{Title}
+\title{Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field}
 \usage{
 parseEFFKernel(data, transcript_ID, EFFColNames)
 }
 \arguments{
-\item{EFFColNames}{}
+\item{data}{Single row of tidyVCF with "EFF" field}
+
+\item{transcript_ID}{the transcript ID to be used to parse the 'EFF' field}
+
+\item{EFFColNames}{the column names to be used for the effect fields of the 'EFF' column}
+}
+\value{
+a data frame row consisting of the original data row with the parsed effect columns appended to it.
 }
 \description{
-Title
+Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
 }

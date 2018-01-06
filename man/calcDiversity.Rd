@@ -2,13 +2,18 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{calcDiversity}
 \alias{calcDiversity}
-\title{Title}
+\title{Calculate Nei's nucleotide diversity statistic for a single position,
+given a vector of counts of uninque genotypes at that location}
 \usage{
 calcDiversity(GTfreq)
 }
 \arguments{
-\item{GTfreq}{}
+\item{GTfreq}{numeric vector listing counts of uninque genotypes}
+}
+\value{
+numeric value nucleotide diversity
 }
 \description{
-Title
+Calculate Nei's nucleotide diversity statistic for a single position,
+given a vector of counts of uninque genotypes at that location
 }

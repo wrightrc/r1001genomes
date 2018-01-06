@@ -273,6 +273,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
 #' @import plyr
+#' @import biomaRt
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {

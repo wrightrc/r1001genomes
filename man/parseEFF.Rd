@@ -7,8 +7,7 @@
 parseEFF(tidyVCF)
 }
 \arguments{
-\item{tidyVCF}{tidyVCF$dat tibble to be parsed. should have an "EFF" field in
-its $dat section}
+\item{tidyVCF}{tidyVCF$dat tibble to be parsed. should have an 'EFF' field}
 
 \item{Transcript_ID}{Character string of the transcript ID. if NULL, the
 function will look for it as the attribute "transcript_ID" of the dataframe}
