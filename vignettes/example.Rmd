@@ -235,39 +235,57 @@ convert the matrix into a very long data frame. Most of the functions in `r1001g
 operate on a long data frame, often called a tidy data frame. We can automatically covert 
 our VCF to a tidy data frame by setting the `tidy` argument to `TRUE`.
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 YFG_VCF <- VCFList(geneInfo = geneInfo, by = "transcript", tidy = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+YFG_VCF <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds", package = "r1001genomes"))
 ```
 
 We now have a list of very long data frames with all the information on SNPs inside, but much of the details on the effects of these polymorphisms are contained in a single column labeled 'EFF' as a long text string, making it hard to filter and process the data by the individual attributes within that text string.
 The `parseEFF` function will separate individual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
-```{r}
+```{r eval = FALSE}
 YFG_VCF <- llply(YFG_VCF, parseEFF)
+YFG_VCF <- llply(YFG_VCF, Nucleotide_diversity)
 ```
 
 
-To generate the three tables of polymorphism stats the app calls the function `polymorphRow`. In R we can do the same thing.
+To generate the tables of unique and nonunique polymorphism counts the app calls the function `variantCounts`. In R we can do the same thing.
 ```{r, cache=TRUE}
-#TIR1_AFB2_table <- polymorphTable(geneInfo = geneInfo, strains = strains)
-YFG_VCF <- llply(YFG_VCF, Nucleotide_diversity)
-TIR1_AFB2_table <- ldply(YFG_VCF, polymorphRow, geneInfo = geneInfo, .id = "Transcript_ID")
-
+TIR1_AFB2_nonunique_variants <- ldply(YFG_VCF, variantCounts, unique = FALSE, .id = "Transcript_ID")
 ```
 
 Before displaying this table we will again clean it up a bit.
 
 ```{r}
-formatRound(datatable(TIR1_AFB2_table[,c(1:6,8)],
+formatRound(datatable(TIR1_AFB2_nonunique_variants,
                   colnames = c("transcript", "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
                                "coding \n total"), 
                   escape = FALSE, rownames = FALSE,
     options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
 ```
-The nucleotide diversity for the chosen genes is also calculated in the call to `polymorphTable`.
+
+to get the unique polymorphism counts we set the 'unique' argument of `variantCounts` to `TRUE`
 
 ```{r}
-formatRound(datatable(TIR1_AFB2_table[, c(1,13,9:12)],
+TIR1_AFB2_unique_variants <- ldply(YFG_VCF, variantCounts, unique = TRUE, .id = "Transcript_ID")
+
+formatRound(datatable(TIR1_AFB2_unique_variants,
+                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                               "coding \n synonymous", "coding \n missense",
+                               "coding \n total"), 
+                  escape = FALSE, rownames = FALSE,
+    options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
+```
+
+The nucleotide diversity for the chosen genes can also be calculated, using the function  `diversityStats`.
+
+```{r}
+TIR1_AFB2_diversity_table <- ldply(YFG_VCF, diversityStats, geneInfo = geneInfo, .id = "Transcript_ID")
+
+formatRound(datatable(TIR1_AFB2_diversity_table,
                   colnames = c("transcript",
                                "&pi; transcript",
                                "&pi; coding",
