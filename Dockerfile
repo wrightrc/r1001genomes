@@ -48,7 +48,7 @@ ADD http://master.bioconductor.org/todays-date /tmp/
 RUN R -f /tmp/install.R
 
 # Install r1001genomes from github repo
-RUN R -e 'devtools::install_github("wrightrc/r1001genomes")'
+RUN R -e 'devtools::install_github("wrightrc/r1001genomes", ref = "docker-stable")'
 
 # Add files to the image
 #ADD . /home/rstudio/
