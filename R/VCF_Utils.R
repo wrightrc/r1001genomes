@@ -309,7 +309,9 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   if (useCache == TRUE) {
     # append cache
     geneInfoCache <- unique(rbind(geneInfoCache, output))
-    write.table(geneInfoCache, file="geneInfoCache.txt", row.names=FALSE)
+    write.table(geneInfoCache, file = system.file("shiny-app",
+                                                "geneInfoCache.txt",
+                                                package = "r1001genomes"), row.names=FALSE)
   }
 
 
