@@ -3,15 +3,13 @@ title: "Example gene-wise analysis of the 1001 genomes data set"
 author: "R. Clay Wright"
 date: "`r Sys.Date()`"
 output: 
-   html_document:
-     toc: true
    rmarkdown::html_vignette: 
       toc: true
 bibliography: references.bib
 csl: apa.csl
 link-citations: true
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Example gene-wise analysis of the 1001 genomes data set}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 ---

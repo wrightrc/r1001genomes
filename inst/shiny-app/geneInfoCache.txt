@@ -1,1 +1,3 @@
 "tair_locus" "tair_symbol" "transcript_ID" "chromosome_name" "start_position" "end_position" "strand" "transcript_start" "transcript_end" "regionString" "transcript_length"
+"AT3G26810" "AFB2" "AT3G26810.1" 3 9867652 9870782 1 9867652 9870782 "3:9867652-9870782" 3130
+"AT3G62980" "TIR1" "AT3G62980.1" 3 23273065 23276630 -1 23273065 23276630 "3:23273065-23276630" 3565
