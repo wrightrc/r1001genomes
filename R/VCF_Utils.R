@@ -80,6 +80,7 @@ makeRegionString <- function (data) {
 #'
 #' @return The URL used for the download
 #' @export
+#' @importFrom utils download.file
 #'
 #' @examples
 downloadData <- function (fName, strainStr, regionStr,
@@ -274,6 +275,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @export
 #' @import plyr
 #' @import biomaRt
+#' @importFrom utils read.table write.table
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
