@@ -18,9 +18,6 @@ vignette: >
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(warning = FALSE, collapse = TRUE, comment = "#>", tidy = TRUE, out.width = "90%", fig.height=4, fig.width=7, out.extra='style="margin: auto; display: block; padding-top: 15px;"')
-library(r1001genomes)
-library(DT)
-library(dplyr)
 
 ```
 
@@ -180,9 +177,19 @@ Once the loading process has finished, the first table you should see scrolling 
 </div><!--panel end------------------------------------------------------------>
 <div  class="using-R-insert"><!--panel start----------------------------------->
 ## Using R
-The code the app uses to download this table is the `getGeneInfo` function. This function is just a simplifying wrapper for the `BioMart` function `getBM`. This downloads the gene model from ENSEMBL plants.
+The code the app uses to download this table is the `getGeneInfo` function. This function is just a simplifying wrapper for the `BioMart` function `getBM`. 
 
+First we must install a load a few package dependencies.
 ```{r}
+library(r1001genomes)
+library(DT)
+library(dplyr)
+library(biomaRt)
+```
+
+This downloads the gene model from ENSEMBL plants.
+```{r}
+
 tair_ids <- c("AT3G62980", "AT3G26810")
 geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, inputType = "tair_locus", useCache = TRUE)
 ```
