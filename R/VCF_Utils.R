@@ -641,9 +641,10 @@ alignCDS <- function(IDs) {
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
   #use_package("GenomicFeatures", "imports")
   #use_package("rtracklayer", "imports")
-  gr <- rtracklayer::import(system.file("extdata",
-            "Araport11_GFF3_genes_transposons.201606.gff.gz",
-            package = "r1001genomes"))
+  # gr is now built in
+  # gr <- rtracklayer::import(system.file("extdata",
+  #           "Araport11_GFF3_genes_transposons.201606.gff.gz",
+  #           package = "r1001genomes"))
   gr_sub <-   gr[which(grepl(pattern = paste(
     gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
                              x = mcols(gr)$ID)),]
