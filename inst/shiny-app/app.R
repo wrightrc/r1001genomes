@@ -78,7 +78,7 @@ ui <- function(request){ fluidPage(
   themeSelector(),
   tabsetPanel(
     tabPanel("SNP Stats",
-        ## Tab 1 ###############################################################
+## Tab 1 - SNP Stats ##########################################################
       tags$br(),
       tags$div(class="input-format",
                tags$h3("Select Genes"),
@@ -129,7 +129,7 @@ ui <- function(request){ fluidPage(
     ),
 
     tabPanel("Diversity Plot",
-        ## Tab 2 ###############################################################
+## Tab 2 - Diversity Plot #####################################################
       tags$br(),
       tags$div(class="input-format",
                tags$h3("Select a Gene"),
@@ -165,7 +165,7 @@ ui <- function(request){ fluidPage(
     ),
 
     tabPanel("SNP Mapping",
-             ## Tab 3 ##########################################################
+## Tab 3  - SNP Mapping #######################################################
              tags$br(),
              tags$div(class="input-format",
                  tags$h3("Select Genes and Filter Diversity Parameter"),
@@ -202,7 +202,7 @@ ui <- function(request){ fluidPage(
 
 
     # tabPanel("Accessions and Mutations",
-    #           ## Tab 4 #########################################################
+    ### Tab 4  - Accessions and Mutations #####################################
     #          tags$br(),
     #          tags$div(class="input-format",
     #                   tags$h3("Gene Select"),
@@ -268,6 +268,21 @@ ui <- function(request){ fluidPage(
     #                   )
     #          )
     # ),
+
+## Tab 5 - Alignments #########################################################
+    tabPanel("Alignments",
+             tags$br(),
+             tags$div(class="input-format",
+                      tags$h3("Select Genes and Type"),
+                      tags$h5("Select one or more transcript IDs below and select the ype of alignment to show"),
+                      # textInput(inputId="tab3.Gene", label=NULL,
+                      #           value="AT1G80490"),
+                      uiOutput("tab5.selectGene"),
+                      # actionButton(inputId="tab3.Submit", label="Submit"),
+             tags$br(),
+             textOutput("debug"),
+             tags$br(),
+             msaROutput(outputId = "tab5.alignment"))),
 
     tabPanel("About",
              ## About Tab ######################################################
@@ -341,7 +356,7 @@ server <- function(input, output){
   ##   _________
   ##  /  tab1   \
   ##             --------------------------------------------------
-  ## Tab 1 stuff:
+  ## Tab 1 ####################
 
   all.Genes <- eventReactive(input$STATS_submit,{
     if (input$STATS_quick_demo){
@@ -468,7 +483,7 @@ server <- function(input, output){
   ##                 _________
   ##                /  tab2   \
   ## ---------------           -------------------------------------
-  ## Tab 2 stuff:
+  ## Tab 2 ###################
 
   output$tab2.selectGene <- renderUI({
     tagList(
@@ -520,7 +535,7 @@ server <- function(input, output){
   ##                            _________
   ##                           /  tab3   \
   ## --------------------------           ----------------------------
-  ## Tab 3 stuff:
+  ## Tab 3 ##################################
 
   output$tab3.selectGene <- renderUI({
     tagList(
@@ -528,10 +543,6 @@ server <- function(input, output){
       actionButton(inputId="tab3.Submit", label = "Submit")
     )
   })
-
-
-
-
 
   tab3.Genes <- eventReactive(input$tab3.Submit, {
     #gene Info for gene on tab 3, updates on 'submit' button press
@@ -685,11 +696,47 @@ server <- function(input, output){
   ##                                        _________
   ##                                       /  tab4   \
   ## --------------------------------------           ----------------
-  ## Tab 4 stuff:
+  ## Tab 4 #####################
 
 
+  ##                                        _________
+  ##                                      /   tab5   \
+  ## --------------------------------------           ----------------
+  ## Tab 5 #########################
 
+  output$tab5.selectGene <- renderUI({
+    tagList(
+      checkboxGroupInput(inputId = "tab5.transcript_ID",
+                         label=NULL, choices=all.GeneChoices()),
+      radioButtons(inputId = "tab5.type",
+                   label = "Alignment type:",
+                   choices = c("DNA", "AA"),
+                   selected = "AA", inline = TRUE),
+      actionButton(inputId="tab5.Submit", label = "Submit")
+    )
+  })
 
+  tab5.Genes <- eventReactive(input$tab5.Submit, {
+    #gene Info for gene on tab 5, updates on 'submit' button press
+    return(input$tab5.transcript_ID)
+  })
+
+  output$debug <- renderPrint({tab5.Genes()})
+
+  output$type <- eventReactive(input$tab5.Submit, {
+    return(input$tab5.type)
+  })
+
+  alignment <- eventReactive(input$tab5.Submit, {
+    alignment <- alignCDS(IDs = tab5.Genes())
+    return(alignment)
+  })
+
+  output$tab5.alignment <- renderMsaR({
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    msaR(alignment()[[type+1]],
+         colorscheme = {if(type) "taylor" else "nucleotide"})
+    })
 }
 
 enableBookmarking(store = "url")

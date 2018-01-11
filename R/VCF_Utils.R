@@ -274,6 +274,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @return
 #' @export
 #' @import plyr
+#' @import biomaRt
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
@@ -622,13 +623,19 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 
 #' Make an alignment of Coding sequences
 #'
-#' @param IDs
+#' @param IDs a vector of TAIR transcript IDs, e.g. "AT3G26890.1"
 #'
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
 #' @import GenomicFeatures
+#' @import S4Vectors
+#' @import XVector
+#' @import DECIPHER
 #'
 #' @examples
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' browseSeqs(alignment[[2]])
 alignCDS <- function(IDs) {
   #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
@@ -637,30 +644,59 @@ alignCDS <- function(IDs) {
   gr <- rtracklayer::import(system.file("extdata",
             "Araport11_GFF3_genes_transposons.201606.gff.gz",
             package = "r1001genomes"))
-  gr_sub <-   gr[which(grepl(pattern = paste(IDs, collapse = "|"),
+  gr_sub <-   gr[which(grepl(pattern = paste(
+    gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
                              x = mcols(gr)$ID)),]
-  txdb <- makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
-  CDSseqs <- extractTranscriptSeqs(Athaliana,
-                                   cdsBy(txdb, by = 'tx', use.names = TRUE))
-  CDSseqs.xstop <- subseq(CDSseqs, start = rep(1,length(CDSseqs)),
+  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
+  CDSseqs <- GenomicFeatures::extractTranscriptSeqs(Athaliana,
+                GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
+  CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
                           end = nchar(CDSseqs)-3)
   CDSseqs.xstop
   #use_package("DECIPHER", "imports")
-  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs, type = "both")
-  CDSAlignment
+  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
   return(CDSAlignment)
 }
 
-# from BrowseSeqs documentation
-# I think I can use patterns to highlight synonymous and nonsynonymous variants
-# "If patterns is a list of matrices,
-# then it must contain one element per sequence."
-# Each matrix is interpreted as providing the fraction
-# red, blue, and green for each letter in the sequence.
-# so make a 3xlength matrix with 1 in appropriate rows to match color
-
-
-CDSAlignment
-CDSVariants <-
-BrowseSeqs(CDSAlignment[[2]])
-BrowseSeqs(myXStringSet = AAAlign, colorPatterns = TRUE, patterns = list())
+#' make DNAStrings of sequences for each gene of each accession
+#'
+#' @param SNPs a VRanges object containing the SNPs you would like to make
+#'  sequences for
+#' @param genome a BSgenomes object corresponding to the genome used to call
+#'  the SNPs and also corresponding to the ranges set in 'ranges'
+#' @param ranges a named GRanges object containing the ranges of the sequence
+#'  elements you would like to extract
+#'
+#' @return
+#' @export
+#'
+#' @examples
+promoterVariantToString<-function(SNPs, genome, ranges, files_out = TRUE){
+  #get reference sequences
+  #mcols(ranges)$seqs <- getSeq(x = genome, ranges)
+  #ranges(SNPs) <- ranges(mapToTranscripts(SNPs, ranges))
+  #mcols(SNPs)$GENEID <- seqnames(mapToTranscripts(SNPs, ranges))
+  #loop to generate accession sequences for each seq of each gene
+  llply(mcols(ranges)$names,function(gene) {
+    #pull all coding snps mapped to gene
+    genes<-subset(SNPs, mcols(SNPs)$GENEID == gsub("\\..*$","",gene))
+    #for each unique accession in the new SNP_list
+    geneList<-llply(unique(sampleNames(SNPs)),function(acc) {
+      #get variants in the strain
+      variants <- unique(subset(genes, sampleNames(genes) == acc))
+      #create sequence
+      strainVar <- replaceAt(x=mcols(ranges)$seqs[
+        which(mcols(ranges)$names==gene)],
+        at = ranges(variants), value = alt(variants))
+      #name it
+      names(strainVar)<-paste(acc,names(strainVar),sep='-')
+      strainVar
+    })
+    geneSet<-do.call(c,geneList)
+    geneSet<-c(mcols(ranges)$seqs[
+      which(mcols(ranges)$names==gene)],geneSet)
+    if(files_out) writeXStringSet(geneSet,
+                                  paste0(gsub("\\..*$","",gene),"seqs.fasta"))
+    geneSet
+  })
+}
