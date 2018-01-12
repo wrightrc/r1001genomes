@@ -651,6 +651,7 @@ alignCDS <- function(IDs) {
   txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
   CDSseqs <- GenomicFeatures::extractTranscriptSeqs(Athaliana,
                 GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
+  #devtools::use_package("XVector", "imports")
   CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
                           end = nchar(CDSseqs)-3)
   CDSseqs.xstop
