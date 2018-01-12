@@ -6,6 +6,8 @@ library(shinythemes)
 library(r1001genomes)
 library(knitr)
 library(stringr)
+library(msaR)
+library(DECIPHER)
 
 CSSCode <- tags$head(tags$style(
    HTML("
