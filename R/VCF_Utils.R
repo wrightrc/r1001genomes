@@ -319,6 +319,57 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   return (output)
 }
 
+#' Rename TAIR symbols of geneInfo table based on .csv file
+#'
+#' @param geneInfo geneInfo dataframe, see getGeneInfo() function
+#' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
+#'
+#' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
+#' @export
+#'
+#' @examples
+relableTairSymbol <- function(geneInfo, fnames) {
+ geneIdTable <- ldply(fnames, read.csv, colClasses="character")
+
+ colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
+
+ geneInfoOut <- merge(geneInfo, geneIdTable[, c("tair_locus", "tair_symbol")], by="tair_locus", all.x=TRUE)
+
+ # relable tair_symbol.x column as tair_symbol, this is in the right column order
+ colnames(geneInfoOut)[colnames(geneInfoOut) == "tair_symbol.x"] <- "tair_symbol"
+ # replace tair_symbol column with tair_symbol.y which contains the names from the csv files
+ geneInfoOut$tair_symbol <- geneInfoOut$tair_symbol.y
+ # remove the tair_symbol.y column (now redundant)
+ geneInfoOut <- subset(geneInfoOut, select=-c(tair_symbol.y))
+
+ return(geneInfoOut)
+}
+
+
+#' make geneInfo dataframe based on .csv file of tair loci and names/symbols
+#'
+#' @param fname filename of csv files containing "tair_locus" and "name" fields
+#' @param firstOnly logical, if true only return transcript IDs containing ".1"
+#' @param inputType
+#' @param useCache logical, read from and write to a file of cached genes?
+#'
+#' @return geneInfo dataframe see getGeneInfo
+#' @export
+#'
+#' @examples
+geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
+  geneIDTable <- read.csv(fname, colClasses="character")
+  genes <- geneIDTable$tair_locus
+
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, inputType=inputType, useCache=useCache)
+
+  geneInfo <- relableTairSymbol(geneInfo, fname)
+
+  return(geneInfo)
+}
+
+
+
 #' Calculate Nei's nucleotide diversity statistic for a single position,
 #' given a vector of counts of uninque genotypes at that location
 #'
