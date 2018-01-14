@@ -160,6 +160,8 @@ parseEFF <- function (tidyVCF){
   transcript_ID <- attr(tidyVCF, "transcript_ID")
   output <- ddply(data, "POS", .fun=parseEFFKernel, transcript_ID, EFFColNames)
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
   return (output)
 }
 
@@ -233,6 +235,8 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
   }
 
   attr(VCF.out, "transcript_ID") <- transcript_ID # add transcript_ID attribute to the output object
+  attr(VCF.out, "tair_locus") <- geneInfo$tair_locus
+  attr(VCF.out, "tair_symbol") <- geneInfo$tair_symbol
 
   return (VCF.out)
 }
@@ -398,10 +402,9 @@ Nucleotide_diversity <- function (tidyVCF){
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
 
-  if (!is.null(attr(tidyVCF, "transcript_ID"))) {
-    # if the input had the "transcript_ID" attribute, pass it to the output
-    attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
-  }
+  attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
 
   return(output)
 }
@@ -497,6 +500,8 @@ variantCounts <- function(data, unique=TRUE) {
                "3_prime_UTR_variant",
                "synonymous_variant",
                "missense_variant",
+               "stop_gained",
+               "frameshift_variant",
                "upstream_gene_variant")
 
   if (unique == TRUE){
@@ -507,6 +512,7 @@ variantCounts <- function(data, unique=TRUE) {
   }
 
   tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+  tableData$tair_symbol <- attr(data, "tair_symbol")
 
   for (effect in effects){
     if (effect %in% variant_counts$Effect){
@@ -540,7 +546,11 @@ diversityStats <- function(data, geneInfo=NULL) {
   AA_Length <- unique(data$Amino_Acid_Length)
   AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
 
-  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
+  tableData$tair_symbol <- attr(data, "tair_symbol")
+  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% c("missense_variant",
+                                                                    "stop_gained",
+                                                                    "frameshift_variant"),
+                                          "Diversity"]) / (3*AA_Length)
   tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
   tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
 
@@ -623,7 +633,7 @@ getCodingDiv <- function(data){
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
 
-  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant"), ]   #"stop_gained", "frameshift_variant"
+  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant", "stop_gained", "frameshift_variant"), ]   #
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
                                                         "Amino_Acid_Change",

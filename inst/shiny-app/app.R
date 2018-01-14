@@ -452,16 +452,18 @@ server <- function(input, output){
 
   output$tab1.SNPcounts <- DT::renderDataTable(
     DT::datatable(tab1.nonUniqueVariants(),
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
+                               "stop\ngained", "frameshift\nvariant",
                                "upstream", "coding \n total"),
                   rownames = FALSE,
-    options=list(paging=FALSE, searching=FALSE)))
+                  options=list(paging=FALSE, searching=FALSE)))
 
   output$tab1.SNPcountsUnique <- DT::renderDataTable(
     DT::datatable(tab1.uniqueVariants(),
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                  colnames = c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
+                               "stop\ngained", "frameshift\nvariant",
                                "upstream", "coding \n total"),
                   rownames = FALSE,
                   options=list(paging=FALSE, searching=FALSE)))
@@ -471,6 +473,7 @@ server <- function(input, output){
     DT::formatRound(DT::datatable(tab1.divStats(),
                   #
                   colnames = c("transcript",
+                               "symbol",
                                "&pi;<sub>N</sub>",
                                "&pi;<sub>S</sub>",
                                "&pi;<sub>N</sub>/&pi;<sub>S</sub>",
