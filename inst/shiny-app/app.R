@@ -450,24 +450,27 @@ server <- function(input, output){
     cbind(tab1.nonUniqueVariants(), uniqueVariantsRenamed[, -1], tab1.divStats()[, -1])
   })
 
-  output$tab1.SNPcounts <- DT::renderDataTable(
-    DT::datatable(tab1.nonUniqueVariants(),
-                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
-                               "coding \n synonymous", "coding \n missense",
-                               "stop\ngained", "frameshift\nvariant",
-                               "upstream", "coding \n total"),
-                  rownames = FALSE,
-                  options=list(paging=FALSE, searching=FALSE)))
+  output$tab1.SNPcounts <- DT::renderDataTable({
+    table <- tab1.nonUniqueVariants()
+    colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
+                         "coding \n synonymous", "coding \n missense",
+                         "stop\ngained", "frameshift\nvariant",
+                         "upstream", "coding \n total")
+    table <-  table[,c(TRUE,TRUE, colSums(table[,3:11])!=0)] # remove columns with all zeros
+    table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
+    return(table)
+  })
 
-  output$tab1.SNPcountsUnique <- DT::renderDataTable(
-    DT::datatable(tab1.uniqueVariants(),
-                  colnames = c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
-                               "coding \n synonymous", "coding \n missense",
-                               "stop\ngained", "frameshift\nvariant",
-                               "upstream", "coding \n total"),
-                  rownames = FALSE,
-                  options=list(paging=FALSE, searching=FALSE)))
-
+  output$tab1.SNPcountsUnique <- DT::renderDataTable({
+    table <- tab1.uniqueVariants()
+    colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
+                         "coding \n synonymous", "coding \n missense",
+                         "stop\ngained", "frameshift\nvariant",
+                         "upstream", "coding \n total")
+    table <-  table[,c(TRUE,TRUE, colSums(table[,3:11])!=0)] # remove columns with all zeros
+    table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
+    return(table)
+  })
 
   output$tab1.Diversity_table <- DT::renderDataTable(
     DT::formatRound(DT::datatable(tab1.divStats(),
