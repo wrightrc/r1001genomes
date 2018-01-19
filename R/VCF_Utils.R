@@ -871,10 +871,10 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
                                  "1" = unique(!!effect),
                                  paste(sort(unique(!!effect)),
                                        collapse = " & "))})
-  temp[,quo_text(seq_pos)] <- as.character(temp[,quo_text(seq_pos)])
+  temp[,dplyr::quo_text(seq_pos)] <- as.character(temp[,dplyr::quo_text(seq_pos)])
   aln_df <- dplyr::left_join(x = aln_df, y = temp,
-                        by = c("seq_name" = quo_text(seq_name),
-                               "seq_pos" = quo_text(seq_pos)))
+                        by = c("seq_name" = dplyr::quo_text(seq_name),
+                               "seq_pos" = dplyr::quo_text(seq_pos)))
   return(aln_plot)
 }
 
