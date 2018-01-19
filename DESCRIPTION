@@ -17,7 +17,7 @@ Description: This web app and open source
         gene family.
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.4), plyr,
+Depends: R (>= 3.4), plyr
     DECIPHER
 Imports: vcfR, biomaRt, VariantAnnotation, stringr, 
          ggplot2, reshape2, dplyr, ggmap, shiny, leaflet, RColorBrewer, 
@@ -27,7 +27,7 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     XVector,
     magrittr,
     DECIPHER
-Suggests: knitr, ggrepel, msaR
+Suggests: knitr, ggrepel, msaR, plotly
 License: Artistic-2.0
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1

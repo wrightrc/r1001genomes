@@ -22,7 +22,11 @@ RUN R -e 'install.packages("ggthemes")'
 
 RUN R -e 'install.packages("leaflet")'
 
+RUN R -e 'install.packages("magrittr")'
+
 RUN R -e 'install.packages("msaR")'
+
+RUN R -e 'install.packages("plotly")'
 
 RUN R -e 'install.packages("plyr")'
 
