@@ -81,17 +81,28 @@ ui <- function(request){ fluidPage(
         ## Tab 1 ###############################################################
       tags$br(),
       tags$div(class="input-format",
+          fluidRow(
+            column(6,
                tags$h3("Select Genes"),
                tags$h5("Type a list of gene loci in the box below, separated by commas. "),
                textAreaInput(inputId = "gene_ids", label = NULL,
-                             width = 600, height = 75, value = "AT3G62980, AT3G26810"),
-               actionButton(inputId="STATS_submit", label = "Submit"),
-               #actionButton(inputId = "STATS_quick_demo", label = "Quick Demo"),
+                             width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
                checkboxInput("STATS_quick_demo", label="Quick Demo"),
-               tags$br()
+               actionButton(inputId="STATS_submit", label = "Submit")
+
+            ),
+            column(6,
+               tags$h3("OR Upload File"),
+               tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                       The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+               fileInput("genesFile", label=NULL),
+               actionButton(inputId="file_submit", label = "Submit")
+
+            )
+          ),
+          tags$br()
       ),
-       #tags$hr(),
-       #uiOutput("tab1.gene_table_ui"),
+
       tags$hr(),
 
       tags$div(class="output-format",
@@ -177,8 +188,8 @@ ui <- function(request){ fluidPage(
                  sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
                              min=-4, max=0, value=-2, step=0.05),
                  radioButtons("tab3.SNPtype", "Type of SNP to mark",
-                              choices=c("All", "Coding", "Missense")),
-                 verbatimTextOutput("tab3.debug")
+                              choices=c("All", "Coding", "Missense"))
+                 #verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
@@ -343,7 +354,30 @@ server <- function(input, output){
   ##             --------------------------------------------------
   ## Tab 1 stuff:
 
-  all.Genes <- eventReactive(input$STATS_submit,{
+  tab1.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
+  observeEvent(input$STATS_submit,{
+    if (input$STATS_submit > 0){
+      tab1.buttons$last_button <- "STATS_submit"
+      tab1.buttons$total_presses <- tab1.buttons$total_presses + 1
+    }
+  })
+  observeEvent(input$file_submit,{
+    if (input$file_submit > 0){
+      tab1.buttons$last_button <- "file_submit"
+      tab1.buttons$total_presses <- tab1.buttons$total_presses + 1
+    }
+  })
+
+
+  all.Genes <- eventReactive({tab1.buttons$total_presses},{
+    req(tab1.buttons$last_button!="none pressed")
+
+    if (tab1.buttons$last_button == "file_submit"){
+      genes <- geneInfoFromFile(input$genesFile$datapath)
+      req(genes != FALSE)
+      return(genes)
+    }
+
     if (input$STATS_quick_demo){
       names <- c("AT3G62980", "AT3G26810")
       genes <- getGeneInfo(names)
@@ -368,9 +402,10 @@ server <- function(input, output){
 
   output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
 
-  all.VCFList <- eventReactive( input$STATS_submit, {
+  all.VCFList <- reactive({
 
-    if(input$STATS_quick_demo) {
+    if(isolate(input$STATS_quick_demo)) {
+      all.Genes() # DO NOT DELETE this is here to make all.VCFList update after unchecking quickdemo
       return(readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
                                         package = "r1001genomes")))
     }
@@ -391,19 +426,23 @@ server <- function(input, output){
     return(output)
   })
 
-  tab1.nonUniqueVariants <- reactive({
+  tab1.nonUniqueVariants <- eventReactive({all.VCFList()},{
+    req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), variantCounts, unique=FALSE, .id="transcript_ID")
   })
 
-  tab1.uniqueVariants <- reactive({
+  tab1.uniqueVariants <- eventReactive({all.VCFList()},{
+    req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), variantCounts, unique=TRUE, .id="transcript_ID")
   })
 
-  tab1.divStats <- reactive({
-    ldply(all.VCFList(), diversityStats, geneInfo=all.Genes(), .id="transcript_ID")
+  tab1.divStats <- eventReactive({all.VCFList()},{
+    req(isolate(tab1.buttons$last_button)!="none pressed")
+    ldply(all.VCFList(), diversityStats, geneInfo=isolate(all.Genes()), .id="transcript_ID")
   })
 
   SNPStats <- reactive({
+    req(isolate(tab1.buttons$last_button)!="none pressed")
     # rename column names on unique variant counts.
     uniqueVariantsRenamed <- tab1.uniqueVariants()
     colnames(uniqueVariantsRenamed) <- paste(colnames(uniqueVariantsRenamed),
@@ -411,27 +450,33 @@ server <- function(input, output){
     cbind(tab1.nonUniqueVariants(), uniqueVariantsRenamed[, -1], tab1.divStats()[, -1])
   })
 
-  output$tab1.SNPcounts <- DT::renderDataTable(
-    DT::datatable(tab1.nonUniqueVariants(),
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
-                               "coding \n synonymous", "coding \n missense",
-                               "upstream", "coding \n total"),
-                  rownames = FALSE,
-    options=list(paging=FALSE, searching=FALSE)))
+  output$tab1.SNPcounts <- DT::renderDataTable({
+    table <- tab1.nonUniqueVariants()
+    colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
+                         "coding \n synonymous", "coding \n missense",
+                         "stop\ngained", "frameshift\nvariant",
+                         "upstream", "coding \n total")
+    table <-  table[,c(TRUE,TRUE, colSums(table[,3:11])!=0)] # remove columns with all zeros
+    table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
+    return(table)
+  })
 
-  output$tab1.SNPcountsUnique <- DT::renderDataTable(
-    DT::datatable(tab1.uniqueVariants(),
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
-                               "coding \n synonymous", "coding \n missense",
-                               "upstream", "coding \n total"),
-                  rownames = FALSE,
-                  options=list(paging=FALSE, searching=FALSE)))
-
+  output$tab1.SNPcountsUnique <- DT::renderDataTable({
+    table <- tab1.uniqueVariants()
+    colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
+                         "coding \n synonymous", "coding \n missense",
+                         "stop\ngained", "frameshift\nvariant",
+                         "upstream", "coding \n total")
+    table <-  table[,c(TRUE,TRUE, colSums(table[,3:11])!=0)] # remove columns with all zeros
+    table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
+    return(table)
+  })
 
   output$tab1.Diversity_table <- DT::renderDataTable(
     DT::formatRound(DT::datatable(tab1.divStats(),
                   #
                   colnames = c("transcript",
+                               "symbol",
                                "&pi;<sub>N</sub>",
                                "&pi;<sub>S</sub>",
                                "&pi;<sub>N</sub>/&pi;<sub>S</sub>",
@@ -460,31 +505,7 @@ server <- function(input, output){
   )
 
 
-    output$tab1.gene_table_ui <- renderUI({
-      if (input$STATS_submit==0){
-        return()
-      }
 
-
-      tagList(
-        tags$div(class="input-format",
-                 tags$h3("Allele selection"),
-                 tags$h5("Select the alleles you want to see on the map by clicking the checkboxes"),
-                 tags$div(class="checkbox-format",
-                          checkboxGroupInput("tab3.allele_select", "select_alleles to display", choices=tab3.mutationList())
-                 ),
-
-                 actionButton(inputId="tab3.update_map", label = "Update Map")
-        )
-      )
-
-      # tags$div(class="output-format",
-                # tags$h3("Selected Gene Information"),
-                # tags$h5("this table provides details on the gene(s) input above, including transcript IDs, and chromosome position information on the start and end of the transcript"),
-                # downloadButton("tab1.downloadGeneInfo","Download Content of Table Below")
-                # DT::dataTableOutput("tab1.genes_table")
-      # )
-    })
 
   ##                 _________
   ##                /  tab2   \
@@ -589,8 +610,8 @@ server <- function(input, output){
 
   output$tab3.debug <- renderPrint({
     # temporary debug output
-    input$tab3.allele_select
-    input$tab3.Submit
+      print(paste("last button =", tab1.buttons$last_button))
+      print(paste("total presses =", tab1.buttons$total_presses))
   })
 
   tab3.filteredByDiv <- reactive({

@@ -80,6 +80,7 @@ makeRegionString <- function (data) {
 #'
 #' @return The URL used for the download
 #' @export
+#' @importFrom utils download.file
 #'
 #' @examples
 downloadData <- function (fName, strainStr, regionStr,
@@ -159,6 +160,8 @@ parseEFF <- function (tidyVCF){
   transcript_ID <- attr(tidyVCF, "transcript_ID")
   output <- ddply(data, "POS", .fun=parseEFFKernel, transcript_ID, EFFColNames)
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
   return (output)
 }
 
@@ -232,6 +235,8 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
   }
 
   attr(VCF.out, "transcript_ID") <- transcript_ID # add transcript_ID attribute to the output object
+  attr(VCF.out, "tair_locus") <- geneInfo$tair_locus
+  attr(VCF.out, "tair_symbol") <- geneInfo$tair_symbol
 
   return (VCF.out)
 }
@@ -274,6 +279,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @export
 #' @import plyr
 #' @import biomaRt
+#' @importFrom utils read.table write.table
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
@@ -317,6 +323,57 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   return (output)
 }
 
+#' Rename TAIR symbols of geneInfo table based on .csv file
+#'
+#' @param geneInfo geneInfo dataframe, see getGeneInfo() function
+#' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
+#'
+#' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
+#' @export
+#'
+#' @examples
+relableTairSymbol <- function(geneInfo, fnames) {
+ geneIdTable <- ldply(fnames, read.csv, colClasses="character")
+
+ colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
+
+ geneInfoOut <- merge(geneInfo, geneIdTable[, c("tair_locus", "tair_symbol")], by="tair_locus", all.x=TRUE)
+
+ # relable tair_symbol.x column as tair_symbol, this is in the right column order
+ colnames(geneInfoOut)[colnames(geneInfoOut) == "tair_symbol.x"] <- "tair_symbol"
+ # replace tair_symbol column with tair_symbol.y which contains the names from the csv files
+ geneInfoOut$tair_symbol <- geneInfoOut$tair_symbol.y
+ # remove the tair_symbol.y column (now redundant)
+ geneInfoOut <- subset(geneInfoOut, select=-c(tair_symbol.y))
+
+ return(geneInfoOut)
+}
+
+
+#' make geneInfo dataframe based on .csv file of tair loci and names/symbols
+#'
+#' @param fname filename of csv files containing "tair_locus" and "name" fields
+#' @param firstOnly logical, if true only return transcript IDs containing ".1"
+#' @param inputType
+#' @param useCache logical, read from and write to a file of cached genes?
+#'
+#' @return geneInfo dataframe see getGeneInfo
+#' @export
+#'
+#' @examples
+geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
+  geneIDTable <- read.csv(fname, colClasses="character")
+  genes <- geneIDTable$tair_locus
+
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, inputType=inputType, useCache=useCache)
+
+  geneInfo <- relableTairSymbol(geneInfo, fname)
+
+  return(geneInfo)
+}
+
+
+
 #' Calculate Nei's nucleotide diversity statistic for a single position,
 #' given a vector of counts of uninque genotypes at that location
 #'
@@ -345,10 +402,9 @@ Nucleotide_diversity <- function (tidyVCF){
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
 
-  if (!is.null(attr(tidyVCF, "transcript_ID"))) {
-    # if the input had the "transcript_ID" attribute, pass it to the output
-    attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
-  }
+  attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
 
   return(output)
 }
@@ -444,6 +500,8 @@ variantCounts <- function(data, unique=TRUE) {
                "3_prime_UTR_variant",
                "synonymous_variant",
                "missense_variant",
+               "stop_gained",
+               "frameshift_variant",
                "upstream_gene_variant")
 
   if (unique == TRUE){
@@ -454,6 +512,7 @@ variantCounts <- function(data, unique=TRUE) {
   }
 
   tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+  tableData$tair_symbol <- attr(data, "tair_symbol")
 
   for (effect in effects){
     if (effect %in% variant_counts$Effect){
@@ -487,7 +546,11 @@ diversityStats <- function(data, geneInfo=NULL) {
   AA_Length <- unique(data$Amino_Acid_Length)
   AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
 
-  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
+  tableData$tair_symbol <- attr(data, "tair_symbol")
+  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% c("missense_variant",
+                                                                    "stop_gained",
+                                                                    "frameshift_variant"),
+                                          "Diversity"]) / (3*AA_Length)
   tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
   tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
 
@@ -570,7 +633,7 @@ getCodingDiv <- function(data){
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
 
-  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant"), ]   #"stop_gained", "frameshift_variant"
+  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant", "stop_gained", "frameshift_variant"), ]   #
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
                                                         "Amino_Acid_Change",
