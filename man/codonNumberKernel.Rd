@@ -2,13 +2,20 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{codonNumberKernel}
 \alias{codonNumberKernel}
-\title{Add codon numbering to the nucleotide diversity kernel}
+\title{Add codon numbering to a row of data from a VCF object with parsed 'EFF' field
+used in the nucleotide diversity kernel.
+use with ddply()}
 \usage{
 codonNumberKernel(SNPData)
 }
 \arguments{
 \item{SNPData}{}
 }
+\value{
+original data row with 'codon_Number' field appended
+}
 \description{
-Add codon numbering to the nucleotide diversity kernel
+Add codon numbering to a row of data from a VCF object with parsed 'EFF' field
+used in the nucleotide diversity kernel.
+use with ddply()
 }

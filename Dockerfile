@@ -20,6 +20,8 @@ RUN R -e 'install.packages("ggmap")'
 
 RUN R -e 'install.packages("ggthemes")'
 
+RUN R -e 'install.packages("ggrepel")'
+
 RUN R -e 'install.packages("leaflet")'
 
 RUN R -e 'install.packages("magrittr")'

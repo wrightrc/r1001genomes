@@ -9,6 +9,9 @@ Nucleotide_diversity(tidyVCF)
 \arguments{
 \item{tidyVCF}{the $dat field of a tidyVCF object}
 }
+\value{
+input with Diversity field appended
+}
 \description{
 Calculate nucleotide diversity for each position in the coding sequence
 }

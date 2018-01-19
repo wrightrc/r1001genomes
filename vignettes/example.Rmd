@@ -3,24 +3,19 @@ title: "Example gene-wise analysis of the 1001 genomes data set"
 author: "R. Clay Wright"
 date: "`r Sys.Date()`"
 output: 
-   html_document:
-     toc: true
    rmarkdown::html_vignette: 
       toc: true
 bibliography: references.bib
 csl: apa.csl
 link-citations: true
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Example gene-wise analysis of the 1001 genomes data set}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(warning = FALSE, collapse = TRUE, comment = "#>", tidy = TRUE, out.width = "90%", fig.height=4, fig.width=7, out.extra='style="margin: auto; display: block; padding-top: 15px;"')
-library(r1001genomes)
-library(DT)
-library(dplyr)
 
 ```
 
@@ -180,18 +175,29 @@ Once the loading process has finished, the first table you should see scrolling 
 </div><!--panel end------------------------------------------------------------>
 <div  class="using-R-insert"><!--panel start----------------------------------->
 ## Using R
-The code the app uses to download this table is the `getGeneInfo` function. This function is just a simplifying wrapper for the `BioMart` function `getBM`. This downloads the gene model from ENSEMBL plants.
+The code the app uses to download this table is the `getGeneInfo` function. This function is just a simplifying wrapper for the `BioMart` function `getBM`. 
 
+First we must install a load a few package dependencies.
 ```{r}
+library(r1001genomes)
+library(DT)
+library(dplyr)
+library(biomaRt)
+```
+
+This downloads the gene model from ENSEMBL plants.
+```{r}
+
 tair_ids <- c("AT3G62980", "AT3G26810")
 geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, inputType = "tair_locus", useCache = TRUE)
 ```
 
 Now we can give this table a look. We can also freshen up the table a bit with `datatable`. 
 ```{r}
-datatable(geneInfo[, -c(5,6,9)], colnames = c("tair locus", "symbol", "transcript", 
-                                              "Chr", "transcript \nstart", "transcript \nend", 
-                                              "transcript \nlength"), rownames = FALSE, 
+datatable(geneInfo[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", 
+                                      "Chr", "transcript \nstart", 
+                                      "transcript \nend", "transcript \nlength"), 
+          rownames = FALSE, 
           options=list(paging=FALSE, searching=FALSE))
 ```
 </div><!--panel end------------------------------------------------------------>
@@ -235,45 +241,66 @@ convert the matrix into a very long data frame. Most of the functions in `r1001g
 operate on a long data frame, often called a tidy data frame. We can automatically covert 
 our VCF to a tidy data frame by setting the `tidy` argument to `TRUE`.
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 YFG_VCF <- VCFList(geneInfo = geneInfo, by = "transcript", tidy = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+YFG_VCF <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds", package = "r1001genomes"))
 ```
 
 We now have a list of very long data frames with all the information on SNPs inside, but much of the details on the effects of these polymorphisms are contained in a single column labeled 'EFF' as a long text string, making it hard to filter and process the data by the individual attributes within that text string.
 The `parseEFF` function will separate individual fields of the EFF string into separate columns on a single dataframe, and can be applied to our list of data frames with the `llply` function from the plyr package
-```{r}
+```{r eval = FALSE}
 YFG_VCF <- llply(YFG_VCF, parseEFF)
+YFG_VCF <- llply(YFG_VCF, Nucleotide_diversity)
 ```
 
 
-To generate the three tables of polymorphism stats the app calls the function `polymorphRow`. In R we can do the same thing.
+To generate the tables of unique and nonunique polymorphism counts the app calls the function `variantCounts`. In R we can do the same thing.
 ```{r, cache=TRUE}
-#TIR1_AFB2_table <- polymorphTable(geneInfo = geneInfo, strains = strains)
-YFG_VCF <- llply(YFG_VCF, Nucleotide_diversity)
-TIR1_AFB2_table <- ldply(YFG_VCF, polymorphRow, geneInfo = geneInfo, .id = "Transcript_ID")
-
+TIR1_AFB2_nonunique_variants <- ldply(YFG_VCF, variantCounts, unique = FALSE, .id = "Transcript_ID")
 ```
 
 Before displaying this table we will again clean it up a bit.
 
 ```{r}
-formatRound(datatable(TIR1_AFB2_table[,c(1:6,8)],
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+formatRound(datatable(TIR1_AFB2_nonunique_variants,
+                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
-                               "coding \n total"), 
+                               "stop\ngained", "frameshift\nvariant",
+                               "upstream", "coding \n total"), 
                   escape = FALSE, rownames = FALSE,
     options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
 ```
-The nucleotide diversity for the chosen genes is also calculated in the call to `polymorphTable`.
+
+to get the unique polymorphism counts we set the 'unique' argument of `variantCounts` to `TRUE`
 
 ```{r}
-formatRound(datatable(TIR1_AFB2_table[, c(1,13,9:12)],
+TIR1_AFB2_unique_variants <- ldply(YFG_VCF, variantCounts, unique = TRUE, .id = "Transcript_ID")
+
+formatRound(datatable(TIR1_AFB2_unique_variants,
+                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
+                               "coding \n synonymous", "coding \n missense",
+                               "stop\ngained", "frameshift\nvariant",
+                               "upstream", "coding \n total"), 
+                  escape = FALSE, rownames = FALSE,
+    options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
+```
+
+The nucleotide diversity for the chosen genes can also be calculated, using the function  `diversityStats`.
+
+```{r}
+TIR1_AFB2_diversity_table <- ldply(YFG_VCF, diversityStats, geneInfo = geneInfo, .id = "Transcript_ID")
+
+formatRound(datatable(TIR1_AFB2_diversity_table,
                   colnames = c("transcript",
-                               "&pi; transcript",
-                               "&pi; coding",
+                               "symbol",
                                "&pi;<sub>N</sub>",
                                "&pi;<sub>S</sub>",
-                               "&pi;<sub>N</sub>/&pi;<sub>S</sub>"), 
+                               "&pi;<sub>N</sub>/&pi;<sub>S</sub>",
+                               "&pi; coding",
+                               "&pi; transcript"), 
                   escape = FALSE,
                   options = list(paging=FALSE, searching=FALSE)),
                 columns = 1:6, digits = 6)

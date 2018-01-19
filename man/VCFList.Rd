@@ -7,7 +7,12 @@
 VCFList(geneInfo, by = "transcript", tidy = TRUE)
 }
 \arguments{
+\item{geneInfo}{a geneInfo dataframe as created by the getGeneInfo() function}
+
 \item{by}{}
+}
+\value{
+list of VCF objects
 }
 \description{
 download and store several VCFs in a list structure, named by their transcirpt ID

@@ -80,6 +80,7 @@ makeRegionString <- function (data) {
 #'
 #' @return The URL used for the download
 #' @export
+#' @importFrom utils download.file
 #'
 #' @examples
 downloadData <- function (fName, strainStr, regionStr,
@@ -140,8 +141,7 @@ downloadMerge <- function (fName, strainVect, regionStr) {
 
 #' Parse the EFF field of the VCF files from 1001genomes.org
 #'
-#' @param tidyVCF tidyVCF$dat tibble to be parsed. should have an "EFF" field in
-#' its $dat section
+#' @param tidyVCF tidyVCF$dat tibble to be parsed. should have an 'EFF' field
 #' @param Transcript_ID Character string of the transcript ID. if NULL, the
 #' function will look for it as the attribute "transcript_ID" of the dataframe
 #'
@@ -160,16 +160,18 @@ parseEFF <- function (tidyVCF){
   transcript_ID <- attr(tidyVCF, "transcript_ID")
   output <- ddply(data, "POS", .fun=parseEFFKernel, transcript_ID, EFFColNames)
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
   return (output)
 }
 
-#' Title
+#' Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
 #'
-#' @param data
-#' @param transcript_ID
-#' @param EFFColNames
+#' @param data Single row of tidyVCF with "EFF" field
+#' @param transcript_ID the transcript ID to be used to parse the 'EFF' field
+#' @param EFFColNames the column names to be used for the effect fields of the 'EFF' column
 #'
-#' @return
+#' @return a data frame row consisting of the original data row with the parsed effect columns appended to it.
 #' @export
 #'
 #' @examples
@@ -210,8 +212,9 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
 #' @param strains numeric vector of strain/ecotypes to include
 #' @param tidy logical, if true VCF will be provided in tidyVCF format, see
 #' vcfR documentation
+#' @param dataOnly logical, if true only return the $dat field of the VCF, (drop the metadata)
 #'
-#' @return
+#' @return the VCF, in the format as requested by the parameters of the function
 #' @export
 #'
 #' @examples
@@ -231,7 +234,9 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
     VCF.out <- VCF.out$dat
   }
 
-  attr(VCF.out, "transcript_ID") <- transcript_ID
+  attr(VCF.out, "transcript_ID") <- transcript_ID # add transcript_ID attribute to the output object
+  attr(VCF.out, "tair_locus") <- geneInfo$tair_locus
+  attr(VCF.out, "tair_symbol") <- geneInfo$tair_symbol
 
   return (VCF.out)
 }
@@ -240,19 +245,17 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
 
 #' download and store several VCFs in a list structure, named by their transcirpt ID
 #'
-#' @param geneInfo
+#' @param geneInfo a geneInfo dataframe as created by the getGeneInfo() function
 #' @param by
 #'
-#' @return
+#' @return list of VCF objects
 #' @export
 #' @import plyr
 #'
 #' @examples
 VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
   output <- alply(geneInfo,.margins=1, .fun=VCFByTranscript, strains=strains)
-  #names(output) <- attr(output, "split_labels")$transcript_ID
   for (i in 1:length(output)){
-    #attr(output[[i]], "transcript_ID") <- names(output)[i]
     names(output)[i] <- attr(output[[i]], "transcript_ID")
   }
   return(output)
@@ -266,29 +269,27 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @description Get the start and end position of each transcript of a set of
 #'  genes using `bioMart` package to query the TAIR10 database via plants.ensembl.org
 #'
-#' @param genes
-#' @param firstOnly
+#' @param genes a character vector of tair IDs of the genes to retrieve
+#' @param firstOnly logical, if true only return transcript IDs containing ".1"
 #' @param inputType
-#' @param useCache
+#' @param useCache logical, read from and write to a file of cached genes?
 #'
-#' @return
+#' @returna table containing fields from the Tair database on the provided genes
+#' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
 #' @import plyr
 #' @import biomaRt
+#' @importFrom utils read.table write.table
 #'
 #' @examples
 getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
-  # input "genes" should be a character vector of tair IDs
-  # use bioMart to find the start and end position and transcript IDs for a given set of genes
-  # outputs a table containing "transcript_ID" and "regionString" columns required for other fuctions in this code
 
   retrievedInfo <- NULL
   genes2 <- genes
+  cacheFile <- system.file("shiny-app", "geneInfoCache.txt", package="r1001genomes")
+
   if (useCache == TRUE){
-    geneInfoCache <- read.table(file=system.file("shiny-app",
-                                                 "geneInfoCache.txt",
-                                                 package = "r1001genomes"),
-                                header=TRUE, stringsAsFactors=FALSE)
+    geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
     retrievedInfo <- geneInfoCache[geneInfoCache$tair_locus %in% genes, ]
     genes2 <- genes[!(genes %in% geneInfoCache$tair_locus)] #remove genes present in the cache from genes list
     print("new genes:")
@@ -310,9 +311,8 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   if (useCache == TRUE) {
     # append cache
     geneInfoCache <- unique(rbind(geneInfoCache, output))
-    write.table(geneInfoCache, file="geneInfoCache.txt", row.names=FALSE)
+    write.table(geneInfoCache, file=cacheFile, row.names=FALSE)
   }
-
 
   output <- rbind(retrievedInfo, output)
 
@@ -323,11 +323,63 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   return (output)
 }
 
-#' Title
+#' Rename TAIR symbols of geneInfo table based on .csv file
 #'
-#' @param GTfreq
+#' @param geneInfo geneInfo dataframe, see getGeneInfo() function
+#' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
 #'
-#' @return
+#' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
+#' @export
+#'
+#' @examples
+relableTairSymbol <- function(geneInfo, fnames) {
+ geneIdTable <- ldply(fnames, read.csv, colClasses="character")
+
+ colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
+
+ geneInfoOut <- merge(geneInfo, geneIdTable[, c("tair_locus", "tair_symbol")], by="tair_locus", all.x=TRUE)
+
+ # relable tair_symbol.x column as tair_symbol, this is in the right column order
+ colnames(geneInfoOut)[colnames(geneInfoOut) == "tair_symbol.x"] <- "tair_symbol"
+ # replace tair_symbol column with tair_symbol.y which contains the names from the csv files
+ geneInfoOut$tair_symbol <- geneInfoOut$tair_symbol.y
+ # remove the tair_symbol.y column (now redundant)
+ geneInfoOut <- subset(geneInfoOut, select=-c(tair_symbol.y))
+
+ return(geneInfoOut)
+}
+
+
+#' make geneInfo dataframe based on .csv file of tair loci and names/symbols
+#'
+#' @param fname filename of csv files containing "tair_locus" and "name" fields
+#' @param firstOnly logical, if true only return transcript IDs containing ".1"
+#' @param inputType
+#' @param useCache logical, read from and write to a file of cached genes?
+#'
+#' @return geneInfo dataframe see getGeneInfo
+#' @export
+#'
+#' @examples
+geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
+  geneIDTable <- read.csv(fname, colClasses="character")
+  genes <- geneIDTable$tair_locus
+
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, inputType=inputType, useCache=useCache)
+
+  geneInfo <- relableTairSymbol(geneInfo, fname)
+
+  return(geneInfo)
+}
+
+
+
+#' Calculate Nei's nucleotide diversity statistic for a single position,
+#' given a vector of counts of uninque genotypes at that location
+#'
+#' @param GTfreq numeric vector listing counts of uninque genotypes
+#'
+#' @return numeric value nucleotide diversity
 #' @export
 #'
 #' @examples
@@ -339,7 +391,7 @@ calcDiversity <- function (GTfreq){
 #'
 #' @param tidyVCF the $dat field of a tidyVCF object
 #'
-#' @return
+#' @return input with Diversity field appended
 #' @export
 #'
 #' @examples
@@ -348,27 +400,27 @@ Nucleotide_diversity <- function (tidyVCF){
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
-
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
-  if (!is.null(attr(tidyVCF, "transcript_ID"))) {
-    # if the input had the "transcript_ID" attribute, pass it to the output
-    attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
-  }
+
+  attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
+  attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
+  attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
 
   return(output)
 }
 
-#' Add codon numbering to the nucleotide diversity kernel
+#' Add codon numbering to a row of data from a VCF object with parsed 'EFF' field
+#' used in the nucleotide diversity kernel.
+#' use with ddply()
 #'
 #' @param SNPData
 #'
-#' @return
+#' @return original data row with 'codon_Number' field appended
 #' @export
 #'
 #' @examples
 codonNumberKernel <- function (SNPData) {
   # add the codon number to a dataframe containing a "Amino_Acid_Change"
-  # use with ddply()
   changeStr <- SNPData$Amino_Acid_Change[grepl( "p.", SNPData$Amino_Acid_Change)][1]
   codonNumber <- stringr::str_extract_all(stringr::str_extract_all(changeStr, "p.[A-z]{3}[0-9]*")[[1]], "[0-9]+")[[1]]
   codonNumber <- as.numeric(codonNumber)
@@ -432,12 +484,93 @@ polymorphTable <- function (geneInfo, strains) {
 }
 
 
-
-
-#' Title
+#' counts number of variants in certain affect categories
+#' use with ldply() on VCFList objects to create a table.
 #'
-#' @param data
+#' @param data tidyVCF with 'EFF' field parsed
+#' @param unique logical, if true only unique variants will be counted
+#'
+#' @return
+#' @export
+#'
+#' @examples
+variantCounts <- function(data, unique=TRUE) {
+  effects <- c("5_prime_UTR_variant",
+               "intron_variant",
+               "3_prime_UTR_variant",
+               "synonymous_variant",
+               "missense_variant",
+               "stop_gained",
+               "frameshift_variant",
+               "upstream_gene_variant")
+
+  if (unique == TRUE){
+    # if unique is true, only count rows with unique combination of positon and genotype.
+    variant_counts <- plyr::count(unique(data[, c("POS", "gt_GT", "Effect")]), "Effect")
+  } else{
+    variant_counts <- plyr::count(data, "Effect")
+  }
+
+  tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+  tableData$tair_symbol <- attr(data, "tair_symbol")
+
+  for (effect in effects){
+    if (effect %in% variant_counts$Effect){
+      tableData[effect] <- variant_counts[variant_counts$Effect %in% effect, "freq"]
+    } else {
+      tableData[effect] <- 0
+    }
+  }
+
+  tableData$coding_total <- tableData$missense_variant + tableData$synonymous_variant
+
+  return(tableData)
+}
+
+
+#' calculate nucleotide diversity statsistics for a gene/transcript
+#' use with ldply() on VCFList objects to create a table.
+#'
+#' @param data tidyVCF with 'EFF' field parsed and diversity calculated by position
 #' @param geneInfo
+#'
+#' @return a row with nucleotide diversity statistics of the transcript.
+#' @export
+#'
+#' @examples
+diversityStats <- function(data, geneInfo=NULL) {
+  tableData <- data.frame(row.names=attr(data,"transcript_ID"))
+
+  #nucleotide diversity sums:
+  reducedData <- unique(data[, c("POS", "Effect", "Diversity")])
+  AA_Length <- unique(data$Amino_Acid_Length)
+  AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
+
+  tableData$tair_symbol <- attr(data, "tair_symbol")
+  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% c("missense_variant",
+                                                                    "stop_gained",
+                                                                    "frameshift_variant"),
+                                          "Diversity"]) / (3*AA_Length)
+  tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
+  tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
+
+  tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant") , c("POS", "Diversity")])$Diversity) / (3*AA_Length)
+
+  if (!is.null(geneInfo)){
+    transcript_length <- geneInfo$transcript_length[geneInfo$transcript_ID == attr(data,"transcript_ID")]
+    tableData$Pi_transcript <- sum(unique(reducedData[, c("POS", "Diversity")])$Diversity) / transcript_length
+  }
+
+  return(tableData)
+}
+
+
+
+#' create a row of statistics for a given tidyVCF dataframe including non unique
+#' variant counts and nucleotide diversity values.
+#'
+#' @param data tidyVCF
+#' @param geneInfo geneInfo dataframe containing a row for the provided tidyVCF gene
 #'
 #' @return
 #' @export
@@ -451,10 +584,11 @@ polymorphRow <- function (data, geneInfo=NULL) {
                "missense_variant",
                "upstream_gene_variant")
 
-  variant_counts <- plyr::count(data, "Effect")
-
+  # create table
   tableData <- data.frame(row.names=attr(data,"transcript_ID"))
 
+  # polymorphism counts (non-unique)
+  variant_counts <- plyr::count(data, "Effect")
   for (effect in effects){
     if (effect %in% variant_counts$Effect){
       tableData[effect] <- variant_counts[variant_counts$Effect %in% effect, "freq"]
@@ -462,19 +596,16 @@ polymorphRow <- function (data, geneInfo=NULL) {
       tableData[effect] <- 0
     }
   }
-
   tableData$coding_total <- tableData$missense_variant + tableData$synonymous_variant
 
   #nucleotide diversity sums:
   reducedData <- unique(data[, c("POS", "Effect", "Diversity")])
   AA_Length <- unique(data$Amino_Acid_Length)
   AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
-
   tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
   tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
   tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
-
-  tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant") , c("POS", "Diversity")])$Diversity) / (3*AA_Length)
+  tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant"), c("POS", "Diversity")])$Diversity) / (3*AA_Length)
 
   if (!is.null(geneInfo)){
      transcript_length <- geneInfo$transcript_length[geneInfo$transcript_ID == attr(data,"transcript_ID")]
@@ -482,14 +613,13 @@ polymorphRow <- function (data, geneInfo=NULL) {
   }
 
   return(tableData)
-
 }
 
 
 
 #' Title
 #'
-#' @param data
+#' @param data tidyVCF with 'EFF' field parsed
 #'
 #' @return
 #' @export
@@ -503,7 +633,7 @@ getCodingDiv <- function(data){
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
 
-  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant"), ]   #"stop_gained", "frameshift_variant"
+  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant", "stop_gained", "frameshift_variant"), ]   #
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
                                                         "Amino_Acid_Change",
