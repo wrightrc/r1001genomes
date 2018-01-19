@@ -17,7 +17,11 @@ Description: This web app and open source
         gene family.
 Encoding: UTF-8
 LazyData: true
+<<<<<<< HEAD
 Depends: R (>= 3.4), plyr, 
+=======
+Depends: R (>= 3.4), plyr
+>>>>>>> origin/alignments
     DECIPHER
 Imports: vcfR, biomaRt, VariantAnnotation, stringr, 
          ggplot2, reshape2, dplyr, ggmap, shiny, leaflet, RColorBrewer, 
