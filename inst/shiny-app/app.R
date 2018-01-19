@@ -8,6 +8,8 @@ library(knitr)
 library(stringr)
 library(msaR)
 library(DECIPHER)
+library(plotly)
+library(ggseqlogo)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -29,6 +31,27 @@ CSSCode <- tags$head(tags$style(
          border-radius: 12px;
          padding:1px 15px 15px 20px;
       }
+
+      .wrapper {
+        background:#EFEFEF;
+        box-shadow: 1px 1px 10px #999;
+        margin: auto;
+        text-align: center;
+        position: relative;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        margin-bottom: 20px !important;
+        width: 800px;
+        padding-top: 5px;
+        }
+
+      .scrolls {
+        overflow-x: scroll;
+        overflow-y: hidden;
+        height: 80px;
+        white-space:nowrap
+        }
 
       .btn-default{
          color: #333;
@@ -279,13 +302,22 @@ ui <- function(request){ fluidPage(
                       tags$h5("Select one or more transcript IDs below and select the ype of alignment to show"),
                       # textInput(inputId="tab3.Gene", label=NULL,
                       #           value="AT1G80490"),
-                      uiOutput("tab5.selectGene"),
+                      uiOutput("tab5.selectGene")),
                       # actionButton(inputId="tab3.Submit", label="Submit"),
              tags$br(),
-             textOutput("debug"),
+             tags$div(
+               msaROutput(outputId = "tab5.alignment")),
+             tags$div(class = "wrapper",
+                      tags$div(class = "scrolls",
+                        htmlOutput("tab5.BrowseSeqs", inline = TRUE, container = )
+               )
+             ),
              tags$br(),
-             msaROutput(outputId = "tab5.alignment"))),
-
+             tags$div(
+               plotlyOutput('tab5.aln_plot'),
+               verbatimTextOutput("event")
+             )
+          ),
     tabPanel("About",
              ## About Tab ######################################################
              tags$br(),
@@ -299,15 +331,8 @@ ui <- function(request){ fluidPage(
                              includeHTML("Bibliography.html")
                     )
              )
-
-
     )
-
-
-
-
   )
-
   # "THIS IS THE FOOTER"
 )}
 
@@ -736,9 +761,57 @@ server <- function(input, output){
 
   output$tab5.alignment <- renderMsaR({
     type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    msaR(alignment()[[type+1]],
+    msaR(alignment()[[type+1]], alignmentHeight = 100,
          colorscheme = {if(type) "taylor" else "nucleotide"})
     })
+
+  output$tab5.BrowseSeqs <- reactive({
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    file <- BrowseSeqs(alignment()[[type + 1]],
+                       openURL = FALSE)
+    html <- paste(readLines(file), collapse="\n")
+    return(html)
+    })
+
+  aln_df <- reactive({
+    aln_df <- makeAlnDF(alignment()[[2]])
+    vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
+                 .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
+    vcf <- getCodingDiv(vcf)
+    aln_df <- addSNPsToAlnDF(aln_df, vcf)
+  })
+
+  output$tab5.aln_plot <- renderPlotly({
+    p <-
+      ggplot(aln_df(), aes(x, as.integer(seqname), group = seqPos)) +
+      geom_rect(data = na.omit(aln_df()), aes(xmin = x - 0.5, xmax = x + 0.5,
+                                              ymin = as.integer(seqname) - 0.5,
+                                              ymax = as.integer(seqname) + 0.5,
+                                              fill = variants), alpha = 0.8) +
+      geom_text(aes(label=letter), alpha= 1,
+                check_overlap = TRUE) +
+      scale_x_continuous(breaks=seq(1,max(aln_df()$x), by = 10)) +
+      scale_y_continuous(breaks = c(1:length(levels(aln_df()$seqname))),
+                         labels = levels(aln_df()$seqname)) +
+      # expand increases distance from axis
+      xlab("") +
+      ylab("") +
+      #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
+      theme_logo(base_family = "Courier") +
+      theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
+    ggplotly(p, tooltip = c("x", "y", "seq_pos", "variants"),
+             height = length(unique(aln_df()$seqname)) * 50 + 25) %>%
+      config(collaborate = FALSE) %>%
+      layout(margin = list(l = 100, r = 0, t = 0, b = 0),
+             legend = list(yanchor = "bottom", y = -1, orientation = "h"),
+             dragmode = "pan", yaxis = list(fixedRange = TRUE),
+             xaxis = list(range = c(0,50), fixedRange = TRUE))
+  })
+
+  output$event <- renderPrint({
+    d <- event_data("plotly_hover")
+    if (is.null(d)) "Hover on a point!" else d
+  })
 }
 
 enableBookmarking(store = "url")
