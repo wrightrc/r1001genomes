@@ -72,35 +72,40 @@ ui <- function(request){ fluidPage(
   bookmarkButton(),
   tags$h5('style'="color:red", "This app is currently a work in progress."),
   themeSelector(),
+
+  tags$br(),
+  tags$div(class="input-format",
+      fluidRow(
+        column(6,
+           tags$h3("Select Genes"),
+           tags$h5("Type a list of gene loci in the box below, separated by commas. "),
+           textAreaInput(inputId = "gene_ids", label = NULL,
+                         width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
+           checkboxInput("STATS_quick_demo", label="Quick Demo"),
+           actionButton(inputId="STATS_submit", label = "Submit")
+
+        ),
+        column(6,
+           tags$h3("OR Upload File"),
+           tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                   The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+           fileInput("genesFile", label=NULL),
+           actionButton(inputId="file_submit", label = "Submit")
+
+        )
+      ),
+      tags$br()
+  ),
+
+
+  tags$br(),
+
+
+
   tabsetPanel(
     tabPanel("SNP Stats",
         ## Tab 1 ###############################################################
-      tags$br(),
-      tags$div(class="input-format",
-          fluidRow(
-            column(6,
-               tags$h3("Select Genes"),
-               tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-               textAreaInput(inputId = "gene_ids", label = NULL,
-                             width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
-               checkboxInput("STATS_quick_demo", label="Quick Demo"),
-               actionButton(inputId="STATS_submit", label = "Submit")
-
-            ),
-            column(6,
-               tags$h3("OR Upload File"),
-               tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
-                       The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
-               fileInput("genesFile", label=NULL),
-               actionButton(inputId="file_submit", label = "Submit")
-
-            )
-          ),
-          tags$br()
-      ),
-
       tags$hr(),
-
       tags$div(class="output-format",
                tags$h3("Gene Information"),
                tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
@@ -303,6 +308,8 @@ ui <- function(request){ fluidPage(
 
 
 
+
+
   )
 
   # "THIS IS THE FOOTER"
@@ -319,28 +326,11 @@ parseInput <- function (textIn) {
   return (names[[1]])
 }
 
-# load_tab_2_Data <- function (geneInfo){
-#   tab2VCF <- VCFByTranscript(geneInfo[1, ], strains)
-#   tab2data <- tab2VCF$dat
-#   tab2data <- parseEFF(tab2data)
-#   tab2data <- Nucleotide_diversity(tab2data)
-#
-#   coding_variants <- coding_Diversity_Plot(tab2data)
-#
-#   return(coding_variants)
-# }
-
-
-
-# plotPi <- function(uniqueCodingVars) {
-#   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=Effect)) +
-#     geom_point() +
-#     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
-#     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-#     ylab("nucleotide diversity, log scale")
-#   return(plot)
-#
-# }
+parseFilterText <- function (textIn) {
+  inputList <- strsplit(textIn, ", ")
+  inputList <- gsub(" ", "", inputList[[1]]) # remove extra spaces
+  return(inputList)
+}
 
 
 
@@ -746,12 +736,24 @@ server <- function(input, output){
 
   tab4.tidyData <- eventReactive(input$tab4.Submit, {
     data <- ldply(all.VCFList()[tab4.Genes()$transcript_ID])
+    data <- subset(data, select=-c(EFF, Transcript_ID, ID, FILTER ))
+    data <- data[,c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
+                    "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
+                    "Codon_Change", "Amino_Acid_Change", "Diversity")]
     return(data)
   })
 
-  tab4.filteredVariants <- reactive({
+  tab4.textFilters <- reactive({
+    textFilters <- data.frame("filterID", "column", "values")
+
+
+
+  })
+
+
+  tab4.filteredVariants <- eventReactive(input$tab4.updateFilter,{
     # add all filtering here.
-    data <- subset(tab4.tidyData(), select=-c(EFF))
+    data <- tab4.tidyData()
 
     if (input$tab4.filterRef) {
       # remove 0|0 genotypes
