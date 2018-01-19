@@ -864,6 +864,7 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
   seq_name <- dplyr::enquo(seq_name)
   seq_pos <- dplyr::enquo(seq_pos)
   effect <- dplyr::enquo(effect)
+  #devtools::use_package("rlang")
   temp <- SNPs %>%
     dplyr::group_by(!!seq_name, !!seq_pos) %>%
     dplyr::summarise(variants = {switch(as.character(length(unique(!!effect))),
@@ -871,11 +872,11 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
                                  "1" = unique(!!effect),
                                  paste(sort(unique(!!effect)),
                                        collapse = " & "))})
-  temp[,dplyr::quo_text(seq_pos)] <- as.character(temp[,dplyr::quo_text(seq_pos)])
+  temp[,rlang::quo_text(seq_pos)] <- as.character(temp[,rlang::quo_text(seq_pos)])
   aln_df <- dplyr::left_join(x = aln_df, y = temp,
-                        by = c("seq_name" = dplyr::quo_text(seq_name),
-                               "seq_pos" = dplyr::quo_text(seq_pos)))
-  return(aln_plot)
+                        by = c("seq_name" = rlang::quo_text(seq_name),
+                               "seq_pos" = rlang::quo_text(seq_pos)))
+  return(aln_df)
 }
 
 #' Add alignment positions to an annotation data frame

@@ -26,7 +26,8 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     GenomicFeatures,
     XVector,
     magrittr,
-    DECIPHER
+    DECIPHER,
+    rlang
 Suggests: knitr, ggrepel, msaR, plotly
 License: Artistic-2.0
 VignetteBuilder: knitr
