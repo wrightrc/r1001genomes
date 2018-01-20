@@ -256,7 +256,7 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 3 (Numeric)"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter3.column", label="column select", choices=c("POS", "gt_GT", "...")),
+                          selectInput("tab4.filter3.column", label="column select", choices=c("Indiv", "POS", "AC", "Diversity")),
                           tags$br(),
                           tags$h5("Max value"),
                           numericInput("tab4.filter3.max", NULL, NA),
@@ -269,7 +269,7 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 4 (Numeric)"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter4.column", label="column select", choices=c("POS", "gt_GT", "...")),
+                          selectInput("tab4.filter4.column", label="column select", choices=c("Indiv", "POS", "AC", "Diversity")),
                           tags$br(),
                           tags$h5("Max value"),
                           numericInput("tab4.filter4.max", NULL, NA),
@@ -755,7 +755,7 @@ server <- function(input, output){
 
   tab4.numFilters <- reactive({
     numFilters <- data.frame("filterID" = c("filter3", "filter4"),
-                             "column" = c(input$tab4.filter1.column, input$tab4.filter2.column),
+                             "column" = c(input$tab4.filter3.column, input$tab4.filter4.column),
                              "max" = c(input$tab4.filter3.max, input$tab4.filter4.max),
                              "min" = c(input$tab4.filter3.min, input$tab4.filter4.min),
                              "missing" = c(input$tab4.filter3.missing, input$tab4.filter4.missing),
@@ -781,8 +781,13 @@ server <- function(input, output){
     }
 
     for (i in 1:nrow(tab4.numFilters())){
+      if (!is.na(tab4.numFilters()[i, "max"])){
+        data <- data[  data[, tab4.numFilters()[i, "column"]] <=  tab4.numFilters()[i, "max"], ]
+      }
 
-
+      if (!is.na(tab4.numFilters()[i, "min"])){
+        data <- data[  data[, tab4.numFilters()[i, "column"]] >=  tab4.numFilters()[i, "min"], ]
+      }
 
     }
 
