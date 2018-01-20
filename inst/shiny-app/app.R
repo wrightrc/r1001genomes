@@ -825,26 +825,22 @@ server <- function(input, output){
 
   output$tab5.aln_plot <- renderPlotly({
     p <-
-      ggplot(aln_df(), aes(x, as.integer(seqname), group = seqPos)) +
-      geom_rect(data = na.omit(aln_df()), aes(xmin = x - 0.5, xmax = x + 0.5,
-                                              ymin = as.integer(seqname) - 0.5,
-                                              ymax = as.integer(seqname) + 0.5,
-                                              fill = variants), alpha = 0.8) +
+      ggplot(aln_df(), aes(x = aln_pos, y = seq_name, group = seq_pos)) +
+      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = variants),
+                width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1,
                 check_overlap = TRUE) +
-      scale_x_continuous(breaks=seq(1,max(aln_df()$x), by = 10)) +
-      scale_y_continuous(breaks = c(1:length(levels(aln_df()$seqname))),
-                         labels = levels(aln_df()$seqname)) +
+      scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       # expand increases distance from axis
       xlab("") +
       ylab("") +
       #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
       theme_logo(base_family = "Courier") +
       theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
-    ggplotly(p, tooltip = c("x", "y", "seq_pos", "variants"),
-             height = length(unique(aln_df()$seqname)) * 50 + 25) %>%
+    ggplotly(p, tooltip = c("seq_name", "seq_pos"),
+             height = length(unique(aln_df()$seq_name)) * 50 + 25) %>%
       config(collaborate = FALSE) %>%
-      layout(margin = list(l = 100, r = 0, t = 0, b = 0),
+      layout(margin = list(l = 100, r = 0, t = 20, b = 0),
              legend = list(yanchor = "bottom", y = -1, orientation = "h"),
              dragmode = "pan", yaxis = list(fixedRange = TRUE),
              xaxis = list(range = c(0,50), fixedRange = TRUE))
