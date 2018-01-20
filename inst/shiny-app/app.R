@@ -232,7 +232,9 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 1"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter1.column", label="column select", choices=c("POS", "gt_GT", "...")),
+                          selectInput("tab4.filter1.column", label="column select", choices=c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
+                                                                                              "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
+                                                                                              "Codon_Change", "Amino_Acid_Change", "Diversity")),
                           tags$br(),
                           tags$h5("values to match, separated by commas"),
                           textAreaInput("tab4.filter1.textIn", NULL)
@@ -242,7 +244,9 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 2"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter2.column", label="column select", choices=c("POS", "gt_GT", "...")),
+                          selectInput("tab4.filter2.column", label="column select", choices=c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
+                                                                                              "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
+                                                                                              "Codon_Change", "Amino_Acid_Change", "Diversity")),
                           tags$br(),
                           tags$h5("values to match, separated by commas"),
                           textAreaInput("tab4.filter2.textIn", NULL)
@@ -255,9 +259,10 @@ ui <- function(request){ fluidPage(
                           selectInput("tab4.filter3.column", label="column select", choices=c("POS", "gt_GT", "...")),
                           tags$br(),
                           tags$h5("Max value"),
-                          textInput("tab4.filter3.max", NULL),
+                          numericInput("tab4.filter3.max", NULL, NA),
                           tags$h5("Min Value"),
-                          textInput("tab4.filter3.min", NULL)
+                          numericInput("tab4.filter3.min", NULL, NA),
+                          checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
                         )),
 
                         column(3, wellPanel(
@@ -267,9 +272,10 @@ ui <- function(request){ fluidPage(
                           selectInput("tab4.filter4.column", label="column select", choices=c("POS", "gt_GT", "...")),
                           tags$br(),
                           tags$h5("Max value"),
-                          textInput("tab4.filter4.max", NULL),
+                          numericInput("tab4.filter4.max", NULL, NA),
                           tags$h5("Min Value"),
-                          textInput("tab4.filter4.min", NULL)
+                          numericInput("tab4.filter4.min", NULL, NA),
+                          checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
                         ))
                       ),
                       actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
@@ -277,6 +283,7 @@ ui <- function(request){ fluidPage(
 
              ),
              tags$hr(),
+             verbatimTextOutput("tab4.debug"),
              tags$div(class="output-format",
                       tags$h3("Filtered Variants"),
                       tags$h5("This table provides ..."),
@@ -305,12 +312,7 @@ ui <- function(request){ fluidPage(
 
     )
 
-
-
-
-
-
-  )
+  ) #end of tabset panel
 
   # "THIS IS THE FOOTER"
 )}
@@ -744,8 +746,20 @@ server <- function(input, output){
   })
 
   tab4.textFilters <- reactive({
-    textFilters <- data.frame("filterID", "column", "values")
+    textFilters <- data.frame("filterID" = c("filter1", "filter2"),
+                              "column" = c(input$tab4.filter1.column, input$tab4.filter2.column),
+                              "values" = I(list(parseFilterText(input$tab4.filter1.textIn),
+                                              parseFilterText(input$tab4.filter2.textIn))),
+                              stringsAsFactors=FALSE)
+  })
 
+  tab4.numFilters <- reactive({
+    numFilters <- data.frame("filterID" = c("filter3", "filter4"),
+                             "column" = c(input$tab4.filter1.column, input$tab4.filter2.column),
+                             "max" = c(input$tab4.filter3.max, input$tab4.filter4.max),
+                             "min" = c(input$tab4.filter3.min, input$tab4.filter4.min),
+                             "missing" = c(input$tab4.filter3.missing, input$tab4.filter4.missing),
+                             stringsAsFactors=FALSE)
 
 
   })
@@ -760,10 +774,27 @@ server <- function(input, output){
       data <- data[data$gt_GT != "0|0",]
     }
 
+    for (i in 1:nrow(tab4.textFilters())){
+      if (length(tab4.textFilters()[i,"values"][[1]]) > 0) {
+        data <- data[as.character(data[, tab4.textFilters()[i, "column"]]) %in% tab4.textFilters()[i, "values"][[1]] , ]
+      }
+    }
+
+    for (i in 1:nrow(tab4.numFilters())){
+
+
+
+    }
 
 
     return(data)
   })
+
+  output$tab4.debug <- renderPrint({
+    print(tab4.numFilters())
+  })
+
+
 
   output$tab4.variantTable <- DT::renderDataTable(tab4.filteredVariants())
 
