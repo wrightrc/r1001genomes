@@ -6,6 +6,10 @@ library(shinythemes)
 library(r1001genomes)
 library(knitr)
 library(stringr)
+library(msaR)
+library(DECIPHER)
+library(plotly)
+library(ggseqlogo)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -27,6 +31,27 @@ CSSCode <- tags$head(tags$style(
          border-radius: 12px;
          padding:1px 15px 15px 20px;
       }
+
+      .wrapper {
+        background:#EFEFEF;
+        box-shadow: 1px 1px 10px #999;
+        margin: auto;
+        text-align: center;
+        position: relative;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        margin-bottom: 20px !important;
+        width: 800px;
+        padding-top: 5px;
+        }
+
+      .scrolls {
+        overflow-x: scroll;
+        overflow-y: hidden;
+        height: 80px;
+        white-space:nowrap
+        }
 
       .btn-default{
          color: #333;
@@ -58,7 +83,7 @@ CSSCode <- tags$head(tags$style(
 
 
 ui <- function(request){ fluidPage(
-
+  theme = shinytheme(theme = "flatly"),
   tags$head(tags$style(
     HTML("
       .checkbox-format {
@@ -75,10 +100,10 @@ ui <- function(request){ fluidPage(
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
   tags$h5('style'="color:red", "This app is currently a work in progress."),
-  themeSelector(),
+  #themeSelector(),
   tabsetPanel(
     tabPanel("SNP Stats",
-        ## Tab 1 ###############################################################
+## Tab 1 - SNP Stats ##########################################################
       tags$br(),
       tags$div(class="input-format",
           fluidRow(
@@ -93,8 +118,8 @@ ui <- function(request){ fluidPage(
             ),
             column(6,
                tags$h3("OR Upload File"),
-               tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
-                       The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+               tags$h5("Browse to a '.csv' file containing 'tair_locus' and 'name' fields.
+                       The 'name' field should be the TAIR symbol or moniker you would like to identify your genes by."),
                fileInput("genesFile", label=NULL),
                actionButton(inputId="file_submit", label = "Submit")
 
@@ -140,7 +165,7 @@ ui <- function(request){ fluidPage(
     ),
 
     tabPanel("Diversity Plot",
-        ## Tab 2 ###############################################################
+## Tab 2 - Diversity Plot #####################################################
       tags$br(),
       tags$div(class="input-format",
                tags$h3("Select a Gene"),
@@ -176,7 +201,7 @@ ui <- function(request){ fluidPage(
     ),
 
     tabPanel("SNP Mapping",
-             ## Tab 3 ##########################################################
+## Tab 3  - SNP Mapping #######################################################
              tags$br(),
              tags$div(class="input-format",
                  tags$h3("Select Genes and Filter Diversity Parameter"),
@@ -213,7 +238,7 @@ ui <- function(request){ fluidPage(
 
 
     # tabPanel("Accessions and Mutations",
-    #           ## Tab 4 #########################################################
+    ### Tab 4  - Accessions and Mutations #####################################
     #          tags$br(),
     #          tags$div(class="input-format",
     #                   tags$h3("Gene Select"),
@@ -280,6 +305,36 @@ ui <- function(request){ fluidPage(
     #          )
     # ),
 
+## Tab 5 - Alignments #########################################################
+    tabPanel("Alignments",
+             tags$br(),
+             tags$div(class="input-format",
+                      tags$h3("Select Genes and Type"),
+                      tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
+                      # textInput(inputId="tab3.Gene", label=NULL,
+                      #           value="AT1G80490"),
+                      uiOutput("tab5.selectGene")),
+                      # actionButton(inputId="tab3.Submit", label="Submit"),
+             tags$br(),
+             tags$hr(),
+             tags$div(class = "output-format",
+                      tags$h3("Sequence Alignment"),
+                      tags$h5("Click and drag to pan, hover over an individual point to see details.
+                              Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
+                              tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", "DECIPHER")),
+               plotlyOutput('tab5.aln_plot', height = "auto"),
+              # verbatimTextOutput("event")
+              tags$br(),
+              tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
+               msaROutput(outputId = "tab5.alignment"), height = "auto")
+             # Remove DECIPHER BrowseSeqs
+             # but perhaps the side scrolling div will come in handy again
+             # tags$div(class = "wrapper",
+             #          tags$div(class = "scrolls",
+             #            htmlOutput("tab5.BrowseSeqs", inline = TRUE)
+             #   )
+             # ),
+          ),
     tabPanel("About",
              ## About Tab ######################################################
              tags$br(),
@@ -293,15 +348,8 @@ ui <- function(request){ fluidPage(
                              includeHTML("Bibliography.html")
                     )
              )
-
-
     )
-
-
-
-
   )
-
   # "THIS IS THE FOOTER"
 )}
 
@@ -352,7 +400,7 @@ server <- function(input, output){
   ##   _________
   ##  /  tab1   \
   ##             --------------------------------------------------
-  ## Tab 1 stuff:
+  ## Tab 1 ####################
 
   tab1.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
   observeEvent(input$STATS_submit,{
@@ -510,7 +558,7 @@ server <- function(input, output){
   ##                 _________
   ##                /  tab2   \
   ## ---------------           -------------------------------------
-  ## Tab 2 stuff:
+  ## Tab 2 ###################
 
   output$tab2.selectGene <- renderUI({
     tagList(
@@ -562,7 +610,7 @@ server <- function(input, output){
   ##                            _________
   ##                           /  tab3   \
   ## --------------------------           ----------------------------
-  ## Tab 3 stuff:
+  ## Tab 3 ##################################
 
   output$tab3.selectGene <- renderUI({
     tagList(
@@ -570,10 +618,6 @@ server <- function(input, output){
       actionButton(inputId="tab3.Submit", label = "Submit")
     )
   })
-
-
-
-
 
   tab3.Genes <- eventReactive(input$tab3.Submit, {
     #gene Info for gene on tab 3, updates on 'submit' button press
@@ -727,11 +771,91 @@ server <- function(input, output){
   ##                                        _________
   ##                                       /  tab4   \
   ## --------------------------------------           ----------------
-  ## Tab 4 stuff:
+  ## Tab 4 #####################
 
 
+  ##                                        _________
+  ##                                      /   tab5   \
+  ## --------------------------------------           ----------------
+  ## Tab 5 #########################
 
+  output$tab5.selectGene <- renderUI({
+    tagList(
+      checkboxGroupInput(inputId = "tab5.transcript_ID",
+                         label=NULL, choices=all.GeneChoices()),
+      radioButtons(inputId = "tab5.type",
+                   label = "Alignment type:",
+                   choices = c("DNA", "AA"),
+                   selected = "AA", inline = TRUE),
+      actionButton(inputId="tab5.Submit", label = "Submit")
+    )
+  })
 
+  tab5.Genes <- eventReactive(input$tab5.Submit, {
+    #gene Info for gene on tab 5, updates on 'submit' button press
+    return(input$tab5.transcript_ID)
+  })
+
+  output$debug <- renderPrint({tab5.Genes()})
+
+  output$type <- eventReactive(input$tab5.Submit, {
+    return(input$tab5.type)
+  })
+
+  alignment <- eventReactive(input$tab5.Submit, {
+    alignment <- alignCDS(IDs = tab5.Genes())
+    return(alignment)
+  })
+
+  output$tab5.alignment <- renderMsaR({
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    msaR(alignment()[[type+1]], alignmentHeight = 100,
+         colorscheme = {if(type) "taylor" else "nucleotide"})
+    })
+
+  output$tab5.BrowseSeqs <- reactive({
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    file <- BrowseSeqs(alignment()[[type + 1]],
+                       openURL = FALSE)
+    html <- paste(readLines(file), collapse="\n")
+    return(html)
+    })
+
+  aln_df <- reactive({
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    aln_df <- makeAlnDF(alignment()[[type + 1]])
+    vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
+                 .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
+    vcf <- getCodingDiv(vcf)
+    aln_df <- addSNPsToAlnDF(aln_df, vcf)
+  })
+
+  output$tab5.aln_plot <- renderPlotly({
+    p <-
+      ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
+                           group = seq_pos, text = variants)) +
+      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
+                width = 1, height = 1, alpha = 0.8) +
+      geom_text(aes(label=letter), alpha= 1,
+                check_overlap = TRUE) +
+      scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
+      # expand increases distance from axis
+      xlab("") +
+      ylab("") +
+      #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
+      theme_logo(base_family = "Courier") +
+      theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
+    ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
+             height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
+      # Total height = 125 = N*50 + 25
+      # 125 = N*30 + 65 better still a bit long with 6 sequences
+      # 125 = N*20 + 85 looks really good but maybe a bit
+      config(collaborate = FALSE) %>%
+      layout(margin = list(l = 100, r = 0, t = 20, b = 0),
+             legend = list(yanchor = "bottom", y = -1, orientation = "h"),
+             dragmode = "pan", yaxis = list(fixedrange = TRUE),
+             xaxis = list(range = c(0,70)))
+  })
 }
 
 enableBookmarking(store = "url")

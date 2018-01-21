@@ -23,8 +23,12 @@ pkgs <- c(
     "biomaRt",
     "Biostrings",
     "BSgenome",
+    "BSgenome.Athaliana.TAIR.TAIR9",
+    "DECIPHER",
+    "GenomicFeatures",
     "VariantAnnotation",
-    "vcfR"
+    "vcfR",
+    "XVector"
     )
 
 ap.db <- available.packages(contrib.url(biocinstallRepos()))
