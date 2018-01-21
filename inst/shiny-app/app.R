@@ -154,7 +154,7 @@ ui <- function(request){ fluidPage(
           DT::dataTableOutput("tab1.SNPcountsUnique"),
           tags$h4("Nucleotide Diversity Statistics"),
           HTML("<h5>
-               This table provides for each given gene the nucleotide diversity as Nei and Li's <i>&pi;</i> (the average number of nucleotide differences per site between all possible pairs of sequence) at synonymous (pi_s) and missense (pi_n) sites.
+               This table provides for each given gene the nucleotide diversity as Nei and Li's <i>&pi;</i> (the average number of nucleotide differences per site between all possible pairs of sequence) at synonymous (<i>&pi;<sub>S</sub></i>) and nonsynonymous (<i>&pi;<sub>N</sub></i>) sites.
                 </br>
                In the future we plan to add
                Fixation index (<i>F<sub>ST</sub></i>),
@@ -439,6 +439,7 @@ server <- function(input, output){
     return(genes)
   })
 
+  #### all.GeneChoices ####
   all.GeneChoices <- reactive({
     displayNames <- paste(all.Genes()$transcript_ID, " (", all.Genes()$tair_symbol, ")", sep="" )
     displayNames <- gsub(" \\(\\)", displayNames, replacement="")  # if no tair symbol, remove empty parens.
@@ -446,7 +447,7 @@ server <- function(input, output){
     names(output) <- displayNames
     return(output)
   })
-
+#### tab1.genes_table ####
   output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
 
   all.VCFList <- reactive({
@@ -473,21 +474,24 @@ server <- function(input, output){
     return(output)
   })
 
+#### tab1.nonUniqueVariants ####
   tab1.nonUniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), variantCounts, unique=FALSE, .id="transcript_ID")
   })
 
+#### tab1.uniqueVariants ####
   tab1.uniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), variantCounts, unique=TRUE, .id="transcript_ID")
   })
-
+#### tab1.divStats ####
   tab1.divStats <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), diversityStats, geneInfo=isolate(all.Genes()), .id="transcript_ID")
   })
 
+#### SNPStats ####
   SNPStats <- reactive({
     req(isolate(tab1.buttons$last_button)!="none pressed")
     # rename column names on unique variant counts.
@@ -496,7 +500,7 @@ server <- function(input, output){
                                              "unique", sep="_")
     cbind(tab1.nonUniqueVariants(), uniqueVariantsRenamed[, -1], tab1.divStats()[, -1])
   })
-
+#### tab1.SNPcounts ####
   output$tab1.SNPcounts <- DT::renderDataTable({
     table <- tab1.nonUniqueVariants()
     colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
@@ -507,7 +511,7 @@ server <- function(input, output){
     table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
     return(table)
   })
-
+#### tab1.SNPcountsUnique ####
   output$tab1.SNPcountsUnique <- DT::renderDataTable({
     table <- tab1.uniqueVariants()
     colnames(table) <- c("transcript", "symbol", "5' UTR", "intron", "3' UTR",
@@ -518,7 +522,7 @@ server <- function(input, output){
     table <- DT::datatable(table,rownames = FALSE, options=list(paging=FALSE, searching=FALSE))
     return(table)
   })
-
+#### tab1.Diversity_table ####
   output$tab1.Diversity_table <- DT::renderDataTable(
     DT::formatRound(DT::datatable(tab1.divStats(),
                   #
@@ -531,7 +535,7 @@ server <- function(input, output){
                                "&pi; transcript"),
                   rownames = FALSE, escape = FALSE,
                   options = list(paging=FALSE, searching=FALSE)),
-                columns = 2:6, digits = 6))
+                columns = 2:7, digits = 6))
 
   output$tab1.downloadStats <- downloadHandler(
     filename=function(){
@@ -541,7 +545,7 @@ server <- function(input, output){
       write.csv(SNPStats(), file, row.names=FALSE)
     }
   )
-
+#### tab1.downloadGeneInfo ####
   output$tab1.downloadGeneInfo <- downloadHandler(
     filename=function(){
       paste("GeneInfo-", Sys.time(), ".csv", sep="")
@@ -550,22 +554,18 @@ server <- function(input, output){
       write.csv(all.Genes(), file, row.names=FALSE)
     }
   )
-
-
-
-
   ##                 _________
   ##                /  tab2   \
   ## ---------------           -------------------------------------
   ## Tab 2 ###################
-
+#### tab2.selectGene ####
   output$tab2.selectGene <- renderUI({
     tagList(
       selectInput("tab2.transcript_ID", label=NULL, choices=all.GeneChoices()),
       actionButton(inputId="tab2.Submit", label = "Submit")
     )
   })
-
+#### tab2.Genes ####
   tab2.Genes <- eventReactive(input$tab2.Submit, {
       #gene Info for gene on tab 2, updates on 'submit' button press
     # names <- parseInput(input$plotGene)
@@ -573,10 +573,10 @@ server <- function(input, output){
     # return(genes)
     return(all.Genes()[ all.Genes()$transcript_ID == input$tab2.transcript_ID,])
   })
-
+#### tab2.GeneInfo ####
   output$tab2.GeneInfo <- renderTable(tab2.Genes())
     #rendered table of Gene info
-
+#### tab2.tableData ####
   #tab2.tableData <- reactive({load_tab_2_Data(tab2.Genes())})
     #SNP reactive data
   tab2.tableData <- eventReactive(input$tab2.Submit, {
@@ -584,8 +584,7 @@ server <- function(input, output){
     coding_variants <- getCodingDiv(tab2data)
     return(coding_variants)
   })
-
-
+#### Diversity_Table ####
   output$Diversity_Table <- DT::renderDataTable(tab2.tableData())
     #render table of diversity data
 
@@ -597,10 +596,10 @@ server <- function(input, output){
       write.csv(tab2.tableData(), file, row.names=FALSE)
     }
   )
-
+#### diversityPlot ####
   output$diversityPlot <- renderPlot(plotCodingDiv(tab2.tableData()))
     #plot output
-
+#### info ####
   output$info <- renderPrint({
     brushedPoints(tab2.tableData(), input$plot_brush, "Codon_Number", "Diversity")
   })
@@ -610,29 +609,27 @@ server <- function(input, output){
   ##                           /  tab3   \
   ## --------------------------           ----------------------------
   ## Tab 3 ##################################
-
+#### tab3.selectGene ####
   output$tab3.selectGene <- renderUI({
     tagList(
       checkboxGroupInput("tab3.transcript_ID", label=NULL, choices=all.GeneChoices()),
       actionButton(inputId="tab3.Submit", label = "Submit")
     )
   })
-
+#### tab3.Genes ####
   tab3.Genes <- eventReactive(input$tab3.Submit, {
     #gene Info for gene on tab 3, updates on 'submit' button press
     return(all.Genes()[ all.Genes()$transcript_ID %in% input$tab3.transcript_ID,])
   })
 
-
+#### tab3.tidyData ####
   tab3.tidyData <- eventReactive(input$tab3.Submit, {
     data <- ldply(all.VCFList()[tab3.Genes()$transcript_ID])
-
     # remove 0|0 genotypes
     data <- data[data$gt_GT != "0|0",]
-
     return(data)
   })
-
+#### tab3.EffectValues ####
   tab3.EffectValues <- reactive({
     # effects <- c("5_prime_UTR_variant",
     #              "intron_variant",
@@ -650,34 +647,30 @@ server <- function(input, output){
             "Coding"= c("missense_variant", "synonymous_variant"))
     )
   })
-
+#### tab3.debug ####
   output$tab3.debug <- renderPrint({
     # temporary debug output
       print(paste("last button =", tab1.buttons$last_button))
       print(paste("total presses =", tab1.buttons$total_presses))
   })
-
+#### tab3.filteredByDiv ####
   tab3.filteredByDiv <- reactive({
     # filter by diversity slider and SNP type radio button then add SNPs column
-
     data <- tab3.tidyData()
-
     # filter by effect type (all, coding, or missense)
     data2 <- data[data$Effect %in% tab3.EffectValues(), ]
-
     # filter on positions with diversity greater than or equal to the 10^slider value
     keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value), "POS"])
     keydata <- data[data$POS %in% keyPOS, ]
-
     return(keydata)
   })
-
+#### tab3.mutationList ####
   tab3.mutationList <- reactive({
     mutList <- labelBySNPs(tab3.filteredByDiv(), collapse=FALSE)$SNPs
     mutList <- unique(mutList[!is.na(mutList)])
     return(mutList)
   })
-
+#### tab3.mutation_checkbox ####
   output$tab3.mutation_checkbox <- renderUI({
     tagList(
       tags$div(class="input-format",
@@ -689,12 +682,10 @@ server <- function(input, output){
           actionButton(inputId="tab3.update_map", label = "Update Map")
       )
     )
-
   })
-
+#### tab3.labeled ####
   tab3.labeled <- eventReactive(input$tab3.update_map, {
     # a dataframe with a single row per accession, containing accession info,
-
     # start with the data filtered by the diversity slider and type buttons
     data <- tab3.filteredByDiv()
     # label by SNPs creates column SNPs with text strings formatted [transcriptID|AA_Change]
@@ -705,57 +696,45 @@ server <- function(input, output){
     data <- ddply(data, "Indiv", summarise, SNPs=paste(SNPs, collapse=","))
     # add back ecotype details
     data <- addAccDetails(data)
-
     return(data)
   })
-
+#### tab3.map ####
   output$tab3.map <- renderLeaflet({
-
     mapdata <- tab3.labeled()
-
     # Reorganize to plot NA's underneath non NA's
     mapdata <- rbind(mapdata[is.na(mapdata$SNPs), ], mapdata[!is.na(mapdata$SNPs), ])
-
     # make a field with text to be displayed when clicking on a marker
     mapdata$popup <- paste("EcoID:",  mapdata$Indiv,"Name:", mapdata$Name, " SNPs:", mapdata$SNPs)
-
     # create the color pallet for the map points
     pal <- brewer.pal(8, "Set1")
     pallet <- colorFactor(palette=pal, domain=mapdata$SNPs)
-
     # create a new leaflet map
     map <- leaflet()
     map <- addProviderTiles(map, providers$Stamen.TonerLite,
                      options = providerTileOptions(noWrap = TRUE))
-
     # groupnames to be used by draw groups of points as separate layers below
     groupnames <- unique(mapdata$SNPs)
     groupnames <- groupnames[!is.na(groupnames)]
-
     # add markers for NA points first so they are furthest back layer
     map <- addCircleMarkers(map, data=mapdata[is.na(mapdata$SNPs), ], color= "#9b9b9b", group="NA",
                             radius=6, popup= ~popup, stroke=FALSE, fillOpacity=0.6)
-
     # for each of the group names, add a set of markers
     for (SNP in groupnames){
           map <- addCircleMarkers(map, data=mapdata[mapdata$SNPs == SNP, ], color= ~pallet(SNPs), group= SNP,
                             radius=6, popup= ~popup, stroke=FALSE, fillOpacity=0.85)
     }
-
     # add the legend to the map
     map <- addLegend(map, position="bottomright", pal=pallet,
                      values=mapdata$SNPs, title="Marker Colors", opacity=1)
-
     # add layer control to map to turn on or off groups of points
     map <- addLayersControl(map, overlayGroups=c(groupnames, "NA"),
                             options = layersControlOptions(collapsed = TRUE),
                             position="bottomleft")
-
     return(map)
   })
-
+#### tab3.dataTable ####
   output$tab3.dataTable <- DT::renderDataTable(tab3.labeled())
-
+#### tab3.downloadMapData ####
   output$tab3.downloadMapData <- downloadHandler(
     filename=function(){
       paste("MapData-", Sys.time(), ".csv", sep="")
@@ -777,7 +756,7 @@ server <- function(input, output){
   ##                                      /   tab5   \
   ## --------------------------------------           ----------------
   ## Tab 5 #########################
-
+#### tab3.selectGene ####
   output$tab5.selectGene <- renderUI({
     tagList(
       checkboxGroupInput(inputId = "tab5.transcript_ID",
@@ -789,29 +768,29 @@ server <- function(input, output){
       actionButton(inputId="tab5.Submit", label = "Submit")
     )
   })
-
+#### tab5.Genes ####
   tab5.Genes <- eventReactive(input$tab5.Submit, {
     #gene Info for gene on tab 5, updates on 'submit' button press
     return(input$tab5.transcript_ID)
   })
-
+#### debug ####
   output$debug <- renderPrint({tab5.Genes()})
-
+#### type ####
   output$type <- eventReactive(input$tab5.Submit, {
     return(input$tab5.type)
   })
-
+#### alignment ####
   alignment <- eventReactive(input$tab5.Submit, {
     alignment <- alignCDS(IDs = tab5.Genes())
     return(alignment)
   })
-
+#### tab5.alignment ####
   output$tab5.alignment <- renderMsaR({
     type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
     msaR(alignment()[[type+1]], alignmentHeight = 100,
          colorscheme = {if(type) "taylor" else "nucleotide"})
     })
-
+#### tab5.BrowseSeqs ####
   output$tab5.BrowseSeqs <- reactive({
     type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
     file <- BrowseSeqs(alignment()[[type + 1]],
@@ -819,7 +798,7 @@ server <- function(input, output){
     html <- paste(readLines(file), collapse="\n")
     return(html)
     })
-
+#### aln_df ####
   aln_df <- reactive({
     type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
     aln_df <- makeAlnDF(alignment()[[type + 1]])
@@ -828,7 +807,7 @@ server <- function(input, output){
     vcf <- getCodingDiv(vcf)
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
   })
-
+#### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlotly({
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
