@@ -860,23 +860,32 @@ makeAlnDF <- function(alignment){
 #' seq_pos = Codon_Number)
 #'
 addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
-                           seq_pos = Codon_Number, effect = Effect){
+                           seq_pos = Codon_Number, effect = Effect,
+                           variant = Amino_Acid_Change){
   seq_name <- dplyr::enquo(seq_name)
   seq_pos <- dplyr::enquo(seq_pos)
   effect <- dplyr::enquo(effect)
+  variant <- dplyr::enquo(variant)
   #devtools::use_package("rlang")
   temp <- SNPs %>%
     dplyr::group_by(!!seq_name, !!seq_pos) %>%
-    dplyr::summarise(variants = {switch(as.character(length(unique(!!effect))),
+    dplyr::summarise(effects = {switch(as.character(length(unique(!!effect))),
                                  "0" = NA,
                                  "1" = unique(!!effect),
                                  paste(sort(unique(!!effect)),
-                                       collapse = " & "))})
+                                       collapse = " & "))},
+                     variants = {switch(as.character(length(unique(!!variant))),
+                                    "0" = NA,
+                                    "1" = unique(!!variant),
+                                    paste(sort(unique(!!variant)),
+                                          collapse = " & "))})
   temp[[rlang::quo_name(seq_pos)]] <- as.character(x = temp[[rlang::quo_name(seq_pos)]])
   aln_df <- dplyr::left_join(x = aln_df, y = temp,
                         by = c("seq_name" = rlang::quo_name(seq_name),
                                "seq_pos" = rlang::quo_name(seq_pos)))
   aln_df$seq_name <- as.factor(aln_df$seq_name)
+  aln_df$effects <- gsub(pattern = "_variant", replacement = "",
+                          x = aln_df$effects)
   return(aln_df)
 }
 

@@ -83,7 +83,7 @@ CSSCode <- tags$head(tags$style(
 
 
 ui <- function(request){ fluidPage(
-
+  theme = shinytheme(theme = "flatly"),
   tags$head(tags$style(
     HTML("
       .checkbox-format {
@@ -100,7 +100,7 @@ ui <- function(request){ fluidPage(
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
   tags$h5('style'="color:red", "This app is currently a work in progress."),
-  themeSelector(),
+  #themeSelector(),
   tabsetPanel(
     tabPanel("SNP Stats",
 ## Tab 1 - SNP Stats ##########################################################
@@ -118,8 +118,8 @@ ui <- function(request){ fluidPage(
             ),
             column(6,
                tags$h3("OR Upload File"),
-               tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
-                       The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+               tags$h5("Browse to a '.csv' file containing 'tair_locus' and 'name' fields.
+                       The 'name' field should be the TAIR symbol or moniker you would like to identify your genes by."),
                fileInput("genesFile", label=NULL),
                actionButton(inputId="file_submit", label = "Submit")
 
@@ -310,24 +310,30 @@ ui <- function(request){ fluidPage(
              tags$br(),
              tags$div(class="input-format",
                       tags$h3("Select Genes and Type"),
-                      tags$h5("Select one or more transcript IDs below and select the ype of alignment to show"),
+                      tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
                       # textInput(inputId="tab3.Gene", label=NULL,
                       #           value="AT1G80490"),
                       uiOutput("tab5.selectGene")),
                       # actionButton(inputId="tab3.Submit", label="Submit"),
              tags$br(),
-             tags$div(
-               msaROutput(outputId = "tab5.alignment")),
-             tags$div(class = "wrapper",
-                      tags$div(class = "scrolls",
-                        htmlOutput("tab5.BrowseSeqs", inline = TRUE, container = )
-               )
-             ),
-             tags$br(),
-             tags$div(
-               plotlyOutput('tab5.aln_plot'),
-               verbatimTextOutput("event")
-             )
+             tags$hr(),
+             tags$div(class = "output-format",
+                      tags$h3("Sequence Alignment"),
+                      tags$h5("Click and drag to pan, hover over an individual point to see details.
+                              Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
+                              tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", "DECIPHER")),
+               plotlyOutput('tab5.aln_plot', height = "auto"),
+              # verbatimTextOutput("event")
+              tags$br(),
+              tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
+               msaROutput(outputId = "tab5.alignment"), height = "auto")
+             # Remove DECIPHER BrowseSeqs
+             # but perhaps the side scrolling div will come in handy again
+             # tags$div(class = "wrapper",
+             #          tags$div(class = "scrolls",
+             #            htmlOutput("tab5.BrowseSeqs", inline = TRUE)
+             #   )
+             # ),
           ),
     tabPanel("About",
              ## About Tab ######################################################
@@ -816,7 +822,8 @@ server <- function(input, output){
     })
 
   aln_df <- reactive({
-    aln_df <- makeAlnDF(alignment()[[2]])
+    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
+    aln_df <- makeAlnDF(alignment()[[type + 1]])
     vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
@@ -825,8 +832,9 @@ server <- function(input, output){
 
   output$tab5.aln_plot <- renderPlotly({
     p <-
-      ggplot(aln_df(), aes(x = aln_pos, y = seq_name, group = seq_pos)) +
-      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = variants),
+      ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
+                           group = seq_pos, text = variants)) +
+      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1,
                 check_overlap = TRUE) +
@@ -837,18 +845,16 @@ server <- function(input, output){
       #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
       theme_logo(base_family = "Courier") +
       theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
-    ggplotly(p, tooltip = c("seq_name", "seq_pos"),
-             height = length(unique(aln_df()$seq_name)) * 50 + 25) %>%
+    ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
+             height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
+      # Total height = 125 = N*50 + 25
+      # 125 = N*30 + 65 better still a bit long with 6 sequences
+      # 125 = N*20 + 85 looks really good but maybe a bit
       config(collaborate = FALSE) %>%
       layout(margin = list(l = 100, r = 0, t = 20, b = 0),
              legend = list(yanchor = "bottom", y = -1, orientation = "h"),
-             dragmode = "pan", yaxis = list(fixedRange = TRUE),
-             xaxis = list(range = c(0,50), fixedRange = TRUE))
-  })
-
-  output$event <- renderPrint({
-    d <- event_data("plotly_hover")
-    if (is.null(d)) "Hover on a point!" else d
+             dragmode = "pan", yaxis = list(fixedrange = TRUE),
+             xaxis = list(range = c(0,70)))
   })
 }
 

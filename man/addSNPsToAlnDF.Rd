@@ -5,7 +5,7 @@
 \title{Add SNPs and indels to an alignment data frame}
 \usage{
 addSNPsToAlnDF(aln_df, SNPs, seq_name = Transcript_ID,
-  seq_pos = Codon_Number, effect = Effect)
+  seq_pos = Codon_Number, effect = Effect, variant = Amino_Acid_Change)
 }
 \arguments{
 \item{aln_df}{an alignment data frame resulting from
