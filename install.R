@@ -23,6 +23,7 @@ pkgs <- c(
     "biomaRt",
     "Biostrings",
     "BSgenome",
+    "BSgenome.Athaliana.TAIR.TAIR9",
     "DECIPHER",
     "GenomicFeatures",
     "VariantAnnotation",

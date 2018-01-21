@@ -25,6 +25,7 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     BSgenome.Athaliana.TAIR.TAIR9,
     GenomicFeatures,
     XVector,
+    Biostrings,
     magrittr,
     DECIPHER,
     rlang

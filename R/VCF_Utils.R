@@ -759,8 +759,8 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
 #' @import GenomicFeatures
-#' @import S4Vectors
 #' @importFrom XVector "subseq"
+#' @import Biostrings
 #'
 #' @examples
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
@@ -783,7 +783,7 @@ alignCDS <- function(IDs) {
                 GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
   #devtools::use_package("XVector", "imports")
   CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
-                          end = nchar(CDSseqs)-3)
+                          end = Biostrings::nchar(CDSseqs)-3)
   CDSseqs.xstop
   #devtools::use_package("DECIPHER", "depends")
   # Update to imports once DECIPHER has fixed environment issue
