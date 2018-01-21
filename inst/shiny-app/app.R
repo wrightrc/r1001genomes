@@ -319,8 +319,7 @@ ui <- function(request){ fluidPage(
              tags$hr(),
              tags$div(class = "output-format",
                       tags$h3("Sequence Alignment"),
-                      tags$h5("Click and drag to pan, hover over an individual point to see details.
-                              Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
+                      tags$h5("Click and drag to pan. The x-axis is the position within the alignment. Hover over the alignment to see details. 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above. Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
                               tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", "DECIPHER")),
                plotlyOutput('tab5.aln_plot', height = "auto"),
               # verbatimTextOutput("event")
