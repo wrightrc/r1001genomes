@@ -53,6 +53,13 @@ CSSCode <- tags$head(tags$style(
 ))
 
 
+filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_GT", "REF",
+                       "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
+                       "Codon_Change", "Amino_Acid_Change", "Diversity")
+
+filterTab.numericCols <- c("Indiv", "POS", "Codon_Number", "AC", "Diversity")
+
+
 ui <- function(request){ fluidPage(
 
   tags$head(tags$style(
@@ -66,7 +73,7 @@ ui <- function(request){ fluidPage(
   )),
 
 
-  CSSCode,
+  #CSSCode,
   headerPanel("Arabidopsis Natural Variation Webtool"),
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
@@ -232,11 +239,10 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 1"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter1.column", label="column select", choices=c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
-                                                                                              "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
-                                                                                              "Codon_Change", "Amino_Acid_Change", "Diversity")),
+                          selectInput("tab4.filter1.column", label="column select",
+                                      choices=filterTab.allCols),
                           tags$br(),
-                          tags$h5("values to match, separated by commas"),
+                          tags$h5("values to match. separate values with a comma followed by a space \n(ie. \"a, b\") "),
                           textAreaInput("tab4.filter1.textIn", NULL)
                         )),
 
@@ -244,11 +250,10 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 2"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter2.column", label="column select", choices=c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
-                                                                                              "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
-                                                                                              "Codon_Change", "Amino_Acid_Change", "Diversity")),
+                          selectInput("tab4.filter2.column", label="column select",
+                                      choices=filterTab.allCols),
                           tags$br(),
-                          tags$h5("values to match, separated by commas"),
+                          tags$h5("values to match. separate values with a comma followed by a space \n(ie. \"a, b\") "),
                           textAreaInput("tab4.filter2.textIn", NULL)
                         )),
 
@@ -256,7 +261,8 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 3 (Numeric)"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter3.column", label="column select", choices=c("Indiv", "POS", "AC", "Diversity")),
+                          selectInput("tab4.filter3.column", label="column select",
+                                      choices=filterTab.numericCols),
                           tags$br(),
                           tags$h5("Max value"),
                           numericInput("tab4.filter3.max", NULL, NA),
@@ -269,7 +275,8 @@ ui <- function(request){ fluidPage(
                           tags$h4("Filter 4 (Numeric)"),
                           tags$br(),
                           tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter4.column", label="column select", choices=c("Indiv", "POS", "AC", "Diversity")),
+                          selectInput("tab4.filter4.column", label="column select",
+                                      choices=filterTab.numericCols),
                           tags$br(),
                           tags$h5("Max value"),
                           numericInput("tab4.filter4.max", NULL, NA),
@@ -739,9 +746,7 @@ server <- function(input, output){
   tab4.tidyData <- eventReactive(input$tab4.Submit, {
     data <- ldply(all.VCFList()[tab4.Genes()$transcript_ID])
     data <- subset(data, select=-c(EFF, Transcript_ID, ID, FILTER ))
-    data <- data[,c("Gene_Name", ".id", "Indiv", "POS", "gt_GT", "REF",
-                    "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
-                    "Codon_Change", "Amino_Acid_Change", "Diversity")]
+    data <- data[,filterTab.allCols]
     return(data)
   })
 
@@ -780,7 +785,12 @@ server <- function(input, output){
       }
     }
 
+
     for (i in 1:nrow(tab4.numFilters())){
+      naRows <- data[is.na(data[, tab4.numFilters()[i, "column"]]) , ]
+      # remove NA rows to avoid issues with logical operators
+      data <- data[!is.na(data[, tab4.numFilters()[i, "column"]]) , ]
+
       if (!is.na(tab4.numFilters()[i, "max"])){
         data <- data[  data[, tab4.numFilters()[i, "column"]] <=  tab4.numFilters()[i, "max"], ]
       }
@@ -789,6 +799,10 @@ server <- function(input, output){
         data <- data[  data[, tab4.numFilters()[i, "column"]] >=  tab4.numFilters()[i, "min"], ]
       }
 
+      if (tab4.numFilters()[i,"missing"]){
+        # add back NA rows if checkbox checked
+        data <- rbind(data, naRows)
+      }
     }
 
 

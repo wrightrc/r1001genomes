@@ -191,6 +191,12 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
   colnames(effect) <- c(EFFColNames)
   # only keep effects that match the transcript ID
   effect <- effect[effect$Transcript_ID == transcript_ID, ]
+  # add codon number field
+  changeStr <- effect$Amino_Acid_Change[grepl( "p.", effect$Amino_Acid_Change)][1]
+  codonNumber <- stringr::str_extract_all(stringr::str_extract_all(changeStr, "p.[A-z]{3}[0-9]*")[[1]], "[0-9]+")[[1]]
+  codonNumber <- as.numeric(codonNumber)
+  effect$Codon_Number <- codonNumber
+
 
   if (nrow(effect) > 0){   # if there are some effects remaining:
     #create a "gt_GT" column in the effect dataframe that matches the format of the VCF$dat
