@@ -637,6 +637,7 @@ getCodingDiv <- function(data){
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
                                                         "Amino_Acid_Change",
+                                                  "Transcript_ID",
                                                         "Diversity") ])
   #add codon number to uniqueCodingVars
   uniqueCodingVars <-plyr::ddply(uniqueCodingVars, .fun=codonNumberKernel,
@@ -751,4 +752,225 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 }
 
 
+#' Make an alignment of Coding sequences
+#'
+#' @param IDs a vector of TAIR transcript IDs, e.g. "AT3G26890.1"
+#'
+#' @return aligned CDS and amino acid sequences as a list of XStringSet objects
+#' @export
+#' @import GenomicFeatures
+#' @import S4Vectors
+#' @importFrom XVector "subseq"
+#'
+#' @examples
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' browseSeqs(alignment[[2]])
+alignCDS <- function(IDs) {
+  #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
+  Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
+  #use_package("GenomicFeatures", "imports")
+  #use_package("rtracklayer", "imports")
+  # gr is now built in
+  # gr <- rtracklayer::import(system.file("extdata",
+  #           "Araport11_GFF3_genes_transposons.201606.gff.gz",
+  #           package = "r1001genomes"))
+  gr_sub <-   gr[which(grepl(pattern = paste(
+    gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
+                             x = mcols(gr)$ID)),]
+  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
+  CDSseqs <- GenomicFeatures::extractTranscriptSeqs(Athaliana,
+                GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
+  #devtools::use_package("XVector", "imports")
+  CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
+                          end = nchar(CDSseqs)-3)
+  CDSseqs.xstop
+  #devtools::use_package("DECIPHER", "depends")
+  # Update to imports once DECIPHER has fixed environment issue
+  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
+  return(CDSAlignment)
+}
 
+#' Make an alignment data frame for plotting
+#'
+#' @param alignment an AAStringSet or DNAStringSet resulting from an alignment made with DECIPHER.
+#'
+#' @return a tidy long data frame of the alignment with columns `seq_name`, `letter`, `aln_pos`, and `seq_pos`, where `aln_pos` is the position of the letter in the alignment of all sequences and `seq_pos` is the position of the letter in the native sequence.
+#' @importFrom magrittr "%>%"
+#' @import DECIPHER
+#' @export
+#'
+#' @examples
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' makeAlnDF(alignment[[2]])
+#'
+makeAlnDF <- function(alignment){
+  seqs <- strsplit(as.character(alignment), split = NULL)
+  #devtools::use_package("plyr")
+  aln_df <- plyr::ldply(.data = seqs, .id = "seq_name", .fun = function(sequence){
+    data.frame(
+      "letter" = sequence,
+      "aln_pos" = 1:length(sequence)
+    )
+  })
+  #devtools::use_package("magrittr")
+  #devtools::use_package("dplyr")
+  aln_df <- aln_df %>% dplyr::group_by(seq_name) %>% dplyr::mutate(
+    seq_pos = {
+      matches <- which(letter %in% c(LETTERS, letters, "*"))
+      gaps <- which(letter %in% c("-"))
+      seqPos <- vector(length = length(letter))
+      seqPos[gaps] <- "-"
+      seqPos[matches] <- 1:length(matches)
+      return(seqPos)
+    })
+  return(aln_df)
+}
+
+
+#' Add SNPs and indels to an alignment data frame
+#'
+#' @param aln_df an alignment data frame resulting from
+#'  \link[r1001genomes]{makeAlnDF}
+#' @param SNPs a data frame of SNPs
+#' @param by_aln_SNPs a named list of character objects with each equivalency
+#' representing matching columns in `aln_df` (on the LHS) and `SNPs`
+#' (on the RHS), e.g. `"seq_name" = "transcript_id"`
+#'
+#' @return aln_df with the addition of a `variants` column containing a string
+#'  listing the variant types at each position
+#'
+#' @importFrom magrittr "%>%"
+#' @export
+#'
+#' @examples
+#' # make an alignment
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' # make an alignment data frame
+#' aln_df <- makeAlnDF(alignment[[2]])
+#' # load a VCF list
+#' vcf <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
+#'    package = "r1001genomes"))
+#' vcf <- ldply(.data = vcf, .fun = subset,
+#'   !is.na(Transcript_ID) & gt_GT != "0|0")
+#' coding_vcf <- getCodingDiv(vcf)
+#' addSNPsToAlnDF(aln_df, coding_vcf, seq_name = Transcript_ID,
+#' seq_pos = Codon_Number)
+#'
+addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
+                           seq_pos = Codon_Number, effect = Effect,
+                           variant = Amino_Acid_Change){
+  seq_name <- dplyr::enquo(seq_name)
+  seq_pos <- dplyr::enquo(seq_pos)
+  effect <- dplyr::enquo(effect)
+  variant <- dplyr::enquo(variant)
+  #devtools::use_package("rlang")
+  temp <- SNPs %>%
+    dplyr::group_by(!!seq_name, !!seq_pos) %>%
+    dplyr::summarise(effects = {switch(as.character(length(unique(!!effect))),
+                                 "0" = NA,
+                                 "1" = unique(!!effect),
+                                 paste(sort(unique(!!effect)),
+                                       collapse = " & "))},
+                     variants = {switch(as.character(length(unique(!!variant))),
+                                    "0" = NA,
+                                    "1" = unique(!!variant),
+                                    paste(sort(unique(!!variant)),
+                                          collapse = " & "))})
+  temp[[rlang::quo_name(seq_pos)]] <- as.character(x = temp[[rlang::quo_name(seq_pos)]])
+  aln_df <- dplyr::left_join(x = aln_df, y = temp,
+                        by = c("seq_name" = rlang::quo_name(seq_name),
+                               "seq_pos" = rlang::quo_name(seq_pos)))
+  aln_df$seq_name <- as.factor(aln_df$seq_name)
+  aln_df$effects <- gsub(pattern = "_variant", replacement = "",
+                          x = aln_df$effects)
+  return(aln_df)
+}
+
+#' Add alignment positions to an annotation data frame
+#'
+#' @param anno_df
+#' @param aln_df
+#'
+#' @return
+#' @export
+#'
+#' @examples
+addAlnPosToAnno <- function(anno_df, aln_df){
+
+}
+
+#' String alignment geom for plotting XStringSet Alignments
+#'
+#' @param data an alignment data.frame made from an XStringSet. In the future,
+#'  we plan to add pretty defaults allowing XStringSets to be plotted.
+#' @param ... additional parameters passed on to geoms like aes()
+#'
+#' @return
+#' @export
+#'
+#' @examples
+geom_str_align <- function(mapping = NULL, data = NULL){
+  ggplot(aln_plot, aes(x, as.integer(seqname), group = seqPos)) +
+    geom_rect(data = na.omit(aln_plot), aes(xmin = x - 0.5, xmax = x + 0.5,
+                                            ymin = as.integer(seqname) - 0.5,
+                                            ymax = as.integer(seqname) + 0.5,
+                                            fill = variants), alpha = 0.8) +
+    geom_text(aes(label=letter), alpha= 1,
+              check_overlap = TRUE) +
+    scale_x_continuous(breaks=seq(1,max(aln_plot$x), by = 10)) +
+    scale_y_continuous(breaks = c(1:length(levels(aln_plot$seqname))),
+                       labels = levels(aln_plot$seqname)) +
+    # expand increases distance from axis
+    xlab("") +
+    ylab("") +
+    #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
+    theme_logo(base_family = "Courier") +
+    theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
+}
+
+#' make DNAStrings of sequences for each gene of each accession
+#'
+#' @param SNPs a VRanges object containing the SNPs you would like to make
+#'  sequences for
+#' @param genome a BSgenomes object corresponding to the genome used to call
+#'  the SNPs and also corresponding to the ranges set in 'ranges'
+#' @param ranges a named GRanges object containing the ranges of the sequence
+#'  elements you would like to extract
+#'
+#' @return
+#' @export
+#'
+#' @examples
+promoterVariantToString<-function(SNPs, genome, ranges, files_out = TRUE){
+  #get reference sequences
+  #mcols(ranges)$seqs <- getSeq(x = genome, ranges)
+  #ranges(SNPs) <- ranges(mapToTranscripts(SNPs, ranges))
+  #mcols(SNPs)$GENEID <- seqnames(mapToTranscripts(SNPs, ranges))
+  #loop to generate accession sequences for each seq of each gene
+  llply(mcols(ranges)$names,function(gene) {
+    #pull all coding snps mapped to gene
+    genes<-subset(SNPs, mcols(SNPs)$GENEID == gsub("\\..*$","",gene))
+    #for each unique accession in the new SNP_list
+    geneList<-llply(unique(sampleNames(SNPs)),function(acc) {
+      #get variants in the strain
+      variants <- unique(subset(genes, sampleNames(genes) == acc))
+      #create sequence
+      strainVar <- replaceAt(x=mcols(ranges)$seqs[
+        which(mcols(ranges)$names==gene)],
+        at = ranges(variants), value = alt(variants))
+      #name it
+      names(strainVar)<-paste(acc,names(strainVar),sep='-')
+      strainVar
+    })
+    #stitch this list together for fasta creation
+    geneSet<-do.call(c,geneList)
+    geneSet<-c(mcols(ranges)$seqs[
+      which(mcols(ranges)$names==gene)],geneSet)
+    if(files_out) writeXStringSet(geneSet,
+                                  paste0(gsub("\\..*$","",gene),"seqs.fasta"))
+    geneSet
+  })
+}

@@ -1,4 +1,8 @@
 ToDo
+
+- make annotations clearer
+- better description of unique tables vs total
+
 ===============================================
 Shiny app / Package
 ===============================================
@@ -13,7 +17,7 @@ Little fixes
 
 New Functionalities
 - add tab for alignments
-- add import custom GFF button on tab1 
+- add import custom GFF button on tab1
 - hover-over/readme for each tab and table
 - ability to get all accessions with a mutation
 - Search by tair_symbol
