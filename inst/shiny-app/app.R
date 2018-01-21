@@ -220,7 +220,7 @@ ui <- function(request){ fluidPage(
     ),
 
 
-    tabPanel("Accessions and Mutations",
+    tabPanel("SNP Browser",
               ## Tab 4 #########################################################
              tags$br(),
              tags$div(class="input-format",

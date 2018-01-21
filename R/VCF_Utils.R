@@ -415,81 +415,6 @@ Nucleotide_diversity <- function (tidyVCF){
   return(output)
 }
 
-#' Add codon numbering to a row of data from a VCF object with parsed 'EFF' field
-#' used in the nucleotide diversity kernel.
-#' use with ddply()
-#'
-#' @param SNPData
-#'
-#' @return original data row with 'codon_Number' field appended
-#' @export
-#'
-#' @examples
-codonNumberKernel <- function (SNPData) {
-  # add the codon number to a dataframe containing a "Amino_Acid_Change"
-  changeStr <- SNPData$Amino_Acid_Change[grepl( "p.", SNPData$Amino_Acid_Change)][1]
-  codonNumber <- stringr::str_extract_all(stringr::str_extract_all(changeStr, "p.[A-z]{3}[0-9]*")[[1]], "[0-9]+")[[1]]
-  codonNumber <- as.numeric(codonNumber)
-  rows <- nrow(SNPData)
-  return (cbind(SNPData, "Codon_Number"=codonNumber))
-}
-
-#' Title
-#'
-#' @param geneInfo
-#' @param strains
-#'
-#' @return
-#' @export
-#'
-#' @examples
-polymorphTable <- function (geneInfo, strains) {
-  effects <- c("5_prime_UTR_variant",
-               "intron_variant",
-               "3_prime_UTR_variant",
-               "synonymous_variant",
-               "missense_variant",
-               "upstream_gene_variant")
-  tableData <- matrix(nrow=length(geneInfo$transcript_ID), ncol=length(effects) + 6)
-  rownames(tableData) <- geneInfo$transcript_ID
-  colnames(tableData) <- c(effects, "coding_total", "Pi_coding", "Pi_non_syn", "Pi_syn", "Pi_NS_Ratio", "Pi_transcript")
-  tableData <- data.frame(tableData)
-
-  #for each transcript
-  for (i in 1:length(geneInfo$transcript_ID)) {
-    tidyVCF <- VCFByTranscript(geneInfo[i, ], strains)
-    data <- parseEFF(tidyVCF)
-    data <- Nucleotide_diversity(data)
-
-    #fill in the first part of the table
-    variant_counts <- plyr::count(data, "Effect")
-    for (j in 1:length(effects)){
-      if (effects[j] %in% variant_counts$Effect){
-        tableData[i,j] <- variant_counts[variant_counts$Effect %in% effects[j], "freq"]
-      } else {
-        tableData[i,j] <- 0
-      }
-    }
-    tableData[i, "coding_total"] <- tableData[i, "missense_variant"] + tableData[i, "synonymous_variant"]
-
-    #nucleotide diversity sums:
-    reducedData <- unique(data[, c("POS", "Effect", "Diversity")])
-    AA_Length <- unique(data$Amino_Acid_Length)
-    AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
-
-    tableData[i, "Pi_non_syn"] <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
-    tableData[i, "Pi_syn"] <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
-    tableData[i, "Pi_NS_Ratio"] <- tableData[i, "Pi_non_syn"] / tableData[i, "Pi_syn"]
-
-    tableData[i, "Pi_coding"] <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant") , c("POS", "Diversity")])$Diversity) / (3*AA_Length)
-    tableData[i, "Pi_transcript"] <- sum(unique(reducedData[, c("POS", "Diversity")])$Diversity) / geneInfo[i, "transcript_length"]
-
-  }
-  return(tableData)
-
-}
-
-
 #' counts number of variants in certain affect categories
 #' use with ldply() on VCFList objects to create a table.
 #'
@@ -570,62 +495,9 @@ diversityStats <- function(data, geneInfo=NULL) {
   return(tableData)
 }
 
-
-
-#' create a row of statistics for a given tidyVCF dataframe including non unique
-#' variant counts and nucleotide diversity values.
-#'
-#' @param data tidyVCF
-#' @param geneInfo geneInfo dataframe containing a row for the provided tidyVCF gene
-#'
-#' @return
-#' @export
-#'
-#' @examples
-polymorphRow <- function (data, geneInfo=NULL) {
-  effects <- c("5_prime_UTR_variant",
-               "intron_variant",
-               "3_prime_UTR_variant",
-               "synonymous_variant",
-               "missense_variant",
-               "upstream_gene_variant")
-
-  # create table
-  tableData <- data.frame(row.names=attr(data,"transcript_ID"))
-
-  # polymorphism counts (non-unique)
-  variant_counts <- plyr::count(data, "Effect")
-  for (effect in effects){
-    if (effect %in% variant_counts$Effect){
-      tableData[effect] <- variant_counts[variant_counts$Effect %in% effect, "freq"]
-    } else {
-      tableData[effect] <- 0
-    }
-  }
-  tableData$coding_total <- tableData$missense_variant + tableData$synonymous_variant
-
-  #nucleotide diversity sums:
-  reducedData <- unique(data[, c("POS", "Effect", "Diversity")])
-  AA_Length <- unique(data$Amino_Acid_Length)
-  AA_Length <- as.numeric(AA_Length[!is.na(AA_Length)])
-  tableData$Pi_non_syn <- sum(reducedData[reducedData$Effect %in% "missense_variant", "Diversity"]) / (3*AA_Length)
-  tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
-  tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
-  tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant"), c("POS", "Diversity")])$Diversity) / (3*AA_Length)
-
-  if (!is.null(geneInfo)){
-     transcript_length <- geneInfo$transcript_length[geneInfo$transcript_ID == attr(data,"transcript_ID")]
-     tableData$Pi_transcript <- sum(unique(reducedData[, c("POS", "Diversity")])$Diversity) / transcript_length
-  }
-
-  return(tableData)
-}
-
-
-
 #' Title
 #'
-#' @param data tidyVCF with 'EFF' field parsed
+#' @param data tidyVCF with 'EFF' field parsed and 'Diversity' field
 #'
 #' @return
 #' @export
@@ -641,12 +513,9 @@ getCodingDiv <- function(data){
 
   coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant", "stop_gained", "frameshift_variant"), ]   #
   #extract uniuqe position and effect
-  uniqueCodingVars <- unique(coding_variants[ , c("POS", "Effect",
+  uniqueCodingVars <- unique(coding_variants[ , c("POS", "Codon_Number", "Effect",
                                                         "Amino_Acid_Change",
                                                         "Diversity") ])
-  #add codon number to uniqueCodingVars
-  uniqueCodingVars <-plyr::ddply(uniqueCodingVars, .fun=codonNumberKernel,
-                                 .variables=c("POS", "Amino_Acid_Change"))
   return(uniqueCodingVars)
 }
 
@@ -686,17 +555,6 @@ addAccDetails <- function(data, ecotypeColumn="Indiv") {
   ecoIDs <- r1001genomes::accessions
   return(merge(data, ecoIDs, by.x=ecotypeColumn, by.y="Ecotype.ID", all.y=TRUE))
 }
-
-
-# buildGT <- function(indivData) {
-#   # use with ddply, chunk by "Indiv"
-#   indivGT <- unique(indivData[,c("POS", "gt_GT")])
-#   Indiv <- indivData[1,"Indiv"]
-#   rownames(indivGT) <- indivGT[,1]
-#   indivGT <- t(indivGT[,2, drop=FALSE])
-#   rownames(indivGT) <- Indiv
-#   return(indivGT)
-# }
 
 #' Label accessions with the variants they contain
 #'
