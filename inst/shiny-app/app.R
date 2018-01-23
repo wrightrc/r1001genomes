@@ -112,7 +112,6 @@ ui <- function(request){ fluidPage(
   tabsetPanel(
     tabPanel("SNP Stats",
         ## Tab 1 ###############################################################
-      tags$hr(),
       tags$div(class="output-format",
                tags$h3("Gene Information"),
                tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
@@ -231,6 +230,8 @@ ui <- function(request){ fluidPage(
              tags$br(),
              tags$div(class="input-format",
                         tags$h3("Filters"),
+                        tags$h5("NOTE: all filters are combined by a logical AND.
+                                So for a row to be displayed, it must satisfy the requirements of ALL the filters."),
                         checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
 
                       fluidRow(
@@ -290,7 +291,7 @@ ui <- function(request){ fluidPage(
 
              ),
              tags$hr(),
-             verbatimTextOutput("tab4.debug"),
+             # verbatimTextOutput("tab4.debug"),  un-comment to debug
              tags$div(class="output-format",
                       tags$h3("Filtered Variants"),
                       tags$h5("This table provides ..."),
