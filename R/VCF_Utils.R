@@ -974,3 +974,5 @@ promoterVariantToString<-function(SNPs, genome, ranges, files_out = TRUE){
     geneSet
   })
 }
+
+

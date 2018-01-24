@@ -166,22 +166,33 @@ ui <- function(request){ fluidPage(
 
     tabPanel("Diversity Plot",
 ## Tab 2 - Diversity Plot #####################################################
-      tags$br(),
-      tags$div(class="input-format",
-               tags$h3("Select a Gene"),
-               tags$h5("Select a transcript ID in the box below"),
-               uiOutput("tab2.selectGene")
-               # textInput(inputId = "plotGene", label =NULL,
-               #           value = "AT1G80490"),
-               #actionButton(inputId="tab2.Submit", label = "Submit")
+    tags$br(),
+    fluidRow(
+      column(6,
+             tags$div(class="input-format",
+                      tags$h3("Select a Gene"),
+                      tags$h5("Select a transcript ID in the box below"),
+                      uiOutput("tab2.selectGene")
+                      # textInput(inputId = "plotGene", label =NULL,
+                      #           value = "AT1G80490"),
+                      #actionButton(inputId="tab2.Submit", label = "Submit")
+             )
       ),
+      column(6,
+             tags$h3("Upload an annotation file"),
+             tags$h5("Browse to a '.csv' file containing a 'gene' field matching the tair loci or gene symbols of your genes of interest."),
+             fileInput("annoFile", label=NULL),
+             actionButton(inputId="annoSubmit", label = "Submit")
 
-      tags$hr(),
-      tags$div(class="output-format",
-          tags$h3("Selected Gene Information"),
-          tableOutput("tab2.GeneInfo")
-      ),
-      tags$br(),
+      )
+    ),
+
+    tags$hr(),
+    tags$div(class="output-format",
+             tags$h3("Selected Gene Information"),
+             tableOutput("tab2.GeneInfo")
+    ),
+    tags$br(),
 
       tags$div(class="output-format",
           tags$h3("Plot of Nucleotide Diversity Statistic by Codon"),
@@ -308,24 +319,32 @@ ui <- function(request){ fluidPage(
 ## Tab 5 - Alignments #########################################################
     tabPanel("Alignments",
              tags$br(),
-             tags$div(class="input-format",
+             tags$div(class = "input-format",
+             fluidRow(
+               column(6,
                       tags$h3("Select Genes and Type"),
-                      tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
-                      # textInput(inputId="tab3.Gene", label=NULL,
-                      #           value="AT1G80490"),
-                      uiOutput("tab5.selectGene")),
-                      # actionButton(inputId="tab3.Submit", label="Submit"),
+                      tags$h5("Select one or more transcript IDs below and the type of alignment to show."),
+                      uiOutput("tab5.selectGene")
+                      ),
+             column(6,
+                    tags$h3("Upload an annotation file"),
+                    tags$h5("Browse to a '.csv' file containing a 'gene' field matching tair_loci or gene symbols."),
+                    fileInput("annoFile", label=NULL),
+                    actionButton(inputId="annoSubmit", label = "Submit")
+                    )
+               )
+             ),
              tags$br(),
              tags$hr(),
              tags$div(class = "output-format",
                       tags$h3("Sequence Alignment"),
                       tags$h5("Click and drag to pan. The x-axis is the position within the alignment. Hover over the alignment to see details. 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above. Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
                               tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", "DECIPHER")),
-               plotlyOutput('tab5.aln_plot', height = "auto"),
+               plotOutput('tab5.aln_plot'),
               # verbatimTextOutput("event")
-              tags$br(),
-              tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
-               msaROutput(outputId = "tab5.alignment"), height = "auto")
+              tags$br())#,
+              #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
+               #msaROutput(outputId = "tab5.alignment"), height = "auto")
              # Remove DECIPHER BrowseSeqs
              # but perhaps the side scrolling div will come in handy again
              # tags$div(class = "wrapper",
@@ -756,7 +775,7 @@ server <- function(input, output){
   ##                                      /   tab5   \
   ## --------------------------------------           ----------------
   ## Tab 5 #########################
-#### tab3.selectGene ####
+#### tab5.selectGene ####
   output$tab5.selectGene <- renderUI({
     tagList(
       checkboxGroupInput(inputId = "tab5.transcript_ID",
@@ -776,8 +795,8 @@ server <- function(input, output){
 #### debug ####
   output$debug <- renderPrint({tab5.Genes()})
 #### type ####
-  output$type <- eventReactive(input$tab5.Submit, {
-    return(input$tab5.type)
+  type <- reactive({
+    return(switch(input$tab5.type, "AA" = 2, "DNA" = 1))
   })
 #### alignment ####
   alignment <- eventReactive(input$tab5.Submit, {
@@ -785,54 +804,110 @@ server <- function(input, output){
     return(alignment)
   })
 #### tab5.alignment ####
-  output$tab5.alignment <- renderMsaR({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    msaR(alignment()[[type+1]], alignmentHeight = 100,
-         colorscheme = {if(type) "taylor" else "nucleotide"})
-    })
+  # output$tab5.alignment <- renderMsaR({
+  #   msaR(alignment()[[type]], alignmentHeight = 100,
+  #        colorscheme = {if(type) "taylor" else "nucleotide"})
+  #   })
 #### tab5.BrowseSeqs ####
-  output$tab5.BrowseSeqs <- reactive({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    file <- BrowseSeqs(alignment()[[type + 1]],
-                       openURL = FALSE)
-    html <- paste(readLines(file), collapse="\n")
-    return(html)
-    })
+  # output$tab5.BrowseSeqs <- reactive({
+  #   file <- BrowseSeqs(alignment()[[type + 1]],
+  #                      openURL = FALSE)
+  #   html <- paste(readLines(file), collapse="\n")
+  #   return(html)
+  #   })
 #### aln_df ####
   aln_df <- reactive({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    aln_df <- makeAlnDF(alignment()[[type + 1]])
+    aln_df <- makeAlnDF(alignment()[[type()]])
     vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
+    ## chunk up aln_df
+    chunk_width <- 80
+    chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
+    aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num)
+    return(aln_df)
   })
+#### tab5.aln_anno ####
+  # tab5.aln_anno <- reactive({
+  #   ## read in annotation
+  #   anno
+  #   ## subset to domains
+  #   anno.domain
+  #   ## consolidate to aln_pos
+  #   anno.domain
+  #   ## convert annotations to type
+  #   anno.domain
+  #   ## chunk up annotations
+  #   ### make chunks df
+  #   chunks <- data.frame("chunk" = levels(aln_df()$chunk)) %>%
+  #     separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
+  #   chunks$start <- if_else(condition = str_detect(chunks$start, "\\("), true = as.numeric(str_extract(chunks$start, "\\d+")) + 1, false = as.numeric(str_extract(chunks$start, "\\d+")))
+  #   chunks$end <- if_else(condition = str_detect(chunks$end, "\\)"), true = as.numeric(str_extract(chunks$end, "\\d+")) - 1, false = as.numeric(str_extract(chunks$end, "\\d+")))
+  #   ### chunk annotations
+  #   chunks.anno.domain <- adply(anno.domain, 1, function(domain) {
+  #     #check which chunks it spans
+  #     rows <- (domain$start < chunks$start & domain$end > chunks$end) |
+  #       (domain$start < chunks$end & domain$start > chunks$start) |
+  #       (domain$end > chunks$start & domain$end < chunks$end)
+  #     print(rows)
+  #     if(sum(rows) != 0){
+  #       #create copies of the row for each chunk
+  #       new_rows <- domain[rep(1, sum(rows)),]
+  #       new_rows[,c("chunk", "start", "end")] <-
+  #         chunks[rows, c("chunk", "start","end")]
+  #       print(new_rows)
+  #       new_rows[(domain$start < chunks$end & domain$start > chunks$start),
+  #                "start"] <- domain[, "start"]
+  #       new_rows[(domain$end > chunks$start & domain$end < chunks$end),
+  #                "end"] <- domain[, "end"]
+  #       new_rows
+  #     }
+  #     # or if mono-chunk-ular add chunk info
+  #     else{
+  #       domain[,"chunk"] <-
+  #         chunks[which(chunks$start <= domain$start & chunks$end >= domain$end),
+  #                c("chunk")]
+  #       domain
+  #     }
+  #   })
+  #   return(chunks.anno.domain)
+  # })
 #### tab5.aln_plot ####
-  output$tab5.aln_plot <- renderPlotly({
+  output$tab5.aln_plot <- renderPlot({
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants)) +
+      # geom_rect(data = tab5.aln_anno(),
+      #           mapping = aes(xmin = start - 0.5,
+      #                         xmax = end + 0.5,
+      #                         fill = annotation),
+      #           ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
       geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
-      geom_text(aes(label=letter), alpha= 1,
-                check_overlap = TRUE) +
+      geom_text(aes(label=letter), alpha= 1) +
+      scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
       scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       # expand increases distance from axis
       xlab("") +
       ylab("") +
       #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
       theme_logo(base_family = "Courier") +
-      theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
-    ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
-             height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
-      # Total height = 125 = N*50 + 25
-      # 125 = N*30 + 65 better still a bit long with 6 sequences
-      # 125 = N*20 + 85 looks really good but maybe a bit
-      config(collaborate = FALSE) %>%
-      layout(margin = list(l = 100, r = 0, t = 20, b = 0),
-             legend = list(yanchor = "bottom", y = -1, orientation = "h"),
-             dragmode = "pan", yaxis = list(fixedrange = TRUE),
-             xaxis = list(range = c(0,70)))
+      theme(panel.grid = element_blank(), panel.grid.minor = element_blank()) +
+      facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
+      theme(strip.background = element_blank(),
+            strip.text.x = element_blank())
+    return(p)
+    # ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
+    #          height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
+    #   # Total height = 125 = N*50 + 25
+    #   # 125 = N*30 + 65 better still a bit long with 6 sequences
+    #   # 125 = N*20 + 85 looks really good but maybe a bit
+    #   config(collaborate = FALSE) %>%
+    #   layout(margin = list(l = 100, r = 0, t = 20, b = 0),
+    #          legend = list(yanchor = "bottom", y = -1, orientation = "h"),
+    #          dragmode = "pan", yaxis = list(fixedrange = TRUE),
+    #          xaxis = list(range = c(0,70)))
   })
 }
 
