@@ -240,7 +240,7 @@ ui <- function(request){ fluidPage(
     ),
 
     tabPanel("SNP Browser",
-              ## Tab 4 #########################################################
+## Tab 4 #########################################################
              tags$br(),
              tags$div(class="input-format",
                       tags$h3("Gene Select"),
@@ -253,61 +253,62 @@ ui <- function(request){ fluidPage(
                         tags$h5("NOTE: all filters are combined by a logical AND.
                                 So for a row to be displayed, it must satisfy the requirements of ALL the filters."),
                         checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
-
-                      fluidRow(
-
-                        column(3, wellPanel(
-                          tags$h4("Filter 1"),
-                          tags$br(),
-                          tags$h5("select a column to filter on"),
+  ### Filter 1 ###
+                   wellPanel(fluidRow(
+                     column(2,tags$h4("Filter 1")),
+                     column(3,
                           selectInput("tab4.filter1.column", label="column select",
-                                      choices=filterTab.allCols),
-                          tags$br(),
-                          tags$h5("values to match. separate values with a comma followed by a space \n(ie. \"a, b\") "),
-                          textAreaInput("tab4.filter1.textIn", NULL)
-                        )),
+                                      choices=filterTab.allCols)
+                     ),
+                     column(5,
+                          textInput("tab4.filter1.textIn", "values to match")
+                     ),
+                     column(2,
+                          tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                     )
+                   )),
+  ### Filter 2 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 2")),
+                     column(3,
+                            selectInput("tab4.filter2.column", label="column select",
+                                        choices=filterTab.allCols)
+                     ),
+                     column(5,
+                            textInput("tab4.filter2.textIn", "values to match")
+                     ),
+                     column(2,
+                            tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                     )
+                   )),
+  ### filter 3 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 3"),tags$h4("(Numeric)")),
+                     column(3,
+                            selectInput("tab4.filter3.column", label="column select",
+                                        choices=filterTab.numericCols)
+                     ),
+                     column(2, numericInput("tab4.filter3.min", "MIN", NA)),
+                     column(2, numericInput("tab4.filter3.max", "MAX", NA)),
+                     column(3,
+                            checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
+                     )
+                   )),
+  ### Filter 4 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 4"),tags$h4("(Numeric)")),
+                     column(3,
+                            selectInput("tab4.filter4.column", label="column select",
+                                        choices=filterTab.numericCols)
+                     ),
+                     column(2, numericInput("tab4.filter4.min", "MIN", NA)),
+                     column(2, numericInput("tab4.filter4.max", "MAX", NA)),
+                     column(3,
+                            checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
+                     )
+                   )),
 
-                        column(3, wellPanel(
-                          tags$h4("Filter 2"),
-                          tags$br(),
-                          tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter2.column", label="column select",
-                                      choices=filterTab.allCols),
-                          tags$br(),
-                          tags$h5("values to match. separate values with a comma followed by a space \n(ie. \"a, b\") "),
-                          textAreaInput("tab4.filter2.textIn", NULL)
-                        )),
-
-                        column(3, wellPanel(
-                          tags$h4("Filter 3 (Numeric)"),
-                          tags$br(),
-                          tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter3.column", label="column select",
-                                      choices=filterTab.numericCols),
-                          tags$br(),
-                          tags$h5("Max value"),
-                          numericInput("tab4.filter3.max", NULL, NA),
-                          tags$h5("Min Value"),
-                          numericInput("tab4.filter3.min", NULL, NA),
-                          checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
-                        )),
-
-                        column(3, wellPanel(
-                          tags$h4("Filter 4 (Numeric)"),
-                          tags$br(),
-                          tags$h5("select a column to filter on"),
-                          selectInput("tab4.filter4.column", label="column select",
-                                      choices=filterTab.numericCols),
-                          tags$br(),
-                          tags$h5("Max value"),
-                          numericInput("tab4.filter4.max", NULL, NA),
-                          tags$h5("Min Value"),
-                          numericInput("tab4.filter4.min", NULL, NA),
-                          checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
-                        ))
-                      ),
-                      actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
-
+                   actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
 
              ),
              tags$hr(),
@@ -317,7 +318,6 @@ ui <- function(request){ fluidPage(
                       tags$h5("This table provides ..."),
                       downloadButton("tab4.downloadVariantTable","Download Content of Table Below"),
                       DT::dataTableOutput("tab4.variantTable")
-
 
              )
 
