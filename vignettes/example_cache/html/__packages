@@ -4,3 +4,10 @@ r1001genomes
 DT
 dplyr
 biomaRt
+BiocGenerics
+S4Vectors
+IRanges
+XVector
+Biostrings
+RSQLite
+DECIPHER

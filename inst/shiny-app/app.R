@@ -69,10 +69,6 @@ CSSCode <- tags$head(tags$style(
          font-family: Helvetica;
          font-weight: 500;
          line-height: 1.1;
-         color: #48ca3b;
-         background-color: #dce4f2;
-         border: 10px solid #dce4f2;
-         border-radius: 12px;
       }
 
 
@@ -80,6 +76,13 @@ CSSCode <- tags$head(tags$style(
    ")
 
 ))
+
+
+filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_GT", "REF",
+                       "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
+                       "Codon_Change", "Amino_Acid_Change", "Diversity")
+
+filterTab.numericCols <- c("Indiv", "POS", "Codon_Number", "AC", "Diversity")
 
 
 ui <- function(request){ fluidPage(
@@ -100,36 +103,34 @@ ui <- function(request){ fluidPage(
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
   tags$h5('style'="color:red", "This app is currently a work in progress."),
-  #themeSelector(),
+  # themeSelector(),
+  tags$br(),
+  tags$div(class="input-format",
+      fluidRow(
+        column(6,
+           tags$h3("Select Genes"),
+           tags$h5("Type a list of gene loci in the box below, separated by commas. "),
+           textAreaInput(inputId = "gene_ids", label = NULL,
+                         width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
+           checkboxInput("STATS_quick_demo", label="Quick Demo"),
+           actionButton(inputId="STATS_submit", label = "Submit")
+
+        ),
+        column(6,
+           tags$h3("OR Upload File"),
+           tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                   The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+           fileInput("genesFile", label=NULL),
+           actionButton(inputId="file_submit", label = "Submit")
+
+        )
+      ),
+      tags$br()
+  ),
+  tags$br(),
   tabsetPanel(
     tabPanel("SNP Stats",
-## Tab 1 - SNP Stats ##########################################################
-      tags$br(),
-      tags$div(class="input-format",
-          fluidRow(
-            column(6,
-               tags$h3("Select Genes"),
-               tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-               textAreaInput(inputId = "gene_ids", label = NULL,
-                             width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
-               checkboxInput("STATS_quick_demo", label="Quick Demo"),
-               actionButton(inputId="STATS_submit", label = "Submit")
-
-            ),
-            column(6,
-               tags$h3("OR Upload File"),
-               tags$h5("Browse to a '.csv' file containing 'tair_locus' and 'name' fields.
-                       The 'name' field should be the TAIR symbol or moniker you would like to identify your genes by."),
-               fileInput("genesFile", label=NULL),
-               actionButton(inputId="file_submit", label = "Submit")
-
-            )
-          ),
-          tags$br()
-      ),
-
-      tags$hr(),
-
+        ## Tab 1 ###############################################################
       tags$div(class="output-format",
                tags$h3("Gene Information"),
                tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
@@ -147,11 +148,13 @@ ui <- function(request){ fluidPage(
                    This table provides counts of the total, non-unique polymorphisms present in the given genes by gene structure. These numbers can be quite high if the reference (Col-0) has a minor allele. \"coding_total\" is the sum of missense, nonsense and synonymous variants.
                 </h5>"),
           DT::dataTableOutput("tab1.SNPcounts"),
+          tags$hr(),
           tags$h4("Unique Allele Counts"),
           HTML("<h5>
               This table provides counts of unique alleles by gene structure.
                </h5>"),
           DT::dataTableOutput("tab1.SNPcountsUnique"),
+          tags$hr(),
           tags$h4("Nucleotide Diversity Statistics"),
           HTML("<h5>
                This table provides for each given gene the nucleotide diversity as Nei and Li's <i>&pi;</i> (the average number of nucleotide differences per site between all possible pairs of sequence) at synonymous (<i>&pi;<sub>S</sub></i>) and nonsynonymous (<i>&pi;<sub>N</sub></i>) sites.
@@ -179,7 +182,7 @@ ui <- function(request){ fluidPage(
       tags$hr(),
       tags$div(class="output-format",
           tags$h3("Selected Gene Information"),
-          tableOutput("tab2.GeneInfo")
+          DT::dataTableOutput("tab2.gene_table")
       ),
       tags$br(),
 
@@ -236,74 +239,89 @@ ui <- function(request){ fluidPage(
              )
     ),
 
+    tabPanel("SNP Browser",
+## Tab 4 #########################################################
+             tags$br(),
+             tags$div(class="input-format",
+                      tags$h3("Gene Select"),
+                      tags$h5("select one or more transcipt IDs below"),
+                      uiOutput("tab4.selectGene")
+             ),
+             tags$br(),
+             tags$div(class="input-format",
+                        tags$h3("Filters"),
+                        tags$h5("NOTE: all filters are combined by a logical AND.
+                                So for a row to be displayed, it must satisfy the requirements of ALL the filters."),
+                        checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
+  ### Filter 1 ###
+                   wellPanel(fluidRow(
+                     column(2,tags$h4("Filter 1")),
+                     column(3,
+                          selectInput("tab4.filter1.column", label="column select",
+                                      choices=filterTab.allCols)
+                     ),
+                     column(5,
+                          textInput("tab4.filter1.textIn", "values to match")
+                     ),
+                     column(2,
+                          tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                     )
+                   )),
+  ### Filter 2 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 2")),
+                     column(3,
+                            selectInput("tab4.filter2.column", label="column select",
+                                        choices=filterTab.allCols)
+                     ),
+                     column(5,
+                            textInput("tab4.filter2.textIn", "values to match")
+                     ),
+                     column(2,
+                            tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                     )
+                   )),
+  ### filter 3 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 3"),tags$h4("(Numeric)")),
+                     column(3,
+                            selectInput("tab4.filter3.column", label="column select",
+                                        choices=filterTab.numericCols)
+                     ),
+                     column(2, numericInput("tab4.filter3.min", "MIN", NA)),
+                     column(2, numericInput("tab4.filter3.max", "MAX", NA)),
+                     column(3,
+                            checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
+                     )
+                   )),
+  ### Filter 4 ###
+                   wellPanel(fluidRow(
+                     column(2, tags$h4("Filter 4"),tags$h4("(Numeric)")),
+                     column(3,
+                            selectInput("tab4.filter4.column", label="column select",
+                                        choices=filterTab.numericCols)
+                     ),
+                     column(2, numericInput("tab4.filter4.min", "MIN", NA)),
+                     column(2, numericInput("tab4.filter4.max", "MAX", NA)),
+                     column(3,
+                            checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
+                     )
+                   )),
 
-    # tabPanel("Accessions and Mutations",
-    ### Tab 4  - Accessions and Mutations #####################################
-    #          tags$br(),
-    #          tags$div(class="input-format",
-    #                   tags$h3("Gene Select"),
-    #                   tags$h5("select one or more transcipt IDs below"),
-    #                   uiOutput("tab4.selectGene"),
-    #                   tags$hr(),
-    #                   tags$br()
-    #
-    #          ),
-    #          tags$br(),
-    #          tags$div(class="input-format",
-    #                     tags$h3("Filters"),
-    #                     checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
-    #
-    #                   fluidRow(
-    #
-    #
-    #                     column(3, wellPanel(
-    #                            tags$h4("Filter 1"),
-    #                            tags$br(),
-    #                            tags$h5("select a column to filter on"),
-    #                            selectInput("tab4.filter1.column", label="column select", choices=c("POS", "gt_GT", "...")),
-    #                            tags$br(),
-    #                            tags$h5("values to match, separated by commas"),
-    #                            textAreaInput("tab4.filter1.textIn", NULL)
-    #                     )),
-    #
-    #                     column(3, wellPanel(
-    #                       tags$h4("Filter 2"),
-    #                       tags$br(),
-    #                       tags$h5("select a column to filter on"),
-    #                       selectInput("tab4.filter2.column", label="column select", choices=c("POS", "gt_GT", "...")),
-    #                       tags$br(),
-    #                       tags$h5("values to match, separated by commas"),
-    #                       textAreaInput("tab4.filter2.textIn", NULL)
-    #                     )),
-    #
-    #                     column(3, wellPanel(
-    #                       tags$h4("Filter 3 (Numeric)"),
-    #                       tags$br(),
-    #                       tags$h5("select a column to filter on"),
-    #                       selectInput("tab4.filter3.column", label="column select", choices=c("POS", "gt_GT", "...")),
-    #                       tags$br(),
-    #                       tags$h5("Max value"),
-    #                       textInput("tab4.filter3.max", NULL),
-    #                       tags$br(),
-    #                       tags$h5("Min Value"),
-    #                       textInput("tab4.filter3.min", NULL)
-    #                     )),
-    #
-    #                     column(3, wellPanel(
-    #                       tags$h4("Filter 4 (Numeric)"),
-    #                       tags$br(),
-    #                       tags$h5("select a column to filter on"),
-    #                       selectInput("tab4.filter4.column", label="column select", choices=c("POS", "gt_GT", "...")),
-    #                       tags$br(),
-    #                       tags$h5("Max value"),
-    #                       textInput("tab4.filter4.max", NULL),
-    #                       tags$br(),
-    #                       tags$h5("Min Value"),
-    #                       textInput("tab4.filter4.min", NULL)
-    #                     ))
-    #                   )
-    #          )
-    # ),
+                   actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
+
+             ),
+             tags$hr(),
+             # verbatimTextOutput("tab4.debug"),  un-comment to debug
+             tags$div(class="output-format",
+                      tags$h3("Filtered Variants"),
+                      tags$h5("This table provides ..."),
+                      downloadButton("tab4.downloadVariantTable","Download Content of Table Below"),
+                      DT::dataTableOutput("tab4.variantTable")
+
+             )
+
+    ),
 
 ## Tab 5 - Alignments #########################################################
     tabPanel("Alignments",
@@ -348,7 +366,8 @@ ui <- function(request){ fluidPage(
                     )
              )
     )
-  )
+  ) #end of tabset panel
+
   # "THIS IS THE FOOTER"
 )}
 
@@ -363,28 +382,11 @@ parseInput <- function (textIn) {
   return (names[[1]])
 }
 
-# load_tab_2_Data <- function (geneInfo){
-#   tab2VCF <- VCFByTranscript(geneInfo[1, ], strains)
-#   tab2data <- tab2VCF$dat
-#   tab2data <- parseEFF(tab2data)
-#   tab2data <- Nucleotide_diversity(tab2data)
-#
-#   coding_variants <- coding_Diversity_Plot(tab2data)
-#
-#   return(coding_variants)
-# }
-
-
-
-# plotPi <- function(uniqueCodingVars) {
-#   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=Effect)) +
-#     geom_point() +
-#     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
-#     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-#     ylab("nucleotide diversity, log scale")
-#   return(plot)
-#
-# }
+parseFilterText <- function (textIn) {
+  inputList <- strsplit(textIn, ", ")
+  inputList <- gsub(" ", "", inputList[[1]]) # remove extra spaces
+  return(inputList)
+}
 
 
 
@@ -401,6 +403,7 @@ server <- function(input, output){
   ##             --------------------------------------------------
   ## Tab 1 ####################
 
+#### tab1.buttons ####
   tab1.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
   observeEvent(input$STATS_submit,{
     if (input$STATS_submit > 0){
@@ -414,50 +417,44 @@ server <- function(input, output){
       tab1.buttons$total_presses <- tab1.buttons$total_presses + 1
     }
   })
-
-
+#### all.Genes ####
   all.Genes <- eventReactive({tab1.buttons$total_presses},{
     req(tab1.buttons$last_button!="none pressed")
-
     if (tab1.buttons$last_button == "file_submit"){
       genes <- geneInfoFromFile(input$genesFile$datapath)
       req(genes != FALSE)
       return(genes)
     }
-
     if (input$STATS_quick_demo){
       names <- c("AT3G62980", "AT3G26810")
       genes <- getGeneInfo(names)
       req(genes != FALSE)
       return(genes)
     }
-
     # list of genes for tab 1, updated on pressing submit button
     names <- parseInput(input$gene_ids)
     genes <- getGeneInfo(names)
     req(genes != FALSE)
     return(genes)
   })
-
-  #### all.GeneChoices ####
+#### all.GeneChoices ####
   all.GeneChoices <- reactive({
-    displayNames <- paste(all.Genes()$transcript_ID, " (", all.Genes()$tair_symbol, ")", sep="" )
-    displayNames <- gsub(" \\(\\)", displayNames, replacement="")  # if no tair symbol, remove empty parens.
+    # displayNames <- paste(all.Genes()$transcript_ID, " (", all.Genes()$tair_symbol, ")", sep="" )
+    # displayNames <- gsub(" \\(\\)", displayNames, replacement="")  # if no tair symbol, remove empty parens.
+    displayNames <- paste(all.Genes()$tair_symbol, " (", all.Genes()$transcript_ID, ")", sep="")
     output <- all.Genes()$transcript_ID
     names(output) <- displayNames
     return(output)
   })
 #### tab1.genes_table ####
   output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
-
+#### all.VCFList ####
   all.VCFList <- reactive({
-
-    if(isolate(input$STATS_quick_demo)) {
+    if(isolate(input$STATS_quick_demo) & (tab1.buttons$last_button == "STATS_submit")) {
       all.Genes() # DO NOT DELETE this is here to make all.VCFList update after unchecking quickdemo
       return(readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
                                         package = "r1001genomes")))
     }
-
     withProgress(message="downloading data from 1001genomes.org",
                    detail="this will take a while, progress bar will not move",
                    value=0.3, {
@@ -470,16 +467,13 @@ server <- function(input, output){
                      output <- llply(output, Nucleotide_diversity)
                      setProgress(value=1)
     })
-
     return(output)
   })
-
 #### tab1.nonUniqueVariants ####
   tab1.nonUniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), variantCounts, unique=FALSE, .id="transcript_ID")
   })
-
 #### tab1.uniqueVariants ####
   tab1.uniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
@@ -490,7 +484,6 @@ server <- function(input, output){
     req(isolate(tab1.buttons$last_button)!="none pressed")
     ldply(all.VCFList(), diversityStats, geneInfo=isolate(all.Genes()), .id="transcript_ID")
   })
-
 #### SNPStats ####
   SNPStats <- reactive({
     req(isolate(tab1.buttons$last_button)!="none pressed")
@@ -573,8 +566,8 @@ server <- function(input, output){
     # return(genes)
     return(all.Genes()[ all.Genes()$transcript_ID == input$tab2.transcript_ID,])
   })
-#### tab2.GeneInfo ####
-  output$tab2.GeneInfo <- renderTable(tab2.Genes())
+#### tab2.gene_table ####
+  output$tab2.gene_table <- DT::renderDataTable(DT::datatable(tab2.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
     #rendered table of Gene info
 #### tab2.tableData ####
   #tab2.tableData <- reactive({load_tab_2_Data(tab2.Genes())})
@@ -749,7 +742,90 @@ server <- function(input, output){
   ##                                        _________
   ##                                       /  tab4   \
   ## --------------------------------------           ----------------
+
   ## Tab 4 #####################
+
+#### tab4.selectGene ####
+  output$tab4.selectGene <- renderUI({
+    tagList(
+      checkboxGroupInput("tab4.transcript_ID", label=NULL, choices=all.GeneChoices()),
+      actionButton(inputId="tab4.Submit", label = "Submit")
+    )
+  })
+#### tab4.Genes ####
+  tab4.Genes <- eventReactive(input$tab4.Submit, {
+    #gene Info for gene on tab 3, updates on 'submit' button press
+    return(all.Genes()[ all.Genes()$transcript_ID %in% input$tab4.transcript_ID,])
+  })
+#### tab4.tidyData ####
+  tab4.tidyData <- eventReactive(input$tab4.Submit, {
+    data <- ldply(all.VCFList()[tab4.Genes()$transcript_ID])
+    data <- subset(data, select=-c(EFF, Transcript_ID, ID, FILTER ))
+    data <- data[,filterTab.allCols]
+    return(data)
+  })
+#### tab4.textFilters ####
+  tab4.textFilters <- reactive({
+    textFilters <- data.frame("filterID" = c("filter1", "filter2"),
+                              "column" = c(input$tab4.filter1.column, input$tab4.filter2.column),
+                              "values" = I(list(parseFilterText(input$tab4.filter1.textIn),
+                                              parseFilterText(input$tab4.filter2.textIn))),
+                              stringsAsFactors=FALSE)
+  })
+#### tab4.numFilters ####
+  tab4.numFilters <- reactive({
+    numFilters <- data.frame("filterID" = c("filter3", "filter4"),
+                             "column" = c(input$tab4.filter3.column, input$tab4.filter4.column),
+                             "max" = c(input$tab4.filter3.max, input$tab4.filter4.max),
+                             "min" = c(input$tab4.filter3.min, input$tab4.filter4.min),
+                             "missing" = c(input$tab4.filter3.missing, input$tab4.filter4.missing),
+                             stringsAsFactors=FALSE)
+  })
+#### tab4.filteredVariants ####
+  tab4.filteredVariants <- eventReactive(input$tab4.updateFilter,{
+    # add all filtering here.
+    data <- tab4.tidyData()
+    if (input$tab4.filterRef) {
+      # remove 0|0 genotypes
+      data <- data[data$gt_GT != "0|0",]
+    }
+    for (i in 1:nrow(tab4.textFilters())){
+      if (length(tab4.textFilters()[i,"values"][[1]]) > 0) {
+        data <- data[as.character(data[, tab4.textFilters()[i, "column"]]) %in% tab4.textFilters()[i, "values"][[1]] , ]
+      }
+    }
+    for (i in 1:nrow(tab4.numFilters())){
+      naRows <- data[is.na(data[, tab4.numFilters()[i, "column"]]) , ]
+      # remove NA rows to avoid issues with logical operators
+      data <- data[!is.na(data[, tab4.numFilters()[i, "column"]]) , ]
+      if (!is.na(tab4.numFilters()[i, "max"])){
+        data <- data[  data[, tab4.numFilters()[i, "column"]] <=  tab4.numFilters()[i, "max"], ]
+      }
+      if (!is.na(tab4.numFilters()[i, "min"])){
+        data <- data[  data[, tab4.numFilters()[i, "column"]] >=  tab4.numFilters()[i, "min"], ]
+      }
+      if (tab4.numFilters()[i,"missing"]){
+        # add back NA rows if checkbox checked
+        data <- rbind(data, naRows)
+      }
+    }
+    return(data)
+  })
+#### tab4.debug ####
+  output$tab4.debug <- renderPrint({
+    print(tab4.numFilters())
+  })
+#### tab4.variantTable ####
+  output$tab4.variantTable <- DT::renderDataTable(tab4.filteredVariants())
+#### tab4.downloadVariantTable ####
+  output$tab4.downloadVariantTable <- downloadHandler(
+    filename=function(){
+      paste("VariantTable-", Sys.time(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(tab4.filteredVariants(), file, row.names=FALSE)
+    }
+  )
 
 
   ##                                        _________
