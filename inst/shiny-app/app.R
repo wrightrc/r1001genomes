@@ -600,14 +600,25 @@ server <- function(input, output){
       write.csv(tab2.tableData(), file, row.names=FALSE)
     }
   )
+
 #### diversityPlot ####
-  output$diversityPlot <- renderPlot(plotCodingDiv(tab2.tableData()))
+  output$diversityPlot <- renderPlot({
+    p <- plotCodingDiv(uniqueCodingVars = tab2.tableData())
+    if(exists(anno)) p <- append_layers(p,
+      geom_rect(data = subset(anno_df, gene == tab2.selectGene),
+                mapping = aes(xmin = as.integer(start),
+                              xmax = as.integer(end),
+                              fill = annotation),
+                ymin = -Inf, ymax = Inf, inherit.aes = FALSE),
+      position = "bottom")
+  })
     #plot output
 #### info ####
   output$info <- renderPrint({
     brushedPoints(tab2.tableData(), input$plot_brush, "Codon_Number", "Diversity")
   })
 
+#### annotations
 
   ##                            _________
   ##                           /  tab3   \
