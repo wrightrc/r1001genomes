@@ -7,7 +7,7 @@
 getCodingDiv(data)
 }
 \arguments{
-\item{data}{tidyVCF with 'EFF' field parsed}
+\item{data}{tidyVCF with 'EFF' field parsed and 'Diversity' field}
 }
 \description{
 Title
