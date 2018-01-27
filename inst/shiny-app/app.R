@@ -10,6 +10,7 @@ library(msaR)
 library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
+library(shinyBS)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -104,28 +105,51 @@ ui <- function(request){ fluidPage(
   tags$h5('style'="color:red", "This app is currently a work in progress."),
   # themeSelector(),
   tags$br(),
-  tags$div(class="input-format",
-           fluidRow(
-             column(6,
-                    tags$h3("Select Genes"),
-                    tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-                    textAreaInput(inputId = "gene_ids", label = NULL,
-                                  width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
-                    checkboxInput("STATS_quick_demo", label="Quick Demo"),
-                    actionButton(inputId="STATS_submit", label = "Submit")
+  bsCollapse(id = "collapse 1", multiple=TRUE, open=c("Gene Select", "Annotation Files"),
+    bsCollapsePanel("Gene Select",
+                    fluidRow(
+                      column(5,
+                             tags$h3("Select Genes"),
+                             tags$h5("Type a list of gene loci in the box below, separated by commas. "),
+                             textAreaInput(inputId = "gene_ids", label = NULL,
+                                           width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
+                             checkboxInput("STATS_quick_demo", label="Quick Demo"),
+                             actionButton(inputId="STATS_submit", label = "Submit")
 
-             ),
-             column(6,
-                    tags$h3("OR Upload File"),
-                    tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
-                   The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
-                    fileInput("genesFile", label=NULL),
-                    actionButton(inputId="file_submit", label = "Submit")
+                      ),
+                      column(2, align="center", tags$h3("OR")),
+                      column(5,
+                             tags$h3("Upload File"),
+                             tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                                     The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+                             fileInput("genesFile", label=NULL),
+                             actionButton(inputId="file_submit", label = "Submit")
 
-             )
-           ),
-           tags$br()
+                             )
+                    )
+    ),
+    bsCollapsePanel("Annotation Files",
+      fluidRow(
+        column(5,
+            tags$h3("Upload an annotation file"),
+            tags$h5("Browse to a '.csv' file containing a 'gene' field matching the tair loci or gene symbols of your genes of interest.
+                    Or create a new annotation file by downloading the empty template file and adding annotations to it.")
+        ),
+        column(4,
+               fileInput("annoFile", label="Upload Annotation File:"),
+               tags$h5(tags$strong("Download Empty Annotation File Template:")),
+               downloadButton("annoTemplateDownload",label="Download Template")
+        ),
+        column(3,
+               tags$h5(tags$strong("Submit Uploaded Annotation File:")),
+               actionButton(inputId="annoSubmit", label = "Submit")
+        )
+      )
+    )
+
   ),
+
+
   tags$br(),
   tabsetPanel(
     tabPanel("SNP Stats",
@@ -135,8 +159,6 @@ ui <- function(request){ fluidPage(
                       tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
                       downloadButton("tab1.downloadGeneInfo","Download Content of Table Below"),
                       DT::dataTableOutput("tab1.genes_table")
-
-
              ),
              tags$br(),
              tags$div(class="output-format",
@@ -168,45 +190,32 @@ ui <- function(request){ fluidPage(
     ## Tab 2 - Diversity Plot #####################################################
     tabPanel("Diversity Plot",
              tags$br(),
-             fluidRow(
-               column(6,
-                      tags$div(class="input-format",
-                               tags$h3("Select a Gene"),
-                               tags$h5("Select a transcript ID in the box below"),
-                               uiOutput("tab2.selectGene")
-                               # textInput(inputId = "plotGene", label =NULL,
-                               #           value = "AT1G80490"),
-                               #actionButton(inputId="tab2.Submit", label = "Submit")
-                      )
-               ),
-               column(6,
-                      tags$h3("Upload an annotation file"),
-                      tags$h5("Browse to a '.csv' file containing a 'gene' field matching the tair loci or gene symbols of your genes of interest."),
-                      fileInput("annoFile", label=NULL),
-                      actionButton(inputId="annoSubmit", label = "Submit"),
-                      tags$hr(),
-                      tags$div(class="output-format",
-                               tags$h3("Selected Gene Information"),
-                               DT::dataTableOutput("tab2.gene_table")
-                      ),
-                      tags$br(),
-
-                      tags$div(class="output-format",
-                               tags$h3("Plot of Nucleotide Diversity Statistic by Codon"),
-                               tags$h5("To see details on specific points, click and drag to create a box selecting points."),
-                               plotOutput("diversityPlot", brush="plot_brush", click="plot_click", height = 400),
-                               verbatimTextOutput("info")
-                      ),
-                      tags$br(),
-                      tags$div(class="output-format",
-
-                               tags$h3("Diversity Plot Data"),
-                               tags$h5("This table provides the raw data from the plot. \"POS\" is the chromosomal position of the SNP,
+             tags$div(class="input-format",
+                      tags$h3("Select a Gene"),
+                      tags$h5("Select a transcript ID in the box below"),
+                      uiOutput("tab2.selectGene")
+             ),
+             tags$hr(),
+             tags$div(class="output-format",
+                      tags$h3("Selected Gene Information"),
+                      DT::dataTableOutput("tab2.gene_table")
+             ),
+             tags$br(),
+             tags$div(class="output-format",
+                      tags$h3("Plot of Nucleotide Diversity Statistic by Codon"),
+                      tags$h5("To see details on specific points, click and drag to create a box selecting points."),
+                      plotOutput("diversityPlot", brush="plot_brush", click="plot_click", height = 400),
+                      verbatimTextOutput("info")
+             ),
+             tags$br(),
+             tags$div(class="output-format",
+                      tags$h3("Diversity Plot Data"),
+                      tags$h5("This table provides the raw data from the plot. \"POS\" is the chromosomal position of the SNP,
                   the Amino_Acid_Change field provides both the amino acid as well as the base change"),
-                               downloadButton("tab2.downloadSNPData","Download Content of Table Below"),
-                               DT::dataTableOutput("Diversity_Table")
-                      )
-               ))),
+                      downloadButton("tab2.downloadSNPData","Download Content of Table Below"),
+                      DT::dataTableOutput("Diversity_Table")
+             )
+    ),
     ## Tab 3  - SNP Mapping #######################################################
     tabPanel("SNP Mapping",
              tags$br(),
@@ -225,9 +234,7 @@ ui <- function(request){ fluidPage(
              ),
 
              tags$br(),
-
              uiOutput("tab3.mutation_checkbox"),
-
              tags$hr(),
              tags$div(class="output-format",
                       tags$h3("Accession Map"),
@@ -329,21 +336,10 @@ ui <- function(request){ fluidPage(
     ## Tab 5 - Alignments #########################################################
     tabPanel("Alignments",
              tags$br(),
-             tags$div(class = "input-format",
-                      fluidRow(
-                        column(6,
-                               tags$h3("Select Genes and Type"),
-                               tags$h5("Select one or more transcript IDs below and the type of alignment to show."),
-                               uiOutput("tab5.selectGene")
-                        ),
-                        column(6,
-                               tags$h3("Upload an annotation file"),
-                               tags$h5("Browse to a '.csv' file containing a 'gene' field matching tair_loci or gene symbols."),
-                               fileInput("annoFile", label=NULL),
-                               actionButton(inputId="annoSubmit", label = "Submit")
-                        )
-                      )
-             ),
+             tags$div(class="input-format",
+                      tags$h3("Select Genes and Type"),
+                      tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
+                      uiOutput("tab5.selectGene")),
              tags$br(),
              tags$hr(),
              tags$div(class = "output-format",
@@ -407,12 +403,13 @@ parseFilterText <- function (textIn) {
 
 
 
-server <- function(input, output){
+server <- function(input, output, session){
 
-  ##   _________
-  ##  /  tab1   \
-  ##             --------------------------------------------------
-  ## Tab 1 ####################
+  ##
+  ##  ------------------------------------------------------------------------
+  ##
+  ##  INPUT AREA #############
+
 
 #### tab1.buttons ####
   tab1.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
@@ -457,8 +454,13 @@ server <- function(input, output){
     names(output) <- displayNames
     return(output)
   })
-#### tab1.genes_table ####
-  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
+#### Annotation Template Download ####
+  output$annoTemplateDownload <- downloadHandler(
+    filename="annotations_template.csv",
+    content = function(file) {
+      file.copy("annotations_template.csv", file)
+    }
+  )
 #### all.VCFList ####
   all.VCFList <- reactive({
     if(isolate(input$STATS_quick_demo) & (tab1.buttons$last_button == "STATS_submit")) {
@@ -480,6 +482,14 @@ server <- function(input, output){
     })
     return(output)
   })
+
+  ##   _________
+  ##  /  tab1   \
+  ##             --------------------------------------------------
+  ## Tab 1 ####################
+
+#### tab1.genes_table ####
+  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
 #### tab1.nonUniqueVariants ####
   tab1.nonUniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
@@ -843,6 +853,8 @@ server <- function(input, output){
   ##                                      /   tab5   \
   ## --------------------------------------           ----------------
   ## Tab 5 #########################
+
+
 #### tab5.selectGene ####
   output$tab5.selectGene <- renderUI({
     tagList(
