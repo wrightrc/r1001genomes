@@ -1,0 +1,21 @@
+/* Green Theme */
+/* use with shinyTheme "flatly" */
+/* overwrites css values from shinyTheme and Bootstrap */
+
+/* Nav bar background color (and unselected tabs) */
+.navbar-default{color:#ffffff;background-color:#aed728}
+/* nav bar color of selected tab */
+.navbar-default .navbar-nav>.active>a{color: #ffffff;background-color:#798d8f}
+.navbar-default .navbar-nav>.active>a:focus{color:#ffffff; background-color:#798d8f}
+.navbar-default .navbar-nav>.active>a:hover{color:#ffffff; background-color:#798d8f}
+/* navbar title and inactive tabs hover over) */
+.navbar-default .navbar-brand:hover{color:#ffffff;background-color:#aed728}
+.navbar-default .navbar-nav>li>a:hover{color:#ffffff;background-color:#7a971c}
+
+/* collapsible panel heading */
+.panel-default > .panel-heading {
+  color: #ffffff;
+         background-color: #7a971c;
+         border-color: #ddd;
+}
+

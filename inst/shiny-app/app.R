@@ -88,18 +88,40 @@ filterTab.numericCols <- c("Indiv", "POS", "Codon_Number", "AC", "Diversity")
 
 ui <- function(request){ fluidPage(
   theme = shinytheme(theme = "flatly"),
-  tags$head(tags$style(
-    HTML("
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css", href = "green_theme.css"),
+    tags$style(HTML("
       .checkbox-format {
          -webkit-column-width: 350px;
          -moz-column-width: 350px;
          column-width: 350px;
       }
-    ")
-  )),
+#         /* Nav bar background color (and unselected tab text) */
+#         .navbar-default{color:#ffffff;background-color:#aed728}
+#         /* nav bar color of selected tab */
+#         .navbar-default .navbar-nav>.active>a{color: #ffffff;background-color:#798d8f}
+#         .navbar-default .navbar-nav>.active>a:focus{color:#ffffff; background-color:#798d8f}
+#         .navbar-default .navbar-nav>.active>a:hover{color:#ffffff; background-color:#798d8f}
+#         /* navbar title and inactive tabs hover over) */
+#         .navbar-default .navbar-brand:hover{color:#ffffff;background-color:#aed728}
+#         .navbar-default .navbar-nav>li>a:hover{color:#ffffff;background-color:#7a971c}
+#
+# .panel-default > .panel-heading {
+#   color: #ffffff;
+#          background-color: #7a971c;
+#          border-color: #ddd;
+# }
+
+   "))
+
+  ),
   #### Header ####
   #CSSCode,
-  headerPanel("Arabidopsis Natural Variation Webtool"),
+  titlePanel(
+    tags$div(style= "color:#ffffff;background-color:#8cac20;padding: 14px; margin-right:-30px;margin-left:-14px",
+             "Arabidopsis Natural Variation Webtool"
+    )
+  ),
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
   tags$h5('style'="color:red", "This app is currently a work in progress."),
@@ -151,7 +173,8 @@ ui <- function(request){ fluidPage(
 
 
   tags$br(),
-  tabsetPanel(
+  tags$div(style = "padding: 14px; margin:-2em",navbarPage(title = "TABS:",
+
     tabPanel("SNP Stats",
              ## Tab 1 ###############################################################
              tags$div(class="output-format",
@@ -373,7 +396,7 @@ ui <- function(request){ fluidPage(
                     )
              )
     )
-  ) #end of tabset panel
+  )) #end of tabset panel
 
   # "THIS IS THE FOOTER"
 )}
