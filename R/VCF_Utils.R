@@ -511,7 +511,7 @@ getCodingDiv <- function(data){
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
 
-  coding_variants <- data[data$Effect %in% c("missense_variant", "synonymous_variant", "stop_gained", "frameshift_variant"), ]   #
+  coding_variants <- data[data$Functional_Class %in% c("SILENT", "MISSENSE", "NONSENSE"), ]   #
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Codon_Number", "Effect",
                                                         "Amino_Acid_Change",
