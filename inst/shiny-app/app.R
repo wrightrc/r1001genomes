@@ -214,7 +214,7 @@ ui <- function(request){ fluidPage(
                  uiOutput("tab3.selectGene"),
                  # actionButton(inputId="tab3.Submit", label="Submit"),
                  sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
-                             min=-4, max=0, value=-2, step=0.05),
+                             min=-4, max=0, value=c(-1,-3), step=0.05),
                  radioButtons("tab3.SNPtype", "Type of SNP to mark",
                               choices=c("All", "Coding", "Missense"))
                  #verbatimTextOutput("tab3.debug")
