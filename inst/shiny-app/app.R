@@ -604,13 +604,16 @@ server <- function(input, output){
 #### diversityPlot ####
   output$diversityPlot <- renderPlot({
     p <- plotCodingDiv(uniqueCodingVars = tab2.tableData())
-    if(exists(anno)) p <- append_layers(p,
-      geom_rect(data = subset(anno_df, gene == tab2.selectGene),
+    if(!is.null(input$anno_df)){
+    p <- append_layers(p,
+      geom_rect(data = subset(input$anno_df, gene == tab2.selectGene),
                 mapping = aes(xmin = as.integer(start),
                               xmax = as.integer(end),
                               fill = annotation),
                 ymin = -Inf, ymax = Inf, inherit.aes = FALSE),
       position = "bottom")
+    }
+    return(p)
   })
     #plot output
 #### info ####
