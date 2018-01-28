@@ -30,8 +30,6 @@ RUN R -e 'install.packages("magrittr")'
 
 RUN R -e 'install.packages("msaR")'
 
-RUN R -e 'install.packages("plotly")'
-
 RUN R -e 'install.packages("plyr")'
 
 RUN R -e 'install.packages("RColorBrewer")'
@@ -39,6 +37,8 @@ RUN R -e 'install.packages("RColorBrewer")'
 RUN R -e 'install.packages("reshape2")'
 
 RUN R -e 'install.packages("shiny")'
+
+RUN R -e 'install.packages("shinyBS")'
 
 RUN R -e 'install.packages("shinycssloaders")'
 
