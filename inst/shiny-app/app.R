@@ -217,7 +217,7 @@ ui <- function(request){ fluidPage(
                              min=-4, max=0, value=c(-1,-3), step=0.05),
                  radioButtons("tab3.SNPtype", "Type of SNP to mark",
                               choices=c("All", "Coding", "Missense"))
-                 #verbatimTextOutput("tab3.debug")
+                 # verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
@@ -643,8 +643,7 @@ server <- function(input, output){
 #### tab3.debug ####
   output$tab3.debug <- renderPrint({
     # temporary debug output
-      print(paste("last button =", tab1.buttons$last_button))
-      print(paste("total presses =", tab1.buttons$total_presses))
+      print(input$tab3.filter_value)
   })
 #### tab3.filteredByDiv ####
   tab3.filteredByDiv <- reactive({
@@ -653,7 +652,8 @@ server <- function(input, output){
     # filter by effect type (all, coding, or missense)
     data2 <- data[data$Effect %in% tab3.EffectValues(), ]
     # filter on positions with diversity greater than or equal to the 10^slider value
-    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value), "POS"])
+    keyPOS <- unique(data2[which((data2$Diversity >= 10^input$tab3.filter_value[1]) & (data2$Diversity <= 10^input$tab3.filter_value[2]) ), "POS"])
+
     keydata <- data[data$POS %in% keyPOS, ]
     return(keydata)
   })
