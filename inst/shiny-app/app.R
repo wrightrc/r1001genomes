@@ -11,6 +11,7 @@ library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
 library(shinyBS)
+library(dplyr)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -96,29 +97,13 @@ ui <- function(request){ fluidPage(
          -moz-column-width: 350px;
          column-width: 350px;
       }
-#         /* Nav bar background color (and unselected tab text) */
-#         .navbar-default{color:#ffffff;background-color:#aed728}
-#         /* nav bar color of selected tab */
-#         .navbar-default .navbar-nav>.active>a{color: #ffffff;background-color:#798d8f}
-#         .navbar-default .navbar-nav>.active>a:focus{color:#ffffff; background-color:#798d8f}
-#         .navbar-default .navbar-nav>.active>a:hover{color:#ffffff; background-color:#798d8f}
-#         /* navbar title and inactive tabs hover over) */
-#         .navbar-default .navbar-brand:hover{color:#ffffff;background-color:#aed728}
-#         .navbar-default .navbar-nav>li>a:hover{color:#ffffff;background-color:#7a971c}
-#
-# .panel-default > .panel-heading {
-#   color: #ffffff;
-#          background-color: #7a971c;
-#          border-color: #ddd;
-# }
-
    "))
 
   ),
   #### Header ####
-  #CSSCode,
+
   titlePanel(
-    tags$div(style= "color:#ffffff;background-color:#8cac20;padding: 14px; margin-right:-30px;margin-left:-14px",
+    tags$div(class= "title-panel",
              "Arabidopsis Natural Variation Webtool"
     )
   ),
@@ -127,8 +112,8 @@ ui <- function(request){ fluidPage(
   tags$h5('style'="color:red", "This app is currently a work in progress."),
   # themeSelector(),
   tags$br(),
-  bsCollapse(id = "collapse 1", multiple=TRUE, open=c("Gene Select", "Annotation Files"),
-    bsCollapsePanel("Gene Select",
+  bsCollapse(id = "collapse 1", multiple=TRUE, open=c("Gene Select"),
+    bsCollapsePanel("Gene Select (click to expand/collapse)", value="Gene Select",
                     fluidRow(
                       column(5,
                              tags$h3("Select Genes"),
@@ -150,7 +135,7 @@ ui <- function(request){ fluidPage(
                              )
                     )
     ),
-    bsCollapsePanel("Annotation Files",
+    bsCollapsePanel("Annotation Files (click to expand/collapse)", value="Annotation Files",
       fluidRow(
         column(5,
             tags$h3("Upload an annotation file"),
@@ -173,7 +158,7 @@ ui <- function(request){ fluidPage(
 
 
   tags$br(),
-  tags$div(style = "padding: 14px; margin:-2em",navbarPage(title = "TABS:",
+  tags$div(style = "padding-left: 14px; margin-right:-14px; margin-left: -28px;",navbarPage(title = "TABS:",
 
     tabPanel("SNP Stats",
              ## Tab 1 ###############################################################
@@ -212,7 +197,7 @@ ui <- function(request){ fluidPage(
     ),
     ## Tab 2 - Diversity Plot #####################################################
     tabPanel("Diversity Plot",
-             tags$br(),
+             #tags$br(),
              tags$div(class="input-format",
                       tags$h3("Select a Gene"),
                       tags$h5("Select a transcript ID in the box below"),
@@ -241,7 +226,7 @@ ui <- function(request){ fluidPage(
     ),
     ## Tab 3  - SNP Mapping #######################################################
     tabPanel("SNP Mapping",
-             tags$br(),
+             #tags$br(),
              tags$div(class="input-format",
                       tags$h3("Select Genes and Filter Diversity Parameter"),
                       tags$h5("Select one or more transcript IDs below and use the slider to select a minimum sitewise nucleotide diversity"),
@@ -274,7 +259,7 @@ ui <- function(request){ fluidPage(
     ),
     ## Tab 4 #########################################################
     tabPanel("SNP Browser",
-             tags$br(),
+             #tags$br(),
              tags$div(class="input-format",
                       tags$h3("Gene Select"),
                       tags$h5("select one or more transcipt IDs below"),
@@ -358,7 +343,7 @@ ui <- function(request){ fluidPage(
 
     ## Tab 5 - Alignments #########################################################
     tabPanel("Alignments",
-             tags$br(),
+             #tags$br(),
              tags$div(class="input-format",
                       tags$h3("Select Genes and Type"),
                       tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
@@ -384,7 +369,7 @@ ui <- function(request){ fluidPage(
     ),
     tabPanel("About",
              ## About Tab ######################################################
-             tags$br(),
+             #tags$br(),
              column(6,
                     tags$div(class="output-format",
                              includeHTML("Glossary.html")

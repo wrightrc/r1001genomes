@@ -528,6 +528,7 @@ getCodingDiv <- function(data){
 #' @export
 #' @import ggplot2
 #' @import ggthemes
+#' @import dplyr
 #'
 #' @examples
 plotCodingDiv <- function(uniqueCodingVars){
