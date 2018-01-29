@@ -692,7 +692,8 @@ server <- function(input, output, session){
     # filter by effect type (all, coding, or missense)
     data2 <- data[data$Effect %in% tab3.EffectValues(), ]
     # filter on positions with diversity greater than or equal to the 10^slider value
-    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value), "POS"])
+    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value[1] &
+                                data2$Diversity <= 10^input$tab3.filter_value[2]), "POS"])
     keydata <- data[data$POS %in% keyPOS, ]
     return(keydata)
   })
