@@ -1,0 +1,53 @@
+/* Simple Blue Theme */
+/* use with shinyTheme "flatly" */
+/* overwrites css values from shinyTheme and Bootstrap */
+
+/* Nav bar background color (and unselected tabs) */
+.navbar-default {
+  color: #ffffff;
+  background-color: #81a0d1
+}
+.navbar-default .navbar-brand:hover {
+  color: #ffffff;
+  background-color: #81a0d1
+}
+
+
+
+/* nav bar color of selected tab */
+.navbar-default .navbar-nav>.active>a {
+  color: #ffffff;
+  background-color: #365b96
+}
+.navbar-default .navbar-nav>.active>a:focus {
+  color: #ffffff;
+  background-color: #365b96
+}
+.navbar-default .navbar-nav>.active>a:hover {
+  color: #ffffff;
+  background-color: #365b96
+}
+
+/* navbar inactive tabs hover over) */
+.navbar-default .navbar-nav>li>a:hover {
+  color: #ffffff;
+  background-color: #798d8f
+}
+
+.title-panel {
+  color: #ffffff;
+  background-color: #81a0d1;
+  padding: 14px;
+  margin-right: -14px;
+  margin-left: -14px
+}
+
+
+.input-format {
+  background-color: #ffffff;
+  border: solid #ddd;
+  border-radius: 5px;
+  border-width: 1px 1px 1px 1px;
+  padding: 1px 15px 10px 10px;
+}
+

@@ -1,0 +1,83 @@
+/* general css code used regardless of theme */
+
+.checkbox-format {
+  -webkit-column-width: 350px;
+  -moz-column-width: 350px;
+  -ms-column-width: 350px;
+  column-width: 350px
+}
+
+.navbar-margin {
+  padding-left: 14px;
+  margin-right:-14px;
+  margin-left: -28px;
+}
+
+
+
+/* UNUSED CSS CODE */
+/* Possibly Usefull to reference */
+/*
+
+      .checkbox-format {
+         -webkit-column-width: 350px;
+         -moz-column-width: 350px;
+         column-width: 350px;
+      }
+
+      .input-format {
+         background-color: #dddddd;
+         border: 1px solid #dddddd;
+         border-radius: 12px;
+         padding:1px 15px 10px 10px;
+      }
+
+      .output-format {
+         border: 5px solid #dddddd;
+         border-radius: 12px;
+         padding:1px 15px 15px 20px;
+      }
+
+      .wrapper {
+        background:#EFEFEF;
+        box-shadow: 1px 1px 10px #999;
+        margin: auto;
+        text-align: center;
+        position: relative;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        margin-bottom: 20px !important;
+        width: 800px;
+        padding-top: 5px;
+        }
+
+      .scrolls {
+        overflow-x: scroll;
+        overflow-y: hidden;
+        height: 80px;
+        white-space:nowrap
+        }
+
+      .btn-default{
+         color: #333;
+         background-color: #eeeeee;
+         border-color: #ccc;
+      }
+
+      .form-control{
+         color: #333;
+         background-color: #eeeeee;
+         border-color: #ccc;
+      }
+
+      h1 {
+         font-family: Helvetica;
+         font-weight: 500;
+         line-height: 1.1;
+      }
+
+
+
+
+*/

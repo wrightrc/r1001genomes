@@ -11,74 +11,6 @@ library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
 library(shinyBS)
-library(dplyr)
-
-CSSCode <- tags$head(tags$style(
-   HTML("
-      .checkbox-format {
-         -webkit-column-width: 350px;
-         -moz-column-width: 350px;
-         column-width: 350px;
-      }
-
-      .input-format {
-         background-color: #dddddd;
-         border: 1px solid #dddddd;
-         border-radius: 12px;
-         padding:1px 15px 10px 10px;
-      }
-
-      .output-format {
-         border: 5px solid #dddddd;
-         border-radius: 12px;
-         padding:1px 15px 15px 20px;
-      }
-
-      .wrapper {
-        background:#EFEFEF;
-        box-shadow: 1px 1px 10px #999;
-        margin: auto;
-        text-align: center;
-        position: relative;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        margin-bottom: 20px !important;
-        width: 800px;
-        padding-top: 5px;
-        }
-
-      .scrolls {
-        overflow-x: scroll;
-        overflow-y: hidden;
-        height: 80px;
-        white-space:nowrap
-        }
-
-      .btn-default{
-         color: #333;
-         background-color: #eeeeee;
-         border-color: #ccc;
-      }
-
-      .form-control{
-         color: #333;
-         background-color: #eeeeee;
-         border-color: #ccc;
-      }
-
-      h1 {
-         font-family: Helvetica;
-         font-weight: 500;
-         line-height: 1.1;
-      }
-
-
-
-   ")
-
-))
-
 
 filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_GT", "REF",
                        "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
@@ -86,22 +18,14 @@ filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_G
 
 filterTab.numericCols <- c("Indiv", "POS", "Codon_Number", "AC", "Diversity")
 
-
 ui <- function(request){ fluidPage(
   theme = shinytheme(theme = "flatly"),
+#### Header ####
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "green_theme.css"),
-    tags$style(HTML("
-      .checkbox-format {
-         -webkit-column-width: 350px;
-         -moz-column-width: 350px;
-         column-width: 350px;
-      }
-   "))
-
+    # Custom CSS code
+    tags$link(rel = "stylesheet", type = "text/css", href = "simple_blue_theme.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "general.css")
   ),
-  #### Header ####
-
   titlePanel(
     tags$div(class= "title-panel",
              "Arabidopsis Natural Variation Webtool"
@@ -158,7 +82,7 @@ ui <- function(request){ fluidPage(
 
 
   tags$br(),
-  tags$div(style = "padding-left: 14px; margin-right:-14px; margin-left: -28px;",navbarPage(title = "TABS:",
+  tags$div(class="navbar-margin",navbarPage(title="TABS:",
 
     tabPanel("SNP Stats",
              ## Tab 1 ###############################################################
