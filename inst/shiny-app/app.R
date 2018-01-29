@@ -220,17 +220,17 @@ ui <- function(request){ fluidPage(
     tabPanel("SNP Mapping",
              tags$br(),
              tags$div(class="input-format",
-                      tags$h3("Select Genes and Filter Diversity Parameter"),
-                      tags$h5("Select one or more transcript IDs below and use the slider to select a minimum sitewise nucleotide diversity"),
-                      # textInput(inputId="tab3.Gene", label=NULL,
-                      #           value="AT1G80490"),
-                      uiOutput("tab3.selectGene"),
-                      # actionButton(inputId="tab3.Submit", label="Submit"),
-                      sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
-                                  min=-4, max=0, value=-2, step=0.05),
-                      radioButtons("tab3.SNPtype", "Type of SNP to mark",
-                                   choices=c("All", "Coding", "Missense"))
-                      #verbatimTextOutput("tab3.debug")
+                 tags$h3("Select Genes and Filter Diversity Parameter"),
+                 tags$h5("Select one or more transcript IDs below and use the slider to select a minimum sitewise nucleotide diversity"),
+                 # textInput(inputId="tab3.Gene", label=NULL,
+                 #           value="AT1G80490"),
+                 uiOutput("tab3.selectGene"),
+                 # actionButton(inputId="tab3.Submit", label="Submit"),
+                 sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
+                             min=-4, max=0, value=c(-1,-3), step=0.05),
+                 radioButtons("tab3.SNPtype", "Type of SNP to mark",
+                              choices=c("All", "Coding", "Missense"))
+                 #verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
