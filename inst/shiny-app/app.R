@@ -347,14 +347,14 @@ ui <- function(request){ fluidPage(
              tags$div(class="input-format",
                       tags$h3("Select Genes and Type"),
                       tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
-                      uiOutput("tab5.selectGene")),
+                      uiOutput("tab5.selectGene")
+                      ),
              tags$br(),
-             tags$hr(),
              tags$div(class = "output-format",
                       tags$h3("Sequence Alignment"),
                       tags$h5("Click and drag to pan. The x-axis is the position within the alignment. Hover over the alignment to see details. 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above. Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
                               tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER")),
-                      plotlyOutput('tab5.aln_plot', height = "auto"),
+                      plotOutput('tab5.aln_plot'),
                       # verbatimTextOutput("event")
                       tags$br())#,
              #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
@@ -880,13 +880,13 @@ server <- function(input, output, session){
 #### tab5.selectGene ####
   output$tab5.selectGene <- renderUI({
     tagList(
-      checkboxGroupInput(inputId = "tab5.transcript_ID",
+      checkboxGroupInput("tab5.transcript_ID",
                          label=NULL, choices=all.GeneChoices()),
+      actionButton(inputId="tab5.Submit", label = "Submit"),
       radioButtons(inputId = "tab5.type",
                    label = "Alignment type:",
                    choices = c("DNA", "AA"),
-                   selected = "AA", inline = TRUE),
-      actionButton(inputId="tab5.Submit", label = "Submit")
+                   selected = "AA", inline = TRUE)
     )
   })
 #### tab5.Genes ####
@@ -895,7 +895,7 @@ server <- function(input, output, session){
     return(input$tab5.transcript_ID)
   })
 #### debug ####
-  output$debug <- renderPrint({tab5.Genes()})
+  output$tab5.debug <- renderPrint({aln_df()})
 #### type ####
   type <- reactive({
     return(switch(input$tab5.type, "AA" = 2, "DNA" = 1))
@@ -976,7 +976,7 @@ server <- function(input, output, session){
   #   return(chunks.anno.domain)
   # })
 #### tab5.aln_plot ####
-  output$tab5.aln_plot <- renderPlot({
+  output$tab5.aln_plot <- renderPlot(expr = {
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants)) +
@@ -987,30 +987,25 @@ server <- function(input, output, session){
       #           ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
       geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
-      geom_text(aes(label=letter), alpha= 1) +
+      geom_text(aes(label=letter), alpha= 1, family = "Courier") +
       scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
       scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       # expand increases distance from axis
       xlab("") +
       ylab("") +
-      #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
-      theme_logo(base_family = "Courier") +
+      theme_logo(base_family = "Helvetica") +
       theme(panel.grid = element_blank(), panel.grid.minor = element_blank()) +
       facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
       theme(strip.background = element_blank(),
             strip.text.x = element_blank())
     return(p)
-    # ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
-    #          height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
-    #   # Total height = 125 = N*50 + 25
-    #   # 125 = N*30 + 65 better still a bit long with 6 sequences
-    #   # 125 = N*20 + 85 looks really good but maybe a bit
-    #   config(collaborate = FALSE) %>%
-    #   layout(margin = list(l = 100, r = 0, t = 20, b = 0),
-    #          legend = list(yanchor = "bottom", y = -1, orientation = "h"),
-    #          dragmode = "pan", yaxis = list(fixedrange = TRUE),
-    #          xaxis = list(range = c(0,70)))
-  })
+   },
+   height = 600, res = 100
+     # if(is.null(input$tab5.transcript_ID)) "400px"
+     #           else
+     #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
+     #                     "px")}
+   )
 }
 
 enableBookmarking(store = "url")
