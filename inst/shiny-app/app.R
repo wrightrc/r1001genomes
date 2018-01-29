@@ -575,6 +575,13 @@ server <- function(input, output){
   tab2.tableData <- eventReactive(input$tab2.Submit, {
     tab2data <- all.VCFList()[[input$tab2.transcript_ID]]
     coding_variants <- getCodingDiv(tab2data)
+    # order the rows so missense and synonymous appear first
+    coding_variants <- rbind(coding_variants[coding_variants$Effect == "synonymous_variant", ],
+                             coding_variants[coding_variants$Effect == "missense_variant", ],
+                             coding_variants[!(coding_variants$Effect %in% c("missense_variant","synonymous_variant")), ]
+                             )
+    # make Effect column a factor, preserving the order above
+    coding_variants$Effect <- factor(coding_variants$Effect, levels=unique(coding_variants$Effect))
     return(coding_variants)
   })
 #### Diversity_Table ####
