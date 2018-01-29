@@ -549,12 +549,25 @@ plotCodingDiv <- function(uniqueCodingVars){
 #'
 #' @return
 #' @export
+#' @import dplyr
 #'
 #' @examples
-addAccDetails <- function(data, ecotypeColumn="Indiv") {
+addAccDetails <- function(tidyVCF, allAccs=FALSE) {
   # add ecotype details (location, collector, sequencer) to any df containing an "Indiv" column
   ecoIDs <- r1001genomes::accessions
-  return(merge(data, ecoIDs, by.x=ecotypeColumn, by.y="Ecotype.ID", all.y=TRUE))
+  data <- tidyVCF
+  data$Indiv <- as.numeric(data$Indiv)
+  if (allAccs) {
+    output <- full_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+  } else{
+    output <- left_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+  }
+
+  attr(output, "transcript_ID") <- attr(data, "transcript_ID")
+  attr(output, "tair_locus") <- attr(data, "tair_locus")
+  attr(output, "tair_symbol") <- attr(data, "tair_symbol")
+
+  return(output)
 }
 
 #' Label accessions with the variants they contain

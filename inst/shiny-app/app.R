@@ -10,6 +10,7 @@ library(msaR)
 library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
+library(dplyr)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -78,7 +79,7 @@ CSSCode <- tags$head(tags$style(
 ))
 
 
-filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_GT", "REF",
+filterTab.allCols <- c("Gene_Name", ".id", "Indiv","Name", "CS.Number", "POS", "Codon_Number", "gt_GT", "REF",
                        "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
                        "Codon_Change", "Amino_Acid_Change", "Diversity")
 
@@ -465,6 +466,7 @@ server <- function(input, output){
                      setProgress(value=0.9, message=NULL,
                                  detail="Calculating nucleotide diversity")
                      output <- llply(output, Nucleotide_diversity)
+                     output <- llply(output, addAccDetails)
                      setProgress(value=1)
     })
     return(output)
@@ -695,7 +697,7 @@ server <- function(input, output){
     # combine mutations to single row (this is slow)
     data <- ddply(data, "Indiv", summarise, SNPs=paste(SNPs, collapse=","))
     # add back ecotype details
-    data <- addAccDetails(data)
+    data <- addAccDetails(data, allAccs=TRUE)
     return(data)
   })
 #### tab3.map ####
