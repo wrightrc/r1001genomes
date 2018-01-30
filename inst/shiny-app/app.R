@@ -347,7 +347,7 @@ ui <- function(request){ fluidPage(
                       tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), "The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel."), "'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
                       tags$div(
                         style = "position:relative",
-                      plotOutput('tab5.aln_plot', hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce")),
+                      uiOutput("plot.ui"),
                       uiOutput("aln_plot_hover"))),
 
                       # verbatimTextOutput("event")
@@ -972,6 +972,15 @@ server <- function(input, output, session){
   #   })
   #   return(chunks.anno.domain)
   # })
+#### aln_plot_height ####
+  aln_plot_height <- reactive({
+      N <- length(unique(aln_df()$seq_name))
+      chunks <- length(unique(aln_df()$chunk))
+      height <- 262 + 1.14*N + 19*chunks + 10*N*chunks
+      return(ceiling(height))
+    }
+  )
+
 #### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlot(expr = {
     p <-
@@ -995,14 +1004,19 @@ server <- function(input, output, session){
       facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
       theme(strip.background = element_blank(),
             strip.text.x = element_blank())
-    return(p)
-   },
-   height = 600, res = 100
+    p},
+    res = 100)
      # if(is.null(input$tab5.transcript_ID)) "400px"
      #           else
      #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
      #                     "px")}
-   )
+#### plot.ui ####
+  output$plot.ui <- renderUI({
+    plotOutput('tab5.aln_plot', height = aln_plot_height(),
+               hover = hoverOpts("plot_hover", delay = 100,
+                                 delayType = "debounce"))
+  })
+
   #### aln_plot_hover ####
   output$aln_plot_hover <- renderUI({
     hover <- input$plot_hover
