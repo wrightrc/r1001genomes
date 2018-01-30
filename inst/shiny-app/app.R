@@ -11,8 +11,9 @@ library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
 library(shinyBS)
+library(dplyr)
 
-filterTab.allCols <- c("Gene_Name", ".id", "Indiv", "POS", "Codon_Number", "gt_GT", "REF",
+filterTab.allCols <- c("Gene_Name", ".id", "Indiv","Name", "CS.Number", "POS", "Codon_Number", "gt_GT", "REF",
                        "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
                        "Codon_Change", "Amino_Acid_Change", "Diversity")
 
@@ -162,7 +163,7 @@ ui <- function(request){ fluidPage(
                              min=-4, max=0, value=c(-3, -1), step=0.05),
                  radioButtons("tab3.SNPtype", "Type of SNP to mark",
                               choices=c("All", "Coding", "Missense"))
-                 #verbatimTextOutput("tab3.debug")
+                 # verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
@@ -414,6 +415,7 @@ server <- function(input, output, session){
                      setProgress(value=0.9, message=NULL,
                                  detail="Calculating nucleotide diversity")
                      output <- llply(output, Nucleotide_diversity)
+                     output <- llply(output, addAccDetails)
                      setProgress(value=1)
     })
     return(output)
@@ -532,6 +534,13 @@ server <- function(input, output, session){
   tab2.tableData <- eventReactive(input$tab2.Submit, {
     tab2data <- all.VCFList()[[input$tab2.transcript_ID]]
     coding_variants <- getCodingDiv(tab2data)
+    # order the rows so missense and synonymous appear first
+    coding_variants <- rbind(coding_variants[coding_variants$Effect == "synonymous_variant", ],
+                             coding_variants[coding_variants$Effect == "missense_variant", ],
+                             coding_variants[!(coding_variants$Effect %in% c("missense_variant","synonymous_variant")), ]
+                             )
+    # make Effect column a factor, preserving the order above
+    coding_variants$Effect <- factor(coding_variants$Effect, levels=unique(coding_variants$Effect))
     return(coding_variants)
   })
 #### Diversity_Table ####
@@ -614,8 +623,7 @@ server <- function(input, output, session){
 #### tab3.debug ####
   output$tab3.debug <- renderPrint({
     # temporary debug output
-      print(paste("last button =", tab1.buttons$last_button))
-      print(paste("total presses =", tab1.buttons$total_presses))
+      print(input$tab3.filter_value)
   })
 #### tab3.filteredByDiv ####
   tab3.filteredByDiv <- reactive({
@@ -660,7 +668,7 @@ server <- function(input, output, session){
     # combine mutations to single row (this is slow)
     data <- ddply(data, "Indiv", summarise, SNPs=paste(SNPs, collapse=","))
     # add back ecotype details
-    data <- addAccDetails(data)
+    data <- addAccDetails(data, allAccs=TRUE)
     return(data)
   })
 #### tab3.map ####
