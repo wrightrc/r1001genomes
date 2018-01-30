@@ -152,17 +152,17 @@ ui <- function(request){ fluidPage(
     tabPanel("SNP Mapping",
              #tags$br(),
              tags$div(class="input-format",
-                      tags$h3("Select Genes and Filter Diversity Parameter"),
-                      tags$h5("Select one or more transcript IDs below and use the slider to select a minimum sitewise nucleotide diversity"),
-                      # textInput(inputId="tab3.Gene", label=NULL,
-                      #           value="AT1G80490"),
-                      uiOutput("tab3.selectGene"),
-                      # actionButton(inputId="tab3.Submit", label="Submit"),
-                      sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
-                                  min=-4, max=0, value=-2, step=0.05),
-                      radioButtons("tab3.SNPtype", "Type of SNP to mark",
-                                   choices=c("All", "Coding", "Missense"))
-                      #verbatimTextOutput("tab3.debug")
+                 tags$h3("Select Genes and Filter Diversity Parameter"),
+                 tags$h5("Select one or more transcript IDs below and use the slider to select a minimum sitewise nucleotide diversity"),
+                 # textInput(inputId="tab3.Gene", label=NULL,
+                 #           value="AT1G80490"),
+                 uiOutput("tab3.selectGene"),
+                 # actionButton(inputId="tab3.Submit", label="Submit"),
+                 sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
+                             min=-4, max=0, value=c(-3, -1), step=0.05),
+                 radioButtons("tab3.SNPtype", "Type of SNP to mark",
+                              choices=c("All", "Coding", "Missense"))
+                 #verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
@@ -276,11 +276,14 @@ ui <- function(request){ fluidPage(
              tags$br(),
              tags$div(class = "output-format",
                       tags$h3("Sequence Alignment"),
-                      tags$h5("Click and drag to pan. The x-axis is the position within the alignment. Hover over the alignment to see details. 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above. Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
-                              tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER")),
-                      plotOutput('tab5.aln_plot'),
+                      tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), "The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel."), "'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
+                      tags$div(
+                        style = "position:relative",
+                      plotOutput('tab5.aln_plot', hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce")),
+                      uiOutput("aln_plot_hover"))),
+
                       # verbatimTextOutput("event")
-                      tags$br())#,
+                      tags$br()#,
              #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
              #msaROutput(outputId = "tab5.alignment"), height = "auto")
              # Remove DECIPHER BrowseSeqs
@@ -290,6 +293,7 @@ ui <- function(request){ fluidPage(
              #            htmlOutput("tab5.BrowseSeqs", inline = TRUE)
              #   )
              # ),
+
     ),
     tabPanel("About",
              ## About Tab ######################################################
@@ -620,7 +624,8 @@ server <- function(input, output, session){
     # filter by effect type (all, coding, or missense)
     data2 <- data[data$Effect %in% tab3.EffectValues(), ]
     # filter on positions with diversity greater than or equal to the 10^slider value
-    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value), "POS"])
+    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value[1] &
+                                data2$Diversity <= 10^input$tab3.filter_value[2]), "POS"])
     keydata <- data[data$POS %in% keyPOS, ]
     return(keydata)
   })
@@ -930,7 +935,42 @@ server <- function(input, output, session){
      #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
      #                     "px")}
    )
+  #### aln_plot_hover ####
+  output$aln_plot_hover <- renderUI({
+    hover <- input$plot_hover
+    point <- nearPoints(aln_df(), coordinfo = hover, xvar = "aln_pos",
+                        yvar = "seq_name", panelvar1 = "chunk", threshold = 8,
+                        maxpoints = 1, addDist = TRUE)
+    if (nrow(point) == 0) return(NULL)
+
+    # calculate point position INSIDE the image as percent of total dimensions
+    # from left (horizontal) and from top (vertical)
+    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+
+    # calculate distance from left and bottom side of the picture in pixels
+    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+    top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    style <- paste0("position:absolute; z-index:100;
+                    background-color: rgba(245, 245, 245, 0.85); ",
+                    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+
+    # actual tooltip created as wellPanel
+    wellPanel(
+      style = style,
+      p(HTML(paste0("<b>seq: </b>", point$seq_name, "<br/>",
+                    "<b>seq_pos: </b>", point$seq_pos, "<br/>",
+                    "<b>variants: </b>", point$variants)))
+    )
+  })
 }
+
+
+
 
 enableBookmarking(store = "url")
 shinyApp(ui = ui, server = server)
