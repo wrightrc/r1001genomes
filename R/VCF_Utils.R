@@ -393,18 +393,41 @@ calcDiversity <- function (GTfreq){
   result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
 
+#' return a count of accessions with undetermined genotype or 0 depending on if there are 0|0 genotpyes present
+#'
+#' @param groupFreq a group GT_Frequencies tibble for a single position
+#'
+#' @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
+#' @export
+#'
+#' @examples
+approxRefGt <- function(groupFreq) {
+  if ("0|0" %in% groupFreq$gt_GT){  # if 0
+    return(0)
+  } else {
+    return(1135 - sum(groupFreq$freq)) # else return number of accessions with undetermined genotypes
+  }
+}
+
+
+
 #' Calculate nucleotide diversity for each position in the coding sequence
 #'
 #' @param tidyVCF the $dat field of a tidyVCF object
+#' @param approxMissingRefGt logical, if true, assume all undetermined geneotypes are 0|0 in positions where no 0|0s are present
 #'
 #' @return input with Diversity field appended
 #' @export
 #'
 #' @examples
-Nucleotide_diversity <- function (tidyVCF){
+Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
   data <- unique(tidyVCF[, c("POS", "gt_GT", "Indiv")])
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
+  if (approxMissingRefGt){
+    # add a row at each position, with frequency determined by the approxRefGt() function
+    GT_Frequencies <- do(GT_Frequencies, add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=approxRefGt(.)))
+  }
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
 
