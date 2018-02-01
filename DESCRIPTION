@@ -28,8 +28,9 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     Biostrings,
     magrittr,
     DECIPHER,
-    rlang
-Suggests: knitr, ggrepel, msaR, plotly
+    rlang,
+    shinyBS
+Suggests: knitr, ggrepel, 
 License: Artistic-2.0
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
