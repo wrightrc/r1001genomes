@@ -10,6 +10,7 @@ library(msaR)
 library(DECIPHER)
 library(plotly)
 library(ggseqlogo)
+library(shinyBS)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -96,8 +97,7 @@ ui <- function(request){ fluidPage(
       }
     ")
   )),
-
-
+  #### Header ####
   #CSSCode,
   headerPanel("Arabidopsis Natural Variation Webtool"),
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
@@ -105,106 +105,119 @@ ui <- function(request){ fluidPage(
   tags$h5('style'="color:red", "This app is currently a work in progress."),
   # themeSelector(),
   tags$br(),
-  tags$div(class="input-format",
+  bsCollapse(id = "collapse 1", multiple=TRUE, open=c("Gene Select", "Annotation Files"),
+    bsCollapsePanel("Gene Select",
+                    fluidRow(
+                      column(5,
+                             tags$h3("Select Genes"),
+                             tags$h5("Type a list of gene loci in the box below, separated by commas. "),
+                             textAreaInput(inputId = "gene_ids", label = NULL,
+                                           width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
+                             checkboxInput("STATS_quick_demo", label="Quick Demo"),
+                             actionButton(inputId="STATS_submit", label = "Submit")
+
+                      ),
+                      column(2, align="center", tags$h3("OR")),
+                      column(5,
+                             tags$h3("Upload File"),
+                             tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                                     The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
+                             fileInput("genesFile", label=NULL),
+                             actionButton(inputId="file_submit", label = "Submit")
+
+                             )
+                    )
+    ),
+    bsCollapsePanel("Annotation Files",
       fluidRow(
-        column(6,
-           tags$h3("Select Genes"),
-           tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-           textAreaInput(inputId = "gene_ids", label = NULL,
-                         width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
-           checkboxInput("STATS_quick_demo", label="Quick Demo"),
-           actionButton(inputId="STATS_submit", label = "Submit")
-
+        column(5,
+            tags$h3("Upload an annotation file"),
+            tags$h5("Browse to a '.csv' file containing a 'gene' field matching the tair loci or gene symbols of your genes of interest.
+                    Or create a new annotation file by downloading the empty template file and adding annotations to it.")
         ),
-        column(6,
-           tags$h3("OR Upload File"),
-           tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
-                   The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
-           fileInput("genesFile", label=NULL),
-           actionButton(inputId="file_submit", label = "Submit")
-
+        column(4,
+               fileInput("annoFile", label="Upload Annotation File:"),
+               tags$h5(tags$strong("Download Empty Annotation File Template:")),
+               downloadButton("annoTemplateDownload",label="Download Template")
+        ),
+        column(3,
+               tags$h5(tags$strong("Submit Uploaded Annotation File:")),
+               actionButton(inputId="annoSubmit", label = "Submit")
         )
-      ),
-      tags$br()
+      )
+    )
+
   ),
+
+
   tags$br(),
   tabsetPanel(
     tabPanel("SNP Stats",
-        ## Tab 1 ###############################################################
-      tags$div(class="output-format",
-               tags$h3("Gene Information"),
-               tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
-               downloadButton("tab1.downloadGeneInfo","Download Content of Table Below"),
-               DT::dataTableOutput("tab1.genes_table")
-
-
-      ),
-      tags$br(),
-      tags$div(class="output-format",
-      tags$h3("Summary of Sequence Diversity"),
-      downloadButton("tab1.downloadStats","Download Content of Tables Below"),
-          tags$h4("Total Polymorphism Counts"),
-          HTML("<h5>
+             ## Tab 1 ###############################################################
+             tags$div(class="output-format",
+                      tags$h3("Gene Information"),
+                      tags$h5("This table provides details on the gene(s) input above, including transcript IDs and chromosomal locations."),
+                      downloadButton("tab1.downloadGeneInfo","Download Content of Table Below"),
+                      DT::dataTableOutput("tab1.genes_table")
+             ),
+             tags$br(),
+             tags$div(class="output-format",
+                      tags$h3("Summary of Sequence Diversity"),
+                      downloadButton("tab1.downloadStats","Download Content of Tables Below"),
+                      tags$h4("Total Polymorphism Counts"),
+                      HTML("<h5>
                    This table provides counts of the total, non-unique polymorphisms present in the given genes by gene structure. These numbers can be quite high if the reference (Col-0) has a minor allele. \"coding_total\" is the sum of missense, nonsense and synonymous variants.
                 </h5>"),
-          DT::dataTableOutput("tab1.SNPcounts"),
-          tags$hr(),
-          tags$h4("Unique Allele Counts"),
-          HTML("<h5>
+                      DT::dataTableOutput("tab1.SNPcounts"),
+                      tags$hr(),
+                      tags$h4("Unique Allele Counts"),
+                      HTML("<h5>
               This table provides counts of unique alleles by gene structure.
                </h5>"),
-          DT::dataTableOutput("tab1.SNPcountsUnique"),
-          tags$hr(),
-          tags$h4("Nucleotide Diversity Statistics"),
-          HTML("<h5>
+                      DT::dataTableOutput("tab1.SNPcountsUnique"),
+                      tags$hr(),
+                      tags$h4("Nucleotide Diversity Statistics"),
+                      HTML("<h5>
                This table provides for each given gene the nucleotide diversity as Nei and Li's <i>&pi;</i> (the average number of nucleotide differences per site between all possible pairs of sequence) at synonymous (<i>&pi;<sub>S</sub></i>) and nonsynonymous (<i>&pi;<sub>N</sub></i>) sites.
                 </br>
                In the future we plan to add
                Fixation index (<i>F<sub>ST</sub></i>),
                Tajima's <i>D</i> and
                Watterson's <i>&theta;</i> to this table."),
-          DT::dataTableOutput("tab1.Diversity_table")
-      )
+                      DT::dataTableOutput("tab1.Diversity_table")
+             )
     ),
-
+    ## Tab 2 - Diversity Plot #####################################################
     tabPanel("Diversity Plot",
-## Tab 2 - Diversity Plot #####################################################
-      tags$br(),
-      tags$div(class="input-format",
-               tags$h3("Select a Gene"),
-               tags$h5("Select a transcript ID in the box below"),
-               uiOutput("tab2.selectGene")
-               # textInput(inputId = "plotGene", label =NULL,
-               #           value = "AT1G80490"),
-               #actionButton(inputId="tab2.Submit", label = "Submit")
-      ),
-
-      tags$hr(),
-      tags$div(class="output-format",
-          tags$h3("Selected Gene Information"),
-          DT::dataTableOutput("tab2.gene_table")
-      ),
-      tags$br(),
-
-      tags$div(class="output-format",
-          tags$h3("Plot of Nucleotide Diversity Statistic by Codon"),
-          tags$h5("To see details on specific points, click and drag to create a box selecting points."),
-          plotOutput("diversityPlot", brush="plot_brush", click="plot_click", height = 400),
-          verbatimTextOutput("info")
-      ),
-      tags$br(),
-      tags$div(class="output-format",
-
-          tags$h3("Diversity Plot Data"),
-          tags$h5("This table provides the raw data from the plot. \"POS\" is the chromosomal position of the SNP,
+             tags$br(),
+             tags$div(class="input-format",
+                      tags$h3("Select a Gene"),
+                      tags$h5("Select a transcript ID in the box below"),
+                      uiOutput("tab2.selectGene")
+             ),
+             tags$hr(),
+             tags$div(class="output-format",
+                      tags$h3("Selected Gene Information"),
+                      DT::dataTableOutput("tab2.gene_table")
+             ),
+             tags$br(),
+             tags$div(class="output-format",
+                      tags$h3("Plot of Nucleotide Diversity Statistic by Codon"),
+                      tags$h5("To see details on specific points, click and drag to create a box selecting points."),
+                      plotOutput("diversityPlot", brush="plot_brush", click="plot_click", height = 400),
+                      verbatimTextOutput("info")
+             ),
+             tags$br(),
+             tags$div(class="output-format",
+                      tags$h3("Diversity Plot Data"),
+                      tags$h5("This table provides the raw data from the plot. \"POS\" is the chromosomal position of the SNP,
                   the Amino_Acid_Change field provides both the amino acid as well as the base change"),
-          downloadButton("tab2.downloadSNPData","Download Content of Table Below"),
-          DT::dataTableOutput("Diversity_Table")
-      )
+                      downloadButton("tab2.downloadSNPData","Download Content of Table Below"),
+                      DT::dataTableOutput("Diversity_Table")
+             )
     ),
-
+    ## Tab 3  - SNP Mapping #######################################################
     tabPanel("SNP Mapping",
-## Tab 3  - SNP Mapping #######################################################
              tags$br(),
              tags$div(class="input-format",
                  tags$h3("Select Genes and Filter Diversity Parameter"),
@@ -214,33 +227,30 @@ ui <- function(request){ fluidPage(
                  uiOutput("tab3.selectGene"),
                  # actionButton(inputId="tab3.Submit", label="Submit"),
                  sliderInput(inputId="tab3.filter_value", label="Log Nucleotide diversity filter limit",
-                             min=-4, max=0, value=-2, step=0.05),
+                             min=-4, max=0, value=c(-3, -1), step=0.05),
                  radioButtons("tab3.SNPtype", "Type of SNP to mark",
                               choices=c("All", "Coding", "Missense"))
                  #verbatimTextOutput("tab3.debug")
              ),
 
              tags$br(),
-
              uiOutput("tab3.mutation_checkbox"),
-
              tags$hr(),
              tags$div(class="output-format",
-             tags$h3("Accession Map"),
-             tags$h5("Zoom with scroll wheel, click and drag to pan, click on individual point to see details.
+                      tags$h3("Accession Map"),
+                      tags$h5("Zoom with scroll wheel, click and drag to pan, click on individual point to see details.
                      Use the layers pop-out to the lower left of the map to hide or show sets of accessions with the same variant."),
-             leafletOutput("tab3.map", width = "95%")
+                      leafletOutput("tab3.map", width = "95%")
              ),
              tags$br(),
              tags$div(class="output-format",
-                 tags$h3("Map Data"),
-                 downloadButton("tab3.downloadMapData","Download Content of Table Below"),
-                 DT::dataTableOutput("tab3.dataTable")
+                      tags$h3("Map Data"),
+                      downloadButton("tab3.downloadMapData","Download Content of Table Below"),
+                      DT::dataTableOutput("tab3.dataTable")
              )
     ),
-
+    ## Tab 4 #########################################################
     tabPanel("SNP Browser",
-## Tab 4 #########################################################
              tags$br(),
              tags$div(class="input-format",
                       tags$h3("Gene Select"),
@@ -249,66 +259,66 @@ ui <- function(request){ fluidPage(
              ),
              tags$br(),
              tags$div(class="input-format",
-                        tags$h3("Filters"),
-                        tags$h5("NOTE: all filters are combined by a logical AND.
+                      tags$h3("Filters"),
+                      tags$h5("NOTE: all filters are combined by a logical AND.
                                 So for a row to be displayed, it must satisfy the requirements of ALL the filters."),
-                        checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
-  ### Filter 1 ###
-                   wellPanel(fluidRow(
-                     column(2,tags$h4("Filter 1")),
-                     column(3,
-                          selectInput("tab4.filter1.column", label="column select",
-                                      choices=filterTab.allCols)
-                     ),
-                     column(5,
-                          textInput("tab4.filter1.textIn", "values to match")
-                     ),
-                     column(2,
-                          tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
-                     )
-                   )),
-  ### Filter 2 ###
-                   wellPanel(fluidRow(
-                     column(2, tags$h4("Filter 2")),
-                     column(3,
-                            selectInput("tab4.filter2.column", label="column select",
-                                        choices=filterTab.allCols)
-                     ),
-                     column(5,
-                            textInput("tab4.filter2.textIn", "values to match")
-                     ),
-                     column(2,
-                            tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
-                     )
-                   )),
-  ### filter 3 ###
-                   wellPanel(fluidRow(
-                     column(2, tags$h4("Filter 3"),tags$h4("(Numeric)")),
-                     column(3,
-                            selectInput("tab4.filter3.column", label="column select",
-                                        choices=filterTab.numericCols)
-                     ),
-                     column(2, numericInput("tab4.filter3.min", "MIN", NA)),
-                     column(2, numericInput("tab4.filter3.max", "MAX", NA)),
-                     column(3,
-                            checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
-                     )
-                   )),
-  ### Filter 4 ###
-                   wellPanel(fluidRow(
-                     column(2, tags$h4("Filter 4"),tags$h4("(Numeric)")),
-                     column(3,
-                            selectInput("tab4.filter4.column", label="column select",
-                                        choices=filterTab.numericCols)
-                     ),
-                     column(2, numericInput("tab4.filter4.min", "MIN", NA)),
-                     column(2, numericInput("tab4.filter4.max", "MAX", NA)),
-                     column(3,
-                            checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
-                     )
-                   )),
+                      checkboxInput("tab4.filterRef", "hide 0|0 genotypes?", FALSE),
+                      #### Filter 1 ####
+                      wellPanel(fluidRow(
+                        column(2,tags$h4("Filter 1")),
+                        column(3,
+                               selectInput("tab4.filter1.column", label="column select",
+                                           choices=filterTab.allCols)
+                        ),
+                        column(5,
+                               textInput("tab4.filter1.textIn", "values to match")
+                        ),
+                        column(2,
+                               tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                        )
+                      )),
+                      #### Filter 2 ####
+                      wellPanel(fluidRow(
+                        column(2, tags$h4("Filter 2")),
+                        column(3,
+                               selectInput("tab4.filter2.column", label="column select",
+                                           choices=filterTab.allCols)
+                        ),
+                        column(5,
+                               textInput("tab4.filter2.textIn", "values to match")
+                        ),
+                        column(2,
+                               tags$h5("Separate values with a comma followed by a space \n(ie. \"a, b\"). ")
+                        )
+                      )),
+                      #### filter 3 ####
+                      wellPanel(fluidRow(
+                        column(2, tags$h4("Filter 3"),tags$h4("(Numeric)")),
+                        column(3,
+                               selectInput("tab4.filter3.column", label="column select",
+                                           choices=filterTab.numericCols)
+                        ),
+                        column(2, numericInput("tab4.filter3.min", "MIN", NA)),
+                        column(2, numericInput("tab4.filter3.max", "MAX", NA)),
+                        column(3,
+                               checkboxInput("tab4.filter3.missing", "keep rows with missing values?")
+                        )
+                      )),
+                      #### Filter 4 ####
+                      wellPanel(fluidRow(
+                        column(2, tags$h4("Filter 4"),tags$h4("(Numeric)")),
+                        column(3,
+                               selectInput("tab4.filter4.column", label="column select",
+                                           choices=filterTab.numericCols)
+                        ),
+                        column(2, numericInput("tab4.filter4.min", "MIN", NA)),
+                        column(2, numericInput("tab4.filter4.max", "MAX", NA)),
+                        column(3,
+                               checkboxInput("tab4.filter4.missing", "keep rows with missing values?")
+                        )
+                      )),
 
-                   actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
+                      actionButton(inputId="tab4.updateFilter", label = "Apply Filters")
 
              ),
              tags$hr(),
@@ -323,27 +333,27 @@ ui <- function(request){ fluidPage(
 
     ),
 
-## Tab 5 - Alignments #########################################################
+    ## Tab 5 - Alignments #########################################################
     tabPanel("Alignments",
              tags$br(),
              tags$div(class="input-format",
                       tags$h3("Select Genes and Type"),
                       tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
-                      # textInput(inputId="tab3.Gene", label=NULL,
-                      #           value="AT1G80490"),
-                      uiOutput("tab5.selectGene")),
-                      # actionButton(inputId="tab3.Submit", label="Submit"),
+                      uiOutput("tab5.selectGene")
+                      ),
              tags$br(),
-             tags$hr(),
              tags$div(class = "output-format",
                       tags$h3("Sequence Alignment"),
-                      tags$h5("Click and drag to pan. The x-axis is the position within the alignment. Hover over the alignment to see details. 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above. Use the pop-up menu in the upper right for zoom and other plotly functionalities. Made with",
-                              tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER")),
-               plotlyOutput('tab5.aln_plot', height = "auto"),
-              # verbatimTextOutput("event")
-              tags$br(),
-              tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
-               msaROutput(outputId = "tab5.alignment"), height = "auto")
+                      tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), "The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel."), "'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
+                      tags$div(
+                        style = "position:relative",
+                      uiOutput("plot.ui"),
+                      uiOutput("aln_plot_hover"))),
+
+                      # verbatimTextOutput("event")
+                      tags$br()#,
+             #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
+             #msaROutput(outputId = "tab5.alignment"), height = "auto")
              # Remove DECIPHER BrowseSeqs
              # but perhaps the side scrolling div will come in handy again
              # tags$div(class = "wrapper",
@@ -351,7 +361,8 @@ ui <- function(request){ fluidPage(
              #            htmlOutput("tab5.BrowseSeqs", inline = TRUE)
              #   )
              # ),
-          ),
+
+    ),
     tabPanel("About",
              ## About Tab ######################################################
              tags$br(),
@@ -396,12 +407,13 @@ parseFilterText <- function (textIn) {
 
 
 
-server <- function(input, output){
+server <- function(input, output, session){
 
-  ##   _________
-  ##  /  tab1   \
-  ##             --------------------------------------------------
-  ## Tab 1 ####################
+  ##
+  ##  ------------------------------------------------------------------------
+  ##
+  ##  INPUT AREA #############
+
 
 #### tab1.buttons ####
   tab1.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
@@ -446,8 +458,13 @@ server <- function(input, output){
     names(output) <- displayNames
     return(output)
   })
-#### tab1.genes_table ####
-  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
+#### Annotation Template Download ####
+  output$annoTemplateDownload <- downloadHandler(
+    filename="annotations_template.csv",
+    content = function(file) {
+      file.copy("annotations_template.csv", file)
+    }
+  )
 #### all.VCFList ####
   all.VCFList <- reactive({
     if(isolate(input$STATS_quick_demo) & (tab1.buttons$last_button == "STATS_submit")) {
@@ -469,6 +486,14 @@ server <- function(input, output){
     })
     return(output)
   })
+
+  ##   _________
+  ##  /  tab1   \
+  ##             --------------------------------------------------
+  ## Tab 1 ####################
+
+#### tab1.genes_table ####
+  output$tab1.genes_table <- DT::renderDataTable(DT::datatable(all.Genes()[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", "Chr", "transcript \nstart", "transcript \nend", "transcript \nlength"), rownames = FALSE, options=list(paging=FALSE, searching=FALSE)))
 #### tab1.nonUniqueVariants ####
   tab1.nonUniqueVariants <- eventReactive({all.VCFList()},{
     req(isolate(tab1.buttons$last_button)!="none pressed")
@@ -589,14 +614,28 @@ server <- function(input, output){
       write.csv(tab2.tableData(), file, row.names=FALSE)
     }
   )
+
 #### diversityPlot ####
-  output$diversityPlot <- renderPlot(plotCodingDiv(tab2.tableData()))
+  output$diversityPlot <- renderPlot({
+    p <- plotCodingDiv(uniqueCodingVars = tab2.tableData())
+    if(!is.null(input$anno_df)){
+    p <- append_layers(p,
+      geom_rect(data = subset(input$anno_df, gene == tab2.selectGene),
+                mapping = aes(xmin = as.integer(start),
+                              xmax = as.integer(end),
+                              fill = annotation),
+                ymin = -Inf, ymax = Inf, inherit.aes = FALSE),
+      position = "bottom")
+    }
+    return(p)
+  })
     #plot output
 #### info ####
   output$info <- renderPrint({
     brushedPoints(tab2.tableData(), input$plot_brush, "Codon_Number", "Diversity")
   })
 
+#### annotations
 
   ##                            _________
   ##                           /  tab3   \
@@ -653,7 +692,8 @@ server <- function(input, output){
     # filter by effect type (all, coding, or missense)
     data2 <- data[data$Effect %in% tab3.EffectValues(), ]
     # filter on positions with diversity greater than or equal to the 10^slider value
-    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value), "POS"])
+    keyPOS <- unique(data2[which(data2$Diversity >= 10^input$tab3.filter_value[1] &
+                                data2$Diversity <= 10^input$tab3.filter_value[2]), "POS"])
     keydata <- data[data$POS %in% keyPOS, ]
     return(keydata)
   })
@@ -832,16 +872,18 @@ server <- function(input, output){
   ##                                      /   tab5   \
   ## --------------------------------------           ----------------
   ## Tab 5 #########################
-#### tab3.selectGene ####
+
+
+#### tab5.selectGene ####
   output$tab5.selectGene <- renderUI({
     tagList(
-      checkboxGroupInput(inputId = "tab5.transcript_ID",
+      checkboxGroupInput("tab5.transcript_ID",
                          label=NULL, choices=all.GeneChoices()),
+      actionButton(inputId="tab5.Submit", label = "Submit"),
       radioButtons(inputId = "tab5.type",
                    label = "Alignment type:",
                    choices = c("DNA", "AA"),
-                   selected = "AA", inline = TRUE),
-      actionButton(inputId="tab5.Submit", label = "Submit")
+                   selected = "AA", inline = TRUE)
     )
   })
 #### tab5.Genes ####
@@ -850,10 +892,10 @@ server <- function(input, output){
     return(input$tab5.transcript_ID)
   })
 #### debug ####
-  output$debug <- renderPrint({tab5.Genes()})
+  output$tab5.debug <- renderPrint({aln_df()})
 #### type ####
-  output$type <- eventReactive(input$tab5.Submit, {
-    return(input$tab5.type)
+  type <- reactive({
+    return(switch(input$tab5.type, "AA" = 2, "DNA" = 1))
   })
 #### alignment ####
   alignment <- eventReactive(input$tab5.Submit, {
@@ -861,56 +903,156 @@ server <- function(input, output){
     return(alignment)
   })
 #### tab5.alignment ####
-  output$tab5.alignment <- renderMsaR({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    msaR(alignment()[[type+1]], alignmentHeight = 100,
-         colorscheme = {if(type) "taylor" else "nucleotide"})
-    })
+  # output$tab5.alignment <- renderMsaR({
+  #   msaR(alignment()[[type]], alignmentHeight = 100,
+  #        colorscheme = {if(type) "taylor" else "nucleotide"})
+  #   })
 #### tab5.BrowseSeqs ####
-  output$tab5.BrowseSeqs <- reactive({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    file <- BrowseSeqs(alignment()[[type + 1]],
-                       openURL = FALSE)
-    html <- paste(readLines(file), collapse="\n")
-    return(html)
-    })
+  # output$tab5.BrowseSeqs <- reactive({
+  #   file <- BrowseSeqs(alignment()[[type + 1]],
+  #                      openURL = FALSE)
+  #   html <- paste(readLines(file), collapse="\n")
+  #   return(html)
+  #   })
 #### aln_df ####
   aln_df <- reactive({
-    type <- switch(EXPR = input$tab5.type, "DNA" = 0, "AA" = 1)
-    aln_df <- makeAlnDF(alignment()[[type + 1]])
+    aln_df <- makeAlnDF(alignment()[[type()]])
     vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
+    ## chunk up aln_df
+    chunk_width <- 80
+    chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
+    aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num)
+    return(aln_df)
   })
+#### tab5.aln_anno ####
+  # tab5.aln_anno <- reactive({
+  #   ## read in annotation
+  #   anno
+  #   ## subset to domains
+  #   anno.domain
+  #   ## consolidate to aln_pos
+  #   anno.domain
+  #   ## convert annotations to type
+  #   anno.domain
+  #   ## chunk up annotations
+  #   ### make chunks df
+  #   chunks <- data.frame("chunk" = levels(aln_df()$chunk)) %>%
+  #     separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
+  #   chunks$start <- if_else(condition = str_detect(chunks$start, "\\("), true = as.numeric(str_extract(chunks$start, "\\d+")) + 1, false = as.numeric(str_extract(chunks$start, "\\d+")))
+  #   chunks$end <- if_else(condition = str_detect(chunks$end, "\\)"), true = as.numeric(str_extract(chunks$end, "\\d+")) - 1, false = as.numeric(str_extract(chunks$end, "\\d+")))
+  #   ### chunk annotations
+  #   chunks.anno.domain <- adply(anno.domain, 1, function(domain) {
+  #     #check which chunks it spans
+  #     rows <- (domain$start < chunks$start & domain$end > chunks$end) |
+  #       (domain$start < chunks$end & domain$start > chunks$start) |
+  #       (domain$end > chunks$start & domain$end < chunks$end)
+  #     print(rows)
+  #     if(sum(rows) != 0){
+  #       #create copies of the row for each chunk
+  #       new_rows <- domain[rep(1, sum(rows)),]
+  #       new_rows[,c("chunk", "start", "end")] <-
+  #         chunks[rows, c("chunk", "start","end")]
+  #       print(new_rows)
+  #       new_rows[(domain$start < chunks$end & domain$start > chunks$start),
+  #                "start"] <- domain[, "start"]
+  #       new_rows[(domain$end > chunks$start & domain$end < chunks$end),
+  #                "end"] <- domain[, "end"]
+  #       new_rows
+  #     }
+  #     # or if mono-chunk-ular add chunk info
+  #     else{
+  #       domain[,"chunk"] <-
+  #         chunks[which(chunks$start <= domain$start & chunks$end >= domain$end),
+  #                c("chunk")]
+  #       domain
+  #     }
+  #   })
+  #   return(chunks.anno.domain)
+  # })
+#### aln_plot_height ####
+  aln_plot_height <- reactive({
+      N <- length(unique(aln_df()$seq_name))
+      chunks <- length(unique(aln_df()$chunk))
+      height <- 262 + 1.14*N + 19*chunks + 10*N*chunks
+      return(ceiling(height))
+    }
+  )
+
 #### tab5.aln_plot ####
-  output$tab5.aln_plot <- renderPlotly({
+  output$tab5.aln_plot <- renderPlot(expr = {
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants)) +
+      # geom_rect(data = tab5.aln_anno(),
+      #           mapping = aes(xmin = start - 0.5,
+      #                         xmax = end + 0.5,
+      #                         fill = annotation),
+      #           ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
       geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
-      geom_text(aes(label=letter), alpha= 1,
-                check_overlap = TRUE) +
+      geom_text(aes(label=letter), alpha= 1, family = "Courier") +
+      scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
       scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       # expand increases distance from axis
       xlab("") +
       ylab("") +
-      #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
-      theme_logo(base_family = "Courier") +
-      theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
-    ggplotly(p, tooltip = c("seq_name", "seq_pos", "variants"),
-             height = length(unique(aln_df()$seq_name)) * 20 + 110) %>%
-      # Total height = 125 = N*50 + 25
-      # 125 = N*30 + 65 better still a bit long with 6 sequences
-      # 125 = N*20 + 85 looks really good but maybe a bit
-      config(collaborate = FALSE) %>%
-      layout(margin = list(l = 100, r = 0, t = 20, b = 0),
-             legend = list(yanchor = "bottom", y = -1, orientation = "h"),
-             dragmode = "pan", yaxis = list(fixedrange = TRUE),
-             xaxis = list(range = c(0,70)))
+      theme_logo(base_family = "Helvetica") +
+      theme(panel.grid = element_blank(), panel.grid.minor = element_blank()) +
+      facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
+      theme(strip.background = element_blank(),
+            strip.text.x = element_blank())
+    p},
+    res = 100)
+     # if(is.null(input$tab5.transcript_ID)) "400px"
+     #           else
+     #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
+     #                     "px")}
+#### plot.ui ####
+  output$plot.ui <- renderUI({
+    plotOutput('tab5.aln_plot', height = aln_plot_height(),
+               hover = hoverOpts("plot_hover", delay = 100,
+                                 delayType = "debounce"))
+  })
+
+  #### aln_plot_hover ####
+  output$aln_plot_hover <- renderUI({
+    hover <- input$plot_hover
+    point <- nearPoints(aln_df(), coordinfo = hover, xvar = "aln_pos",
+                        yvar = "seq_name", panelvar1 = "chunk", threshold = 8,
+                        maxpoints = 1, addDist = TRUE)
+    if (nrow(point) == 0) return(NULL)
+
+    # calculate point position INSIDE the image as percent of total dimensions
+    # from left (horizontal) and from top (vertical)
+    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+
+    # calculate distance from left and bottom side of the picture in pixels
+    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+    top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    style <- paste0("position:absolute; z-index:100;
+                    background-color: rgba(245, 245, 245, 0.85); ",
+                    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+
+    # actual tooltip created as wellPanel
+    wellPanel(
+      style = style,
+      p(HTML(paste0("<b>seq: </b>", point$seq_name, "<br/>",
+                    "<b>seq_pos: </b>", point$seq_pos, "<br/>",
+                    "<b>variants: </b>", point$variants)))
+    )
   })
 }
+
+
+
 
 enableBookmarking(store = "url")
 shinyApp(ui = ui, server = server)
