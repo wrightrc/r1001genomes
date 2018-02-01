@@ -458,7 +458,13 @@ server <- function(input, output, session){
     names(output) <- displayNames
     return(output)
   })
-#### Annotation Template Download ####
+#### annoFile
+  anno_df <- eventReactive(input$annoSubmit,{
+    anno_df <- readAnnotationFile(input$genesFile$datapath)
+    req(anno_df != FALSE)
+    return(anno_df)
+  })
+#### annoTemplateDownload ####
   output$annoTemplateDownload <- downloadHandler(
     filename="annotations_template.csv",
     content = function(file) {

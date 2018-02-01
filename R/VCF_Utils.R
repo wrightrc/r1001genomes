@@ -773,6 +773,72 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
   return(aln_df)
 }
 
+#' Read an annotation file
+#'
+#' @param filename filename or path to the annotation csv file to be read.
+#' This should by default be a long format csv containing at least columns
+#' named "gene", "annotation", "annotation_type", "position", and
+#' "position_type". "Gene" should match the names of the tracks you wish to
+#' annotate. "Annotation" is a description of the position and may be the start
+#' or end of annotations spanning multiple consecutive positions
+#' (multiposition annotations) (e.g. domain_start), note that the
+#' underscore separator and "start" and "end" are crucial to the processing of
+#' domain annotations and "start" and "end" should not be used in single
+#' position annotations. "Position_type" should be either
+#' "AA" refering to the amino acid position, or "DNA" refering to the coding
+#' sequence.
+#' @param wide is the annotation file a wide format data frame with colums for
+#' the start and end of each domain? Defaults to \code{FALSE}
+#' @param domains create multiposition annotations from annotations containing
+#' "start" and "end"? This will allow shading of the entire domain as opposed
+#' to just marking the start and end positions.
+#'
+#' @return returns an annotation data frame, or if domains = TRUE a list of
+#' data frames with the first "domains" element containing multiposition
+#' annotation and the second "positions" element containing single position
+#' annotations.
+#'
+#' @export
+#' @importFrom magrittr "%>%"
+#' @import dplyr
+#' @import reshape2
+#' @import stringr
+#'
+#' @examples
+readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
+                               gene_info = NULL){
+  anno_df <- read.csv(filename)
+
+  if(!is.null(gene_info)){
+    tair_locus <- dplyr::enquo(tair_locus)
+    tair_symbol <- dplyr::enquo(tair_symbol)
+    gene <- dplyr::enquo(gene)
+    anno_df <- anno_df %>% group_by(gene)
+    if(stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}"))
+    anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
+                                            !!tair_symbol),
+                                     by = c("gene" = "tair_symbol"))
+  }
+  if(wide){
+    anno.domain <- reshape2::melt(data = anno_df,
+                                   id.vars = "gene",
+                                   variable.name = "annotation",
+                              # column name for
+                                   # all of the column names in the wide format
+                                   value.name = "position")
+    # what is the name
+    # of all of the values in the table
+  } else if(domains){
+      anno.domain <- anno_df %>% dplyr::filter(
+        stringr::str_detect(!!annotation, "start|end")) %>%
+        dplyr::separate(col = !!annotation,
+                        into = c("annotation", "bound"), sep = "_") %>%
+        spread(key = !!bound, value = !!position)
+      anno.pos <- anno %>% filter(!str_detect(!!annotation, "start|end"))
+  }
+  return(list(domains = anno.domain, positions = anno.pos))
+}
+
 #' Add alignment positions to an annotation data frame
 #'
 #' @param anno_df
