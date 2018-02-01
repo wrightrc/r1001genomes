@@ -528,6 +528,8 @@ getCodingDiv <- function(data){
 #' @export
 #' @import ggplot2
 #' @import ggthemes
+#' @import dplyr
+#' @importFrom magrittr "%>%"
 #'
 #' @examples
 plotCodingDiv <- function(uniqueCodingVars){
@@ -547,7 +549,8 @@ plotCodingDiv <- function(uniqueCodingVars){
                                          "missense", "frameshift",
                                          "stop gained"))
   # join the color data.frame with coding_vcf
-  uniqueCodingVars <- uniqueCodingVars %>% left_join(effectColor, by = "Effect")
+  uniqueCodingVars <- uniqueCodingVars %>%
+    dplyr::left_join(effectColor, by = "Effect")
   effects <- effectColor$Effect %in% unique(uniqueCodingVars$Effect)
   #plot the diversity
   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
