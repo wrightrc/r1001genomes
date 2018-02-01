@@ -8,7 +8,6 @@ library(knitr)
 library(stringr)
 library(msaR)
 library(DECIPHER)
-library(plotly)
 library(ggseqlogo)
 library(shinyBS)
 
@@ -886,6 +885,9 @@ server <- function(input, output, session){
       checkboxGroupInput("tab5.transcript_ID",
                          label=NULL, choices=all.GeneChoices()),
       actionButton(inputId="tab5.Submit", label = "Submit"),
+      checkboxInput(inputID = "tab5.primary_transcript",
+                         label = NULL, label = "Primary transcript only?",
+                         value = TRUE),
       radioButtons(inputId = "tab5.type",
                    label = "Alignment type:",
                    choices = c("DNA", "AA"),

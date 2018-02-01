@@ -816,11 +816,19 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     tair_locus <- dplyr::enquo(tair_locus)
     tair_symbol <- dplyr::enquo(tair_symbol)
     gene <- dplyr::enquo(gene)
-    anno_df <- anno_df %>% group_by(gene)
-    if(stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}"))
-    anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
-                                            !!tair_symbol),
-                                     by = c("gene" = "tair_symbol"))
+    anno_df <- anno_df %>% group_by(gene) %>%
+      stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}") %>%
+      dplyr::ifelse(yes = {
+        anno_df <- anno_df %>% left_join(select(gene_info,
+                                                !!tair_locus,
+                                                !!tair_symbol),
+                                              by = c("gene" = "tair_locus"))},
+                    no = {
+        anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
+                                                !!tair_symbol),
+                                         by = c("gene" = "tair_symbol"))
+      })
+
   }
   if(wide){
     anno.domain <- reshape2::melt(data = anno_df,
