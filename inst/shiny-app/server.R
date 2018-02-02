@@ -27,6 +27,8 @@ parseFilterText <- function (textIn) {
 }
 
 
+enableBookmarking(store = "url")
+
 server <- function(input, output, session){
 
   ##
@@ -690,10 +692,4 @@ server <- function(input, output, session){
     )
   })
 }
-
-
-
-
-#enableBookmarking(store = "url")
-#shinyApp(ui = ui, server = server)
 
