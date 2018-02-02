@@ -9,6 +9,8 @@ library(stringr)
 library(DECIPHER)
 library(ggseqlogo)
 library(shinyBS)
+library(ggplot2)
+library(dplyr)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -456,7 +458,13 @@ server <- function(input, output, session){
     names(output) <- displayNames
     return(output)
   })
-#### Annotation Template Download ####
+#### annoFile
+  anno_df <- eventReactive(input$annoSubmit,{
+    anno_df <- readAnnotationFile(input$genesFile$datapath)
+    req(anno_df != FALSE)
+    return(anno_df)
+  })
+#### annoTemplateDownload ####
   output$annoTemplateDownload <- downloadHandler(
     filename="annotations_template.csv",
     content = function(file) {
@@ -878,6 +886,9 @@ server <- function(input, output, session){
       checkboxGroupInput("tab5.transcript_ID",
                          label=NULL, choices=all.GeneChoices()),
       actionButton(inputId="tab5.Submit", label = "Submit"),
+      checkboxInput(inputId = "tab5.primary_transcript",
+                         label = "Primary transcripts only?",
+                         value = TRUE),
       radioButtons(inputId = "tab5.type",
                    label = "Alignment type:",
                    choices = c("DNA", "AA"),
@@ -897,7 +908,7 @@ server <- function(input, output, session){
   })
 #### alignment ####
   alignment <- eventReactive(input$tab5.Submit, {
-    alignment <- alignCDS(IDs = tab5.Genes())
+    alignment <- alignCDS(IDs = tab5.Genes(), primary_only = input$tab5.primary_transcript, all = {if(input$tab5.primary_transcript) FALSE else TRUE})
     return(alignment)
   })
 #### tab5.alignment ####
@@ -919,6 +930,10 @@ server <- function(input, output, session){
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
+    aln_df <- left_join(aln_df, dplyr::select(all.Genes(), "tair_locus",
+                                       "tair_symbol", "transcript_ID"),
+                        by = c("seq_name" = "transcript_ID"))
+    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
     ## chunk up aln_df
     chunk_width <- 80
     chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
