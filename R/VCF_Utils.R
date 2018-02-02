@@ -864,12 +864,12 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     anno_df <- anno_df %>% group_by(gene) %>%
       stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}") %>%
       dplyr::ifelse(yes = {
-        anno_df <- anno_df %>% left_join(select(gene_info,
+        anno_df <- anno_df %>% dplyr::left_join(select(gene_info,
                                                 !!tair_locus,
                                                 !!tair_symbol),
                                               by = c("gene" = "tair_locus"))},
                     no = {
-        anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
+        anno_df <- anno_df %>% dplyr::left_join(select(gene_info, !!tair_locus,
                                                 !!tair_symbol),
                                          by = c("gene" = "tair_symbol"))
       })
@@ -885,9 +885,9 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     # what is the name
     # of all of the values in the table
   } else if(domains){
-    annotation <- quo(annotation)
-    bound <- quo(bound)
-    position <- quo(position)
+    annotation <- dplyr::quo(annotation)
+    bound <- dplyr::quo(bound)
+    position <- dplyr::quo(position)
       anno.domain <- anno_df %>% dplyr::filter(
         stringr::str_detect(!!annotation, "start|end")) %>%
         #devtools::use_package("tidyr")
