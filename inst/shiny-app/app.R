@@ -931,7 +931,7 @@ server <- function(input, output, session){
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
-    aln_df <- left_join(aln_df, select(all.Genes(), "tair_locus",
+    aln_df <- left_join(aln_df, dplyr::select(all.Genes(), "tair_locus",
                                        "tair_symbol", "transcript_ID"),
                         by = c("seq_name" = "transcript_ID"))
     aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
