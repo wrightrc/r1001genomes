@@ -3,6 +3,8 @@ ToDo
 Shiny app / Package
 ===============================================
 Little fixes
+- check IAA15 for truncated transcript
+- frameshifts are not showing up on the alignment
 - add color scheme to aln_plot
 - add hoverover to divPlot
 - decrease font of input collapse instructions
