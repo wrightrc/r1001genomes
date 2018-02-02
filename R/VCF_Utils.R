@@ -552,6 +552,7 @@ getCodingDiv <- function(data){
 #' @import ggplot2
 #' @import ggthemes
 #' @import dplyr
+#' @importFrom magrittr "%>%"
 #'
 #' @examples
 plotCodingDiv <- function(uniqueCodingVars){
@@ -571,7 +572,8 @@ plotCodingDiv <- function(uniqueCodingVars){
                                          "missense", "frameshift",
                                          "stop gained"))
   # join the color data.frame with coding_vcf
-  uniqueCodingVars <- uniqueCodingVars %>% left_join(effectColor, by = "Effect")
+  uniqueCodingVars <- uniqueCodingVars %>%
+    dplyr::left_join(effectColor, by = "Effect")
   effects <- effectColor$Effect %in% unique(uniqueCodingVars$Effect)
   #plot the diversity
   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
@@ -676,6 +678,10 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 #' Make an alignment of Coding sequences
 #'
 #' @param IDs a vector of TAIR transcript IDs, e.g. "AT3G26890.1"
+#' @param primary_only TRUE or FALSE should only the primary transcript coding
+#' sequences be aligned?
+#' @param all TRUE or FALSE should the coding sequences of all known transcripts
+#' be aligned
 #'
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
@@ -687,7 +693,7 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
 #' alignment <- alignCDS(IDs)
 #' browseSeqs(alignment[[2]])
-alignCDS <- function(IDs) {
+alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
   #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
   #use_package("GenomicFeatures", "imports")
@@ -696,16 +702,18 @@ alignCDS <- function(IDs) {
   # gr <- rtracklayer::import(system.file("extdata",
   #           "Araport11_GFF3_genes_transposons.201606.gff.gz",
   #           package = "r1001genomes"))
-  gr_sub <-   gr[which(grepl(pattern = paste(
+  gr_sub <- gr[which(grepl(pattern = paste(
     gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
                              x = mcols(gr)$ID)),]
-  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
+  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub, drop.stop.codons = TRUE) # maybe use exclude.stop
   CDSseqs <- GenomicFeatures::extractTranscriptSeqs(Athaliana,
                 GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
   #devtools::use_package("XVector", "imports")
   CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
                           end = Biostrings::nchar(CDSseqs)-3)
-  CDSseqs.xstop
+  if(primary_only) CDSseqs.xstop <- CDSseqs.xstop[grepl(pattern = "\\.1",
+                                                        x = names(CDSseqs.xstop))]
+  if(!all) CDSseqs.xstop <- CDSseqs.xstop[names(CDSseqs.xstop) %in% IDs]
   #devtools::use_package("DECIPHER", "depends")
   # Update to imports once DECIPHER has fixed environment issue
   CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
@@ -808,6 +816,80 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
   aln_df$effects <- gsub(pattern = "_variant", replacement = "",
                           x = aln_df$effects)
   return(aln_df)
+}
+
+#' Read an annotation file
+#'
+#' @param filename filename or path to the annotation csv file to be read.
+#' This should by default be a long format csv containing at least columns
+#' named "gene", "annotation", "annotation_type", "position", and
+#' "position_type". "Gene" should match the names of the tracks you wish to
+#' annotate. "Annotation" is a description of the position and may be the start
+#' or end of annotations spanning multiple consecutive positions
+#' (multiposition annotations) (e.g. domain_start), note that the
+#' underscore separator and "start" and "end" are crucial to the processing of
+#' domain annotations and "start" and "end" should not be used in single
+#' position annotations. "Position_type" should be either
+#' "AA" refering to the amino acid position, or "DNA" refering to the coding
+#' sequence.
+#' @param wide is the annotation file a wide format data frame with colums for
+#' the start and end of each domain? Defaults to \code{FALSE}
+#' @param domains create multiposition annotations from annotations containing
+#' "start" and "end"? This will allow shading of the entire domain as opposed
+#' to just marking the start and end positions.
+#'
+#' @return returns an annotation data frame, or if domains = TRUE a list of
+#' data frames with the first "domains" element containing multiposition
+#' annotation and the second "positions" element containing single position
+#' annotations.
+#'
+#' @export
+#' @importFrom magrittr "%>%"
+#' @import dplyr
+#' @import reshape2
+#' @import stringr
+#'
+#' @examples
+readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
+                               gene_info = NULL){
+  anno_df <- read.csv(filename)
+
+  if(!is.null(gene_info)){
+    tair_locus <- dplyr::enquo(tair_locus)
+    tair_symbol <- dplyr::enquo(tair_symbol)
+    gene <- dplyr::enquo(gene)
+    anno_df <- anno_df %>% group_by(gene) %>%
+      stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}") %>%
+      dplyr::ifelse(yes = {
+        anno_df <- anno_df %>% left_join(select(gene_info,
+                                                !!tair_locus,
+                                                !!tair_symbol),
+                                              by = c("gene" = "tair_locus"))},
+                    no = {
+        anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
+                                                !!tair_symbol),
+                                         by = c("gene" = "tair_symbol"))
+      })
+
+  }
+  if(wide){
+    anno.domain <- reshape2::melt(data = anno_df,
+                                   id.vars = "gene",
+                                   variable.name = "annotation",
+                              # column name for
+                                   # all of the column names in the wide format
+                                   value.name = "position")
+    # what is the name
+    # of all of the values in the table
+  } else if(domains){
+      anno.domain <- anno_df %>% dplyr::filter(
+        stringr::str_detect(!!annotation, "start|end")) %>%
+        dplyr::separate(col = !!annotation,
+                        into = c("annotation", "bound"), sep = "_") %>%
+        spread(key = !!bound, value = !!position)
+      anno.pos <- anno %>% filter(!str_detect(!!annotation, "start|end"))
+  }
+  return(list(domains = anno.domain, positions = anno.pos))
 }
 
 #' Add alignment positions to an annotation data frame
