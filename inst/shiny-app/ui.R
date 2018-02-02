@@ -1,22 +1,8 @@
-library(shiny)
-library(biomaRt)
 library(leaflet)
-library(RColorBrewer)
-library(shinythemes)
-library(r1001genomes)
-library(knitr)
-library(stringr)
-library(DECIPHER)
-library(ggseqlogo)
 library(shinyBS)
+library(shinythemes)
+library(knitr)
 library(ggplot2)
-library(dplyr)
-
-filterTab.allCols <- c("Gene_Name", ".id", "Indiv","Name", "CS.Number", "POS", "Codon_Number", "gt_GT", "REF",
-                       "gt_GT_alleles", "AC", "Effect", "Effect_Impact",
-                       "Codon_Change", "Amino_Acid_Change", "Diversity")
-
-filterTab.numericCols <- c("Indiv", "POS", "Codon_Number", "AC", "Diversity")
 
 ui <- function(request){ fluidPage(
   theme = shinytheme(theme = "flatly"),
