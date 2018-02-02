@@ -3,6 +3,7 @@ ToDo
 Shiny app / Package
 ===============================================
 Little fixes
+- add example/template tair_locus and name file
 - "Diversity plot" handling for premature stops (and frame shifts)?
 - update comments and documentation in code (mainly VCF_Utils.R)
 - Add tair symbols throughout
