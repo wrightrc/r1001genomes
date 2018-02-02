@@ -4,7 +4,7 @@
 \alias{addAccDetails}
 \title{Add accession metadata to a dataset containing ecotype IDs}
 \usage{
-addAccDetails(data, ecotypeColumn = "Indiv")
+addAccDetails(tidyVCF, allAccs = FALSE)
 }
 \arguments{
 \item{ecotypeColumn}{}

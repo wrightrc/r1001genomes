@@ -393,18 +393,41 @@ calcDiversity <- function (GTfreq){
   result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
 
+#' return a count of accessions with undetermined genotype or 0 depending on if there are 0|0 genotpyes present
+#'
+#' @param groupFreq a group GT_Frequencies tibble for a single position
+#'
+#' @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
+#' @export
+#'
+#' @examples
+approxRefGt <- function(groupFreq) {
+  if ("0|0" %in% groupFreq$gt_GT){  # if 0
+    return(0)
+  } else {
+    return(1135 - sum(groupFreq$freq)) # else return number of accessions with undetermined genotypes
+  }
+}
+
+
+
 #' Calculate nucleotide diversity for each position in the coding sequence
 #'
 #' @param tidyVCF the $dat field of a tidyVCF object
+#' @param approxMissingRefGt logical, if true, assume all undetermined geneotypes are 0|0 in positions where no 0|0s are present
 #'
 #' @return input with Diversity field appended
 #' @export
 #'
 #' @examples
-Nucleotide_diversity <- function (tidyVCF){
+Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
   data <- unique(tidyVCF[, c("POS", "gt_GT", "Indiv")])
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
+  if (approxMissingRefGt){
+    # add a row at each position, with frequency determined by the approxRefGt() function
+    GT_Frequencies <- do(GT_Frequencies, add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=approxRefGt(.)))
+  }
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
 
@@ -511,7 +534,7 @@ getCodingDiv <- function(data){
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
 
-  coding_variants <- data[data$Functional_Class %in% c("SILENT", "MISSENSE", "NONSENSE"), ]   #
+  coding_variants <- data[!is.na(data$Codon_Number), ]
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Codon_Number", "Effect",
                                                         "Amino_Acid_Change",
@@ -572,12 +595,25 @@ plotCodingDiv <- function(uniqueCodingVars){
 #'
 #' @return
 #' @export
+#' @import dplyr
 #'
 #' @examples
-addAccDetails <- function(data, ecotypeColumn="Indiv") {
+addAccDetails <- function(tidyVCF, allAccs=FALSE) {
   # add ecotype details (location, collector, sequencer) to any df containing an "Indiv" column
   ecoIDs <- r1001genomes::accessions
-  return(merge(data, ecoIDs, by.x=ecotypeColumn, by.y="Ecotype.ID", all.y=TRUE))
+  data <- tidyVCF
+  data$Indiv <- as.numeric(data$Indiv)
+  if (allAccs) {
+    output <- full_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+  } else{
+    output <- left_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+  }
+
+  attr(output, "transcript_ID") <- attr(data, "transcript_ID")
+  attr(output, "tair_locus") <- attr(data, "tair_locus")
+  attr(output, "tair_symbol") <- attr(data, "tair_symbol")
+
+  return(output)
 }
 
 #' Label accessions with the variants they contain
@@ -828,12 +864,12 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     anno_df <- anno_df %>% group_by(gene) %>%
       stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}") %>%
       dplyr::ifelse(yes = {
-        anno_df <- anno_df %>% left_join(select(gene_info,
+        anno_df <- anno_df %>% dplyr::left_join(select(gene_info,
                                                 !!tair_locus,
                                                 !!tair_symbol),
                                               by = c("gene" = "tair_locus"))},
                     no = {
-        anno_df <- anno_df %>% left_join(select(gene_info, !!tair_locus,
+        anno_df <- anno_df %>% dplyr::left_join(select(gene_info, !!tair_locus,
                                                 !!tair_symbol),
                                          by = c("gene" = "tair_symbol"))
       })
@@ -849,9 +885,9 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     # what is the name
     # of all of the values in the table
   } else if(domains){
-    annotation <- quo(annotation)
-    bound <- quo(bound)
-    position <- quo(position)
+    annotation <- dplyr::quo(annotation)
+    bound <- dplyr::quo(bound)
+    position <- dplyr::quo(position)
       anno.domain <- anno_df %>% dplyr::filter(
         stringr::str_detect(!!annotation, "start|end")) %>%
         #devtools::use_package("tidyr")
