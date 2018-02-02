@@ -10,6 +10,7 @@ library(msaR)
 library(DECIPHER)
 library(ggseqlogo)
 library(shinyBS)
+library(ggplot2)
 
 CSSCode <- tags$head(tags$style(
    HTML("
@@ -885,8 +886,8 @@ server <- function(input, output, session){
       checkboxGroupInput("tab5.transcript_ID",
                          label=NULL, choices=all.GeneChoices()),
       actionButton(inputId="tab5.Submit", label = "Submit"),
-      checkboxInput(inputID = "tab5.primary_transcript",
-                         label = NULL, label = "Primary transcript only?",
+      checkboxInput(inputId = "tab5.primary_transcript",
+                         label = "Primary transcripts only?",
                          value = TRUE),
       radioButtons(inputId = "tab5.type",
                    label = "Alignment type:",
@@ -907,7 +908,7 @@ server <- function(input, output, session){
   })
 #### alignment ####
   alignment <- eventReactive(input$tab5.Submit, {
-    alignment <- alignCDS(IDs = tab5.Genes())
+    alignment <- alignCDS(IDs = tab5.Genes(), primary_only = input$tab5.primary_transcript)
     return(alignment)
   })
 #### tab5.alignment ####

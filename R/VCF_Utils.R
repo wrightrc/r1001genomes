@@ -642,6 +642,10 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 #' Make an alignment of Coding sequences
 #'
 #' @param IDs a vector of TAIR transcript IDs, e.g. "AT3G26890.1"
+#' @param primary_only TRUE or FALSE should only the primary transcript coding
+#' sequences be aligned?
+#' @param all TRUE or FALSE should the coding sequences of all known transcripts
+#' be aligned
 #'
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
@@ -653,7 +657,7 @@ labelBySNPsKernel <- function(indivData, collapse=TRUE) {
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
 #' alignment <- alignCDS(IDs)
 #' browseSeqs(alignment[[2]])
-alignCDS <- function(IDs) {
+alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
   #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
   #use_package("GenomicFeatures", "imports")
@@ -662,7 +666,7 @@ alignCDS <- function(IDs) {
   # gr <- rtracklayer::import(system.file("extdata",
   #           "Araport11_GFF3_genes_transposons.201606.gff.gz",
   #           package = "r1001genomes"))
-  gr_sub <-   gr[which(grepl(pattern = paste(
+  gr_sub <- gr[which(grepl(pattern = paste(
     gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
                              x = mcols(gr)$ID)),]
   txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
@@ -671,7 +675,9 @@ alignCDS <- function(IDs) {
   #devtools::use_package("XVector", "imports")
   CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
                           end = Biostrings::nchar(CDSseqs)-3)
-  CDSseqs.xstop
+  if(primary_only) CDSseqs.xstop <- CDSseqs.xstop[grepl(pattern = "\\.1",
+                                                        x = names(CDSseqs))]
+  if(!all) CDSseqs.xstop <- CDSseqs.xstop[names(CDSseqs) %in% IDs]
   #devtools::use_package("DECIPHER", "depends")
   # Update to imports once DECIPHER has fixed environment issue
   CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
