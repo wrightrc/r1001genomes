@@ -23,7 +23,9 @@ ui <- function(request){ fluidPage(
   # themeSelector(),
   tags$br(),
   bsCollapse(id = "collapse 1", multiple=TRUE, open=c("Gene Select"),
-             bsCollapsePanel("Gene Select (click to expand/collapse)", value="Gene Select",
+             bsCollapsePanel(
+               title=tagList("Gene Select", tags$h6(style= "display:inline", "(click to expand/collapse)")),
+               value="Gene Select",
                              fluidRow(
                                column(5,
                                       tags$h3("Select Genes"),
@@ -45,7 +47,9 @@ ui <- function(request){ fluidPage(
                                       )
                              )
              ),
-             bsCollapsePanel("Annotation Files (click to expand/collapse)", value="Annotation Files",
+             bsCollapsePanel(
+               title=tagList("Annotation Files", tags$h6(style= "display:inline", "(click to expand/collapse)")),
+               value="Annotation Files",
                              fluidRow(
                                column(5,
                                       tags$h3("Upload an annotation file"),
@@ -298,5 +302,5 @@ ui <- function(request){ fluidPage(
                                             )) #end of tabset panel
 
   # "THIS IS THE FOOTER"
-  )}
+)}
 
