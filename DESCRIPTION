@@ -29,7 +29,8 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     magrittr,
     DECIPHER,
     rlang,
-    shinyBS
+    shinyBS,
+    tidyr
 Suggests: knitr, ggrepel, 
 License: Artistic-2.0
 VignetteBuilder: knitr

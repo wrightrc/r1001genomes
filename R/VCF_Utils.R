@@ -812,8 +812,11 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
 #' @import dplyr
 #' @import reshape2
 #' @import stringr
+#' @import tidyr
 #'
 #' @examples
+#'readAnnotationFile(filename = system.file("extdata", "AFB_annotations.csv",
+#'                                         package = "r1001genomes"))
 readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
                                gene_info = NULL){
   anno_df <- read.csv(filename)
@@ -846,12 +849,17 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     # what is the name
     # of all of the values in the table
   } else if(domains){
+    annotation <- quo(annotation)
+    bound <- quo(bound)
+    position <- quo(position)
       anno.domain <- anno_df %>% dplyr::filter(
         stringr::str_detect(!!annotation, "start|end")) %>%
-        dplyr::separate(col = !!annotation,
+        #devtools::use_package("tidyr")
+        tidyr::separate(col = !!annotation,
                         into = c("annotation", "bound"), sep = "_") %>%
-        spread(key = !!bound, value = !!position)
-      anno.pos <- anno %>% filter(!str_detect(!!annotation, "start|end"))
+        tidyr::spread(key = !!bound, value = !!position)
+      anno.pos <- anno_df %>% dplyr::filter(
+        !stringr::str_detect(!!annotation, "start|end"))
   }
   return(list(domains = anno.domain, positions = anno.pos))
 }
