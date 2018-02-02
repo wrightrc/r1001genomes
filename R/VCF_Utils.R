@@ -669,15 +669,15 @@ alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
   gr_sub <- gr[which(grepl(pattern = paste(
     gsub(pattern = "\\..*", replacement = "", x = IDs), collapse = "|"),
                              x = mcols(gr)$ID)),]
-  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub) # maybe use exclude.stop
+  txdb <- GenomicFeatures::makeTxDbFromGRanges(gr_sub, drop.stop.codons = TRUE) # maybe use exclude.stop
   CDSseqs <- GenomicFeatures::extractTranscriptSeqs(Athaliana,
                 GenomicFeatures::cdsBy(txdb, by = 'tx', use.names = TRUE))
   #devtools::use_package("XVector", "imports")
   CDSseqs.xstop <- XVector::subseq(CDSseqs, start = rep(1,length(CDSseqs)),
                           end = Biostrings::nchar(CDSseqs)-3)
   if(primary_only) CDSseqs.xstop <- CDSseqs.xstop[grepl(pattern = "\\.1",
-                                                        x = names(CDSseqs))]
-  if(!all) CDSseqs.xstop <- CDSseqs.xstop[names(CDSseqs) %in% IDs]
+                                                        x = names(CDSseqs.xstop))]
+  if(!all) CDSseqs.xstop <- CDSseqs.xstop[names(CDSseqs.xstop) %in% IDs]
   #devtools::use_package("DECIPHER", "depends")
   # Update to imports once DECIPHER has fixed environment issue
   CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
