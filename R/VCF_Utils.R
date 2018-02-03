@@ -855,25 +855,22 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
 #'                                         package = "r1001genomes"))
 readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
                                gene_info = NULL){
-  anno_df <- read.csv(filename)
-
+  anno_df <- read.csv(filename, stringsAsFactors = FALSE)
   if(!is.null(gene_info)){
-    tair_locus <- dplyr::enquo(tair_locus)
-    tair_symbol <- dplyr::enquo(tair_symbol)
-    gene <- dplyr::enquo(gene)
-    anno_df <- anno_df %>% group_by(gene) %>%
-      stringr::str_detect(anno_df$gene, "AT[1-5]G[0-9]{5}") %>%
-      dplyr::ifelse(yes = {
-        anno_df <- anno_df %>% dplyr::left_join(select(gene_info,
-                                                !!tair_locus,
-                                                !!tair_symbol),
-                                              by = c("gene" = "tair_locus"))},
-                    no = {
-        anno_df <- anno_df %>% dplyr::left_join(select(gene_info, !!tair_locus,
-                                                !!tair_symbol),
-                                         by = c("gene" = "tair_symbol"))
-      })
-
+    tair_locus <- dplyr::quo(tair_locus)
+    tair_symbol <- dplyr::quo(tair_symbol)
+    gene <- dplyr::quo(gene)
+    #if(sum(unique(anno_df$gene) %in% unique(gene_info$tair_locus) | unique(anno_df$gene) %in% unique(gene_info$tair_symbol)) < length(unique(anno_df$gene)))
+    anno_df.loci <- anno_df %>% dplyr::inner_join(y = gene_info,
+                                                  by = c("gene" = "tair_locus"))
+    anno_df.symbol <- anno_df %>% dplyr::inner_join(y = gene_info,
+                                                by = c("gene" = "tair_symbol"))
+    names(anno_df.symbol)[which(names(anno_df.symbol) == "gene")] <-
+      "tair_symbol"
+    names(anno_df.loci)[which(names(anno_df.loci) == "gene")] <-
+      "tair_locus"
+    anno_df.loci <- anno_df.loci[,names(anno_df.symbol)]
+    anno_df <- bind_rows(anno_df.symbol, anno_df.loci)
   }
   if(wide){
     anno.domain <- reshape2::melt(data = anno_df,
@@ -902,15 +899,58 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 
 #' Add alignment positions to an annotation data frame
 #'
-#' @param anno_df
-#' @param aln_df
+#' @param anno_df an annotation data frame from \link{readAnnotationFile}
+#' @param aln_df an alignment data frame
+#'
+#' @return an annotation data frame with columns from an alignment data frame joined by transcript ID and position
+#' @export
+#' @importFrom magrittr "%>%"
+#'
+#'
+#' @examples
+addAlnPosToAnno <- function(anno_df, aln_df){
+  anno_df <- anno_df %>%
+    dplyr::left_join(aln_df, by = c("transcript_ID" = "seq_name",
+                                                  "position" = "seq_position"))
+}
+
+#' Title
+#'
+#' @param anno_df an annotation data frame from \link{readAnnotationFile}
+#' @param chunks
 #'
 #' @return
 #' @export
 #'
 #' @examples
-addAlnPosToAnno <- function(anno_df, aln_df){
-
+chunkAnnotation <- function(anno_df, chunks){
+  chunks.anno.domain <- adply(anno.domain, 1, function(domain) {
+    #check which chunks it spans
+    rows <- (domain$start < chunks$start & domain$end > chunks$end) |
+      (domain$start < chunks$end & domain$start > chunks$start) |
+      (domain$end > chunks$start & domain$end < chunks$end)
+    print(rows)
+    if(sum(rows) != 0){
+      #create copies of the row for each chunk
+      new_rows <- domain[rep(1, sum(rows)),]
+      new_rows[,c("chunk", "start", "end")] <-
+        chunks[rows, c("chunk", "start","end")]
+      print(new_rows)
+      new_rows[(domain$start < chunks$end & domain$start > chunks$start),
+               "start"] <- domain[, "start"]
+      new_rows[(domain$end > chunks$start & domain$end < chunks$end),
+               "end"] <- domain[, "end"]
+      new_rows
+    }
+    # or if mono-chunk-ular add chunk info
+    else{
+      domain[,"chunk"] <-
+        chunks[which(chunks$start <= domain$start & chunks$end >= domain$end),
+               c("chunk")]
+      domain
+    }
+  })
+  return(chunks.anno.domain)
 }
 
 #' String alignment geom for plotting XStringSet Alignments
