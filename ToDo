@@ -3,6 +3,7 @@ ToDo
 Shiny app / Package
 ===============================================
 Little fixes
+- add some padding to around the alignment
 - add color scheme to aln_plot
 - add hoverover to divPlot
 - decrease font of input collapse instructions
