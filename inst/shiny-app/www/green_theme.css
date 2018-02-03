@@ -1,0 +1,67 @@
+/* Green Theme */
+/* use with shinyTheme "flatly" */
+/* overwrites css values from shinyTheme and Bootstrap */
+
+/* Nav bar background color (and unselected tabs) */
+.navbar-default {
+  color: #ffffff;
+  background-color: #aed728
+}
+
+/* nav bar color of selected tab */
+.navbar-default .navbar-nav>.active>a {
+  color: #ffffff;
+  background-color:#798d8f
+}
+.navbar-default .navbar-nav>.active>a:focus {
+  color: #ffffff;
+  background-color: #798d8f
+}
+.navbar-default .navbar-nav>.active>a:hover {
+  color: #ffffff;
+  background-color: #798d8f
+}
+
+/* navbar title and inactive tabs hover over) */
+.navbar-default .navbar-brand:hover {
+  color: #ffffff;
+  background-color: #aed728
+}
+.navbar-default .navbar-nav>li>a:hover {
+  color: #ffffff;
+  background-color: #7a971c
+}
+
+/* collapsible panel heading */
+.panel-default > .panel-heading {
+  color: #ffffff;
+  background-color: #aed728;
+  border-color: #aed728;
+}
+
+.input-format {
+  color: #000;
+  background-color: #ffffff;
+  border: solid #aed728;
+  border-radius: 5px 5px 15px 15px;
+  border-width: 20px 1px 1px 1px;
+  padding: 1px 15px 10px 10px;
+}
+
+.output-format {
+  color: #000;
+  background-color: #ffffff;
+  border: solid #7a971c;
+  border-radius: 5px 15px 15px 5px;
+  border-width: 1px 0 1px 20px;
+  padding: 1px 15px 10px 10px;
+}
+
+.title-panel {
+  color: #ffffff;
+  background-color: #8cac20;
+  padding: 14px;
+  margin-right: -14px;
+  margin-left: -14px
+}
+

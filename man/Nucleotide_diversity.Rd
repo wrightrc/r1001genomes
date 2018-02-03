@@ -4,10 +4,12 @@
 \alias{Nucleotide_diversity}
 \title{Calculate nucleotide diversity for each position in the coding sequence}
 \usage{
-Nucleotide_diversity(tidyVCF)
+Nucleotide_diversity(tidyVCF, approxMissingRefGt = TRUE)
 }
 \arguments{
 \item{tidyVCF}{the $dat field of a tidyVCF object}
+
+\item{approxMissingRefGt}{logical, if true, assume all undetermined geneotypes are 0|0 in positions where no 0|0s are present}
 }
 \value{
 input with Diversity field appended

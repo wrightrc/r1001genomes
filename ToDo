@@ -3,6 +3,12 @@ ToDo
 Shiny app / Package
 ===============================================
 Little fixes
+- check IAA15 for truncated transcript
+- frameshifts are not showing up on the alignment
+- add color scheme to aln_plot
+- add hoverover to divPlot
+- decrease font of input collapse instructions
+- add alignment diversity plot
 - add example/template tair_locus and name file
 - "Diversity plot" handling for premature stops (and frame shifts)?
 - update comments and documentation in code (mainly VCF_Utils.R)
