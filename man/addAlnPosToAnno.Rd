@@ -7,8 +7,29 @@
 addAlnPosToAnno(anno_df, aln_df)
 }
 \arguments{
-\item{aln_df}{}
+\item{anno_df}{an annotation data frame from \link{readAnnotationFile}}
+
+\item{aln_df}{an alignment data frame}
+}
+\value{
+an annotation data frame with columns from an alignment data frame joined by transcript ID and position
 }
 \description{
 Add alignment positions to an annotation data frame
+}
+\examples{
+## first make a gene info DF
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## read in an annotation DF
+anno_df <- readAnnotationFile(filename = system.file("extdata",
+"AFB_annotations.csv", package = "r1001genomes"), gene_info = geneInfo )
+
+## make an alignment DF
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+alignment <- alignCDS(IDs)
+aln_df <- makeAlnDF(alignment[[2]])
+
+addAlnPosToAnno(anno_df, aln_df)
+
 }

@@ -818,6 +818,31 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
   return(aln_df)
 }
 
+
+#' Chunk up an alignment data frame to allow facetting over
+#' multiple rows
+#'
+#' @param aln_df
+#' @param chunk_width
+#'
+#' @return \code{aln_df} with the addition of a \code{chunk} column for
+#'  wrapping the alignment across facets
+#' @export
+#'
+#' @examples
+#' #' # make an alignment
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' # make an alignment data frame
+#' aln_df <- makeAlnDF(alignment[[2]])
+#' chunkAlnDF(aln_df)
+#'
+chunkAlnDF <- function(aln_df, chunk_width = 80){
+  chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
+  aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num)
+  return(aln_df)
+}
+
 #' Read an annotation file
 #'
 #' @param filename filename or path to the annotation csv file to be read.
@@ -908,49 +933,151 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #'
 #'
 #' @examples
+#' ## first make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## read in an annotation DF
+#' anno_df <- readAnnotationFile(filename = system.file("extdata",
+#' "AFB_annotations.csv", package = "r1001genomes"), gene_info = geneInfo )
+#'
+#' ## make an alignment DF
+#' #' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' aln_df <- makeAlnDF(alignment[[2]])
+#'
+#' addAlnPosToAnno(anno_df, aln_df)
+#'
 addAlnPosToAnno <- function(anno_df, aln_df){
-  anno_df <- anno_df %>%
-    dplyr::left_join(aln_df, by = c("transcript_ID" = "seq_name",
-                                                  "position" = "seq_position"))
+  aln_df$seq_pos <- as.integer(aln_df$seq_pos)
+  anno_df$domains <- anno_df$domains %>%
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
+                     by = c("transcript_ID" = "seq_name",
+                                        "end" = "seq_pos"))
+  names(anno_df$domains)[which(names(anno_df$domains) == "aln_pos")] <-
+    "end_aln_pos"
+  anno_df$domains <- anno_df$domains %>%
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
+                     by = c("transcript_ID" = "seq_name",
+                            "start" = "seq_pos"))
+  names(anno_df$domains)[which(names(anno_df$domains) == "aln_pos")] <-
+    "start_aln_pos"
+  anno_df$positions <- anno_df$positions %>%
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
+                     by = c("transcript_ID" = "seq_name",
+                            "position" = "seq_pos"))
+  return(anno_df)
 }
 
-#' Title
+
+
+#' Create a chunks data frame from a chunked alignment data frame
 #'
-#' @param anno_df an annotation data frame from \link{readAnnotationFile}
-#' @param chunks
+#' To allow similar chunking of annotation layers for facetting
+#' across multiple rows
 #'
-#' @return
+#' @param aln_df
+#' @param chunk_width
+#'
+#' @return a chunks data frame containing the start, end, and chunk name for
+#' each chunk of the alignment
 #' @export
 #'
 #' @examples
+#' # make an alignment
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' # make an alignment data frame
+#' aln_df <- makeAlnDF(alignment[[2]])
+#' aln_df <- chunkAlnDF(aln_df)
+#' makeChunksDF(aln_df)
+#'
+makeChunksDF <- function(aln_df){
+  chunks <- data.frame("chunk" = levels(aln_df$chunk)) %>%
+    separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
+  chunks$start <- if_else(condition = str_detect(chunks$start, "\\("),
+                          true = as.numeric(str_extract(chunks$start, "\\d+"))
+                          + 1, false = as.numeric(str_extract(chunks$start,
+                                                              "\\d+")))
+  chunks$end <- if_else(condition = str_detect(chunks$end, "\\)"),
+                        true = as.numeric(str_extract(chunks$end, "\\d+")) - 1,
+                        false = as.numeric(str_extract(chunks$end, "\\d+")))
+  return(chunks)
+}
+
+#' Add a chunks column to an annotation data frame
+#'
+#' This function adds chunk information for wrapping an alignment and
+#' annotations across multiple rows. This will also split individual
+#' annotations across rows.
+#' @param anno_df an annotation data frame from \link{readAnnotationFile}
+#' with attached alignment positions from \link{addAlnPosToAnno}
+#' @param chunks a data frame of chunks to facet an alignment/annotation
+#' data frame across
+#'
+#' @return anno_df with the addition of chunks columns (and potentially extra
+#' rows) for facetting
+#' @export
+#'
+#' @examples
+#' ## first make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## read in an annotation DF
+#' anno_df <- readAnnotationFile(filename = system.file("extdata",
+#' "AFB_annotations.csv", package = "r1001genomes"), gene_info = geneInfo )
+#'
+#' ## make an alignment DF
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' alignment <- alignCDS(IDs)
+#' aln_df <- makeAlnDF(alignment[[2]])
+#' aln_df <- chunkAlnDF(aln_df)
+#' chunks <- makeChunksDF(aln_df)
+#'
+#' anno_df <- addAlnPosToAnno(anno_df, aln_df)
+#'
+#' chunkAnnotation(anno_df, chunks)
+#'
 chunkAnnotation <- function(anno_df, chunks){
-  chunks.anno.domain <- adply(anno.domain, 1, function(domain) {
+  chunks.anno.domain <- adply(anno_df$domains, 1, function(domain) {
     #check which chunks it spans
-    rows <- (domain$start < chunks$start & domain$end > chunks$end) |
-      (domain$start < chunks$end & domain$start > chunks$start) |
-      (domain$end > chunks$start & domain$end < chunks$end)
-    print(rows)
-    if(sum(rows) != 0){
+    rows <- (domain$start_aln_pos < chunks$start &
+               domain$end_aln_pos > chunks$end) |
+      (domain$start_aln_pos < chunks$end &
+         domain$start_aln_pos > chunks$start) |
+      (domain$end_aln_pos > chunks$start & domain$end_aln_pos < chunks$end)
+    #print(rows)
+    if(sum(rows) > 1){
       #create copies of the row for each chunk
       new_rows <- domain[rep(1, sum(rows)),]
-      new_rows[,c("chunk", "start", "end")] <-
+      new_rows[,c("chunk", "start_aln_pos", "end_aln_pos")] <-
         chunks[rows, c("chunk", "start","end")]
-      print(new_rows)
-      new_rows[(domain$start < chunks$end & domain$start > chunks$start),
-               "start"] <- domain[, "start"]
-      new_rows[(domain$end > chunks$start & domain$end < chunks$end),
-               "end"] <- domain[, "end"]
+      #print(new_rows)
+      new_rows[(domain$start_aln_pos < chunks$end &
+                  domain$start_aln_pos > chunks$start),
+               "start_aln_pos"] <- domain[, "start_aln_pos"]
+      new_rows[(domain$end_aln_pos > chunks$start &
+                  domain$end_aln_pos < chunks$end),
+               "end_aln_pos"] <- domain[, "end_aln_pos"]
       new_rows
     }
     # or if mono-chunk-ular add chunk info
     else{
       domain[,"chunk"] <-
-        chunks[which(chunks$start <= domain$start & chunks$end >= domain$end),
+        chunks[which(chunks$start <= domain$start_aln_pos &
+                       chunks$end >= domain$end_aln_pos),
                c("chunk")]
       domain
     }
   })
-  return(chunks.anno.domain)
+  aln_pos <- dplyr::quo(aln_pos)
+  chunks.anno.positions <- anno_df$positions %>%
+    dplyr::rowwise() %>% dplyr::mutate(
+    chunk = chunks[(chunks$start <= !!aln_pos &
+                          chunks$end >= !!aln_pos),
+                                  c("chunk")])
+  chunks.anno <- list("domains" = chunks.anno.domain,
+                      "positions" = chunks.anno.positions)
+  return(chunks.anno)
 }
 
 #' String alignment geom for plotting XStringSet Alignments

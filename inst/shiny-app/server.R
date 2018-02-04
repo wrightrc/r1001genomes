@@ -558,9 +558,7 @@ server <- function(input, output, session){
                         by = c("seq_name" = "transcript_ID"))
     aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
     ## chunk up aln_df
-    chunk_width <- 80
-    chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
-    aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num)
+    aln_df <- chunkAlnDF(aln_df, chunk_width = 80)
     return(aln_df)
   })
 #### tab5.aln_anno ####
@@ -574,40 +572,9 @@ server <- function(input, output, session){
   #   ## convert annotations to type
   #   anno.domain
   #   ## chunk up annotations
-  #   ### make chunks df
-  #   chunks <- data.frame("chunk" = levels(aln_df()$chunk)) %>%
-  #     separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
-  #   chunks$start <- if_else(condition = str_detect(chunks$start, "\\("), true = as.numeric(str_extract(chunks$start, "\\d+")) + 1, false = as.numeric(str_extract(chunks$start, "\\d+")))
-  #   chunks$end <- if_else(condition = str_detect(chunks$end, "\\)"), true = as.numeric(str_extract(chunks$end, "\\d+")) - 1, false = as.numeric(str_extract(chunks$end, "\\d+")))
+  makeChunks
   #   ### chunk annotations
-  #   chunks.anno.domain <- adply(anno.domain, 1, function(domain) {
-  #     #check which chunks it spans
-  #     rows <- (domain$start < chunks$start & domain$end > chunks$end) |
-  #       (domain$start < chunks$end & domain$start > chunks$start) |
-  #       (domain$end > chunks$start & domain$end < chunks$end)
-  #     print(rows)
-  #     if(sum(rows) != 0){
-  #       #create copies of the row for each chunk
-  #       new_rows <- domain[rep(1, sum(rows)),]
-  #       new_rows[,c("chunk", "start", "end")] <-
-  #         chunks[rows, c("chunk", "start","end")]
-  #       print(new_rows)
-  #       new_rows[(domain$start < chunks$end & domain$start > chunks$start),
-  #                "start"] <- domain[, "start"]
-  #       new_rows[(domain$end > chunks$start & domain$end < chunks$end),
-  #                "end"] <- domain[, "end"]
-  #       new_rows
-  #     }
-  #     # or if mono-chunk-ular add chunk info
-  #     else{
-  #       domain[,"chunk"] <-
-  #         chunks[which(chunks$start <= domain$start & chunks$end >= domain$end),
-  #                c("chunk")]
-  #       domain
-  #     }
-  #   })
-  #   return(chunks.anno.domain)
-  # })
+
 #### aln_plot_height ####
   aln_plot_height <- reactive({
       N <- length(unique(aln_df()$seq_name))
