@@ -735,7 +735,7 @@ alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
 makeAlnDF <- function(alignment){
   seqs <- strsplit(as.character(alignment), split = NULL)
   #devtools::use_package("plyr")
-  aln_df <- plyr::ldply(.data = seqs, .id = "seq_name", .fun = function(sequence){
+  aln_df <- plyr::ldply(.data = seqs, .id = "transcript_ID", .fun = function(sequence){
     data.frame(
       "letter" = sequence,
       "aln_pos" = 1:length(sequence)
@@ -743,6 +743,7 @@ makeAlnDF <- function(alignment){
   })
   #devtools::use_package("magrittr")
   #devtools::use_package("dplyr")
+  aln_df$seq_name <- aln_df$transcript_ID
   aln_df <- aln_df %>% dplyr::group_by(seq_name) %>% dplyr::mutate(
     seq_pos = {
       matches <- which(letter %in% c(LETTERS, letters, "*"))
@@ -948,20 +949,23 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 addAlnPosToAnno <- function(anno_df, aln_df){
   aln_df$seq_pos <- as.integer(aln_df$seq_pos)
   anno_df$domains <- anno_df$domains %>%
-    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
-                     by = c("transcript_ID" = "seq_name",
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
+                               "aln_pos", "transcript_ID")],
+                     by = c("transcript_ID" = "transcript_ID",
                                         "end" = "seq_pos"))
   names(anno_df$domains)[which(names(anno_df$domains) == "aln_pos")] <-
     "end_aln_pos"
   anno_df$domains <- anno_df$domains %>%
-    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
-                     by = c("transcript_ID" = "seq_name",
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
+                               "aln_pos", "transcript_ID")],
+                     by = c("transcript_ID" = "transcript_ID",
                             "start" = "seq_pos"))
   names(anno_df$domains)[which(names(anno_df$domains) == "aln_pos")] <-
     "start_aln_pos"
   anno_df$positions <- anno_df$positions %>%
-    dplyr::left_join(aln_df[,c("seq_name", "seq_pos", "aln_pos")],
-                     by = c("transcript_ID" = "seq_name",
+    dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
+                               "aln_pos", "transcript_ID")],
+                     by = c("transcript_ID" = "transcript_ID",
                             "position" = "seq_pos"))
   return(anno_df)
 }

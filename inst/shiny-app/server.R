@@ -555,7 +555,7 @@ server <- function(input, output, session){
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
     aln_df <- left_join(aln_df, dplyr::select(all.Genes(), "tair_locus",
                                        "tair_symbol", "transcript_ID"),
-                        by = c("seq_name" = "transcript_ID"))
+                        by = c("transcript_ID" = "transcript_ID"))
     ## chunk up aln_df
     aln_df <- chunkAlnDF(aln_df, chunk_width = 80)
     return(aln_df)
@@ -570,7 +570,8 @@ server <- function(input, output, session){
     chunks <- makeChunksDF(aln_df())
     ## chunk up annotations
     anno_df <- chunkAnnotation(anno_df, chunks)
-    anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID)
+    if(is.null(input$tab5.primary_transcript)) anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID) else
+      anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
     print(anno_df)
     return(anno_df)
   })
@@ -586,14 +587,15 @@ server <- function(input, output, session){
 
 #### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlot(expr = {
-    #aln_df <- aln_df()
-    #aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
-    #aln_df$seq_name <- as.factor(aln_df$seq_name)
+    aln_df <- aln_df()
+    aln_df$seq_name <- as.character(aln_df$seq_name)
+    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
+    aln_df$seq_name <- as.factor(aln_df$seq_name)
     #anno_df <- tab5.aln_anno()
     #anno_df$domains$seq_name[!is.na(anno_df$domains$tair_symbol)] <- anno_df$domains$tair_symbol[!is.na(anno_df$domains$tair_symbol)]
     #anno_df$domains$seq_name <- as.factor(anno_df$domains$seq_name)
     p <-
-      ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
+      ggplot(aln_df, aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants))
     if(!is.null(input$annoFile)) p <- p +
       geom_rect(data = tab5.aln_anno()$domains,
@@ -602,11 +604,11 @@ server <- function(input, output, session){
                               fill = annotation,
                 ymin = as.numeric(seq_name)-0.6, ymax = as.numeric(seq_name)+0.6), inherit.aes = FALSE)
     p <- p +
-      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
+      geom_tile(data = na.omit(aln_df), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1, family = "Courier") +
       scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
-      scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
+      scale_x_continuous(breaks=seq(1,max(aln_df$aln_pos), by = 10)) +
       scale_y_discrete() +
       # expand increases distance from axis
       xlab("") +
