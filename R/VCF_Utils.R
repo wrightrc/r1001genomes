@@ -409,8 +409,6 @@ approxRefGt <- function(groupFreq) {
   }
 }
 
-
-
 #' Calculate nucleotide diversity for each position in the coding sequence
 #'
 #' @param tidyVCF the $dat field of a tidyVCF object
@@ -941,7 +939,7 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #' "AFB_annotations.csv", package = "r1001genomes"), gene_info = geneInfo )
 #'
 #' ## make an alignment DF
-#' #' IDs <- c("AT3G62980.1", "AT3G26810.1")
+#' IDs <- c("AT3G62980.1", "AT3G26810.1")
 #' alignment <- alignCDS(IDs)
 #' aln_df <- makeAlnDF(alignment[[2]])
 #'
@@ -1039,12 +1037,13 @@ makeChunksDF <- function(aln_df){
 #'
 chunkAnnotation <- function(anno_df, chunks){
   chunks.anno.domain <- adply(anno_df$domains, 1, function(domain) {
-    #check which chunks it spans
-    rows <- (domain$start_aln_pos < chunks$start &
-               domain$end_aln_pos > chunks$end) |
-      (domain$start_aln_pos < chunks$end &
-         domain$start_aln_pos > chunks$start) |
-      (domain$end_aln_pos > chunks$start & domain$end_aln_pos < chunks$end)
+    #check which chunks the domain spans
+    rows <- (domain$start_aln_pos <= chunks$start &
+               domain$end_aln_pos >= chunks$end) | # chunks it encompases
+      (domain$start_aln_pos <= chunks$end &
+         domain$start_aln_pos >= chunks$start) | #chunks at the beginning
+      (domain$end_aln_pos >= chunks$start & domain$end_aln_pos <= chunks$end)
+      # chunks at the end
     #print(rows)
     if(sum(rows) > 1){
       #create copies of the row for each chunk

@@ -26,7 +26,7 @@ anno_df <- readAnnotationFile(filename = system.file("extdata",
 "AFB_annotations.csv", package = "r1001genomes"), gene_info = geneInfo )
 
 ## make an alignment DF
-#' IDs <- c("AT3G62980.1", "AT3G26810.1")
+IDs <- c("AT3G62980.1", "AT3G26810.1")
 alignment <- alignCDS(IDs)
 aln_df <- makeAlnDF(alignment[[2]])
 

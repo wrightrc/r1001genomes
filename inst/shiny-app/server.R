@@ -74,10 +74,9 @@ server <- function(input, output, session){
     names(output) <- displayNames
     return(output)
   })
-#### annoFile
+#### anno_df ####
   anno_df <- eventReactive(input$annoSubmit,{
-    anno_df <- readAnnotationFile(input$genesFile$datapath)
-    req(anno_df != FALSE)
+    anno_df <- readAnnotationFile(input$annoFile$datapath, gene_info = all.Genes())
     return(anno_df)
   })
 #### annoTemplateDownload ####
@@ -524,7 +523,8 @@ server <- function(input, output, session){
     return(input$tab5.transcript_ID)
   })
 #### debug ####
-  output$tab5.debug <- renderPrint({aln_df()})
+  output$tab5.debug <- renderPrint({
+    aln_df()})
 #### type ####
   type <- reactive({
     return(switch(input$tab5.type, "AA" = 2, "DNA" = 1))
@@ -556,24 +556,24 @@ server <- function(input, output, session){
     aln_df <- left_join(aln_df, dplyr::select(all.Genes(), "tair_locus",
                                        "tair_symbol", "transcript_ID"),
                         by = c("seq_name" = "transcript_ID"))
-    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
     ## chunk up aln_df
     aln_df <- chunkAlnDF(aln_df, chunk_width = 80)
     return(aln_df)
   })
 #### tab5.aln_anno ####
-  # tab5.aln_anno <- reactive({
-  #   ## read in annotation
-  #   anno
-  #   ## subset to domains
-  #   anno.domain
-  #   ## consolidate to aln_pos
-  #   anno.domain
-  #   ## convert annotations to type
-  #   anno.domain
-  #   ## chunk up annotations
-  makeChunks
-  #   ### chunk annotations
+  tab5.aln_anno <- reactive({
+    ## read in annotation
+    anno_df <- anno_df()
+
+    anno_df <- addAlnPosToAnno(anno_df, aln_df())
+    ## make chunks from aln_df
+    chunks <- makeChunksDF(aln_df())
+    ## chunk up annotations
+    anno_df <- chunkAnnotation(anno_df, chunks)
+    anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID)
+    print(anno_df)
+    return(anno_df)
+  })
 
 #### aln_plot_height ####
   aln_plot_height <- reactive({
@@ -586,19 +586,28 @@ server <- function(input, output, session){
 
 #### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlot(expr = {
+    #aln_df <- aln_df()
+    #aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
+    #aln_df$seq_name <- as.factor(aln_df$seq_name)
+    #anno_df <- tab5.aln_anno()
+    #anno_df$domains$seq_name[!is.na(anno_df$domains$tair_symbol)] <- anno_df$domains$tair_symbol[!is.na(anno_df$domains$tair_symbol)]
+    #anno_df$domains$seq_name <- as.factor(anno_df$domains$seq_name)
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
-                           group = seq_pos, text = variants)) +
-      # geom_rect(data = tab5.aln_anno(),
-      #           mapping = aes(xmin = start - 0.5,
-      #                         xmax = end + 0.5,
-      #                         fill = annotation),
-      #           ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
+                           group = seq_pos, text = variants))
+    if(!is.null(input$annoFile)) p <- p +
+      geom_rect(data = tab5.aln_anno()$domains,
+                mapping = aes(xmin = start_aln_pos - 0.5,
+                              xmax = end_aln_pos + 0.5,
+                              fill = annotation,
+                ymin = as.numeric(seq_name)-0.6, ymax = as.numeric(seq_name)+0.6), inherit.aes = FALSE)
+    p <- p +
       geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1, family = "Courier") +
       scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
       scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
+      scale_y_discrete() +
       # expand increases distance from axis
       xlab("") +
       ylab("") +

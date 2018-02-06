@@ -51,7 +51,7 @@ ui <- function(request){ fluidPage(
                                column(2, align="center", tags$h3("OR")),
                                column(5,
                                       tags$h3("Upload File"),
-                                      tags$h5("brows to a .csv file containing 'tair_locus' and 'name' fields.
+                                      tags$h5("browse to a .csv file containing 'tair_locus' and 'name' fields.
                                               The name field should be the TAIR symbol or moniker you would like to identify your genes by."),
                                       fileInput("genesFile", label=NULL),
                                       actionButton(inputId="file_submit", label = "Submit")
@@ -276,14 +276,15 @@ ui <- function(request){ fluidPage(
                                                      tags$br(),
                                                      tags$div(class = "output-format",
                                                               tags$h3("Sequence Alignment"),
-                                                              tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), "The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel."), "'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
+                                                              tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), "The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel"), "). 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
                                                               tags$div(
                                                                 style = "position:relative",
                                                                 uiOutput("plot.ui"),
                                                                 uiOutput("aln_plot_hover"))),
 
                                                      # verbatimTextOutput("event")
-                                                     tags$br()#,
+                                                     tags$br(),
+                                                     tags$div(verbatimTextOutput("tab5.debug"))
                                                      #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
                                                      #msaROutput(outputId = "tab5.alignment"), height = "auto")
                                                      # Remove DECIPHER BrowseSeqs
