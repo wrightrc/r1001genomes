@@ -1,8 +1,19 @@
 
 # Server =================================================================
 
-#source("VCF_Utils.R")
-#source("Strains_and_Gene_Families.R")
+library(shiny)
+library(biomaRt)
+library(leaflet)
+library(RColorBrewer)
+library(r1001genomes)
+library(knitr)
+library(stringr)
+library(DECIPHER)
+library(ggseqlogo)
+library(shinyBS)
+library(ggplot2)
+library(dplyr)
+
 
 parseInput <- function (textIn) {
   names <- str_extract_all(textIn, "AT[1-5]G[0-9]{5}")
@@ -16,12 +27,7 @@ parseFilterText <- function (textIn) {
 }
 
 
-
-
-#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
+enableBookmarking(store = "url")
 
 server <- function(input, output, session){
 
@@ -664,10 +670,4 @@ server <- function(input, output, session){
     )
   })
 }
-
-
-
-
-#enableBookmarking(store = "url")
-#shinyApp(ui = ui, server = server)
 
