@@ -37,3 +37,7 @@ annotations.
 \description{
 Read an annotation file
 }
+\examples{
+readAnnotationFile(filename = system.file("extdata", "AFB_annotations.csv",
+                                        package = "r1001genomes"))
+}
