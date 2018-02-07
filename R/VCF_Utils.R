@@ -885,7 +885,7 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     tair_locus <- dplyr::quo(tair_locus)
     tair_symbol <- dplyr::quo(tair_symbol)
     gene <- dplyr::quo(gene)
-    #if(sum(unique(anno_df$gene) %in% unique(gene_info$tair_locus) | unique(anno_df$gene) %in% unique(gene_info$tair_symbol)) < length(unique(anno_df$gene)))
+
     anno_df.loci <- anno_df %>% dplyr::inner_join(y = gene_info,
                                                   by = c("gene" = "tair_locus"))
     anno_df.symbol <- anno_df %>% dplyr::inner_join(y = gene_info,
