@@ -838,9 +838,10 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
 #'
 chunkAlnDF <- function(aln_df, chunk_width = 80){
   chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
-  aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num)
+  aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num, dig.lab = 6)
   return(aln_df)
 }
+cut_number
 
 #' Read an annotation file
 #'
@@ -1055,12 +1056,15 @@ chunkAnnotation <- function(anno_df, chunks){
       new_rows[,c("chunk", "start_aln_pos", "end_aln_pos")] <-
         chunks[rows, c("chunk", "start","end")]
       #print(new_rows)
-      new_rows[(domain$start_aln_pos < chunks$end &
-                  domain$start_aln_pos > chunks$start),
+      # if the domain starts after the chunk starts extend the "start_aln_pos"
+      new_rows[(domain$start_aln_pos < new_rows$end_aln_pos &
+                  domain$start_aln_pos > new_rows$start_aln_pos),
                "start_aln_pos"] <- domain[, "start_aln_pos"]
-      new_rows[(domain$end_aln_pos > chunks$start &
-                  domain$end_aln_pos < chunks$end),
+      # if the domain ends before the chunk does shorten "end_aln_pos"
+      new_rows[(domain$end_aln_pos > new_rows$start_aln_pos &
+                  domain$end_aln_pos < new_rows$end_aln_pos),
                "end_aln_pos"] <- domain[, "end_aln_pos"]
+      print(new_rows)
       new_rows
     }
     # or if mono-chunk-ular add chunk info

@@ -572,13 +572,20 @@ server <- function(input, output, session){
     anno_df <- anno_df()
 
     anno_df <- addAlnPosToAnno(anno_df, aln_df())
+    print(anno_df)
     ## make chunks from aln_df
     chunks <- makeChunksDF(aln_df())
     ## chunk up annotations
+    print(chunks)
     anno_df <- chunkAnnotation(anno_df, chunks)
-    if(is.null(input$tab5.primary_transcript)) anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID) else
+    if(is.null(input$tab5.primary_transcript)) {
+      anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID)
+      anno_df$positions$seq_name <- as.factor(anno_df$positions$transcript_ID)}
+    else {
       anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
-    print(anno_df)
+      anno_df$positions$seq_name <- as.factor(anno_df$positions$tair_symbol)
+    }
+
     return(anno_df)
   })
 
@@ -607,8 +614,14 @@ server <- function(input, output, session){
       geom_rect(data = tab5.aln_anno()$domains,
                 mapping = aes(xmin = start_aln_pos - 0.5,
                               xmax = end_aln_pos + 0.5,
-                              fill = annotation,
-                ymin = as.numeric(seq_name)-0.6, ymax = as.numeric(seq_name)+0.6), inherit.aes = FALSE)
+                              color = annotation,
+                ymin = as.numeric(seq_name)-0.5,
+                ymax = as.numeric(seq_name)+0.5),
+                inherit.aes = FALSE, fill = NA, size = 1.2, alpha = 0.5) +
+      geom_tile(data = tab5.aln_anno()$positions,
+                mapping = aes(x = aln_pos, y = seq_name, color = annotation),
+                width = 1, height = 1,
+                fill = NA, size = 1.2, alpha = 0.5, inherit.aes = FALSE)
     p <- p +
       geom_tile(data = na.omit(aln_df), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
@@ -623,7 +636,8 @@ server <- function(input, output, session){
       theme(panel.grid = element_blank(), panel.grid.minor = element_blank()) +
       facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
       theme(strip.background = element_blank(),
-            strip.text.x = element_blank())
+            strip.text.x = element_blank(),
+            legend.box = "vertical")
     p},
     res = 100)
      # if(is.null(input$tab5.transcript_ID)) "400px"
