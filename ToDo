@@ -11,7 +11,7 @@ Little fixes
 >>>>>>> master
 - add color scheme to aln_plot
 - add hoverover to divPlot
-- decrease font of input collapse instructions
+x decrease font of input collapse instructions
 - add alignment diversity plot
 - add example/template tair_locus and name file
 - "Diversity plot" handling for premature stops (and frame shifts)?

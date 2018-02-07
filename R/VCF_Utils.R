@@ -885,8 +885,6 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     tair_locus <- dplyr::quo(tair_locus)
     tair_symbol <- dplyr::quo(tair_symbol)
     gene <- dplyr::quo(gene)
-<<<<<<< Updated upstream
-    #if(sum(unique(anno_df$gene) %in% unique(gene_info$tair_locus) | unique(anno_df$gene) %in% unique(gene_info$tair_symbol)) < length(unique(anno_df$gene)))
     anno_df.loci <- anno_df %>% dplyr::inner_join(y = gene_info,
                                                   by = c("gene" = "tair_locus"))
     anno_df.symbol <- anno_df %>% dplyr::inner_join(y = gene_info,
@@ -897,24 +895,6 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
       "tair_locus"
     anno_df.loci <- anno_df.loci[,names(anno_df.symbol)]
     anno_df <- bind_rows(anno_df.symbol, anno_df.loci)
-=======
-    anno_df.tair_locus <- anno_df$gene %>%
-      stringr::str_detect("AT[1-5]G[0-9]{5}")
-    anno_df <-
-      ifelse(anno_df.tair_locus, yes = {
-          anno_df %>% dplyr::inner_join(
-          dplyr::select(gene_info,
-                                                !!tair_locus,
-                                                !!tair_symbol),
-                                              by = c("gene" = "tair_locus"))},
-                    no = {
-          anno_df %>% dplyr::inner_join(
-          dplyr::select(gene_info, !!tair_locus,
-                                                !!tair_symbol),
-                                         by = c("gene" = "tair_symbol"))
-      })
-    print(anno_df)
->>>>>>> Stashed changes
   }
   if(wide){
     anno.domain <- reshape2::melt(data = anno_df,
