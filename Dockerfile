@@ -18,13 +18,13 @@ RUN R -e 'install.packages("devtools")'
 
 RUN R -e 'install.packages("ggmap")'
 
-RUN R -e 'install.packages("ggthemes")'
-
 RUN R -e 'install.packages("ggpmisc")'
 
 RUN R -e 'install.packages("ggrepel")'
 
 RUN R -e 'install.packages("ggseqlogo")'
+
+RUN R -e 'install.packages("ggthemes")'
 
 RUN R -e 'install.packages("leaflet")'
 
