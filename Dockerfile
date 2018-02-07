@@ -20,6 +20,8 @@ RUN R -e 'install.packages("ggmap")'
 
 RUN R -e 'install.packages("ggthemes")'
 
+RUN R -e 'install.packages("ggpmisc")
+
 RUN R -e 'install.packages("ggrepel")'
 
 RUN R -e 'install.packages("ggseqlogo")'

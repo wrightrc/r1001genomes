@@ -12,6 +12,7 @@ library(DECIPHER)
 library(ggseqlogo)
 library(shinyBS)
 library(ggplot2)
+library(ggpmisc)
 library(dplyr)
 
 
@@ -253,13 +254,20 @@ server <- function(input, output, session){
 #### diversityPlot ####
   output$diversityPlot <- renderPlot({
     p <- plotCodingDiv(uniqueCodingVars = tab2.tableData())
-    if(!is.null(input$anno_df)){
-    p <- append_layers(p,
-      geom_rect(data = subset(input$anno_df, gene == tab2.selectGene),
+    if(!is.null(input$annoFile)){
+    p <- append_layers(p,list(
+      geom_rect(data = subset(anno_df()$domains,
+                              transcript_ID == input$tab2.transcript_ID),
                 mapping = aes(xmin = as.integer(start),
                               xmax = as.integer(end),
                               fill = annotation),
-                ymin = -Inf, ymax = Inf, inherit.aes = FALSE),
+                ymin = -Inf, ymax = Inf, inherit.aes = FALSE, alpha = 0.2),
+        geom_rect(data = subset(anno_df()$positions,
+                                 transcript_ID == input$tab2.transcript_ID),
+                   mapping = aes(xmin = as.integer(position)-0.5,
+                                 xmax = as.integer(position)+0.5,
+                                 fill = annotation),
+                  ymin = -Inf, ymax = Inf, inherit.aes = FALSE, alpha = 0.8)),
       position = "bottom")
     }
     return(p)
