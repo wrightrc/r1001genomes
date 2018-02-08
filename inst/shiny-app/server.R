@@ -607,6 +607,10 @@ server <- function(input, output, session){
                         by = c("transcript_ID" = "transcript_ID"))
     ## chunk up aln_df
     aln_df <- chunkAlnDF(aln_df, chunk_width = 80)
+    aln_df$seq_name <- as.character(aln_df$seq_name)
+    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
+    aln_df$seq_name <- as.factor(aln_df$seq_name)
+    print(aln_df)
     return(aln_df)
   })
 #### tab5.aln_anno ####
@@ -615,7 +619,7 @@ server <- function(input, output, session){
     anno_df <- anno_df()
 
     anno_df <- addAlnPosToAnno(anno_df, aln_df())
-    print(anno_df)
+    #print(anno_df)
     ## make chunks from aln_df
     chunks <- makeChunksDF(aln_df())
     ## chunk up annotations
@@ -628,7 +632,7 @@ server <- function(input, output, session){
       anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
       anno_df$positions$seq_name <- as.factor(anno_df$positions$tair_symbol)
     }
-
+    print(anno_df)
     return(anno_df)
   })
 
@@ -643,15 +647,17 @@ server <- function(input, output, session){
 
 #### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlot(expr = {
-    aln_df <- aln_df()
-    aln_df$seq_name <- as.character(aln_df$seq_name)
-    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
-    aln_df$seq_name <- as.factor(aln_df$seq_name)
+    ## NEED TO MOVE THIS UP TO aln_df() because hover refers to aln_df()
+    ## and make sure that tab5.aln_anno() only depends on transcript_ID
+    # aln_df <- aln_df()
+    # aln_df$seq_name <- as.character(aln_df$seq_name)
+    # aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
+    # aln_df$seq_name <- as.factor(aln_df$seq_name)
     #anno_df <- tab5.aln_anno()
     #anno_df$domains$seq_name[!is.na(anno_df$domains$tair_symbol)] <- anno_df$domains$tair_symbol[!is.na(anno_df$domains$tair_symbol)]
     #anno_df$domains$seq_name <- as.factor(anno_df$domains$seq_name)
     p <-
-      ggplot(aln_df, aes(x = aln_pos, y = seq_name,
+      ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants))
     if(!is.null(input$annoFile)) p <- p +
       geom_rect(data = tab5.aln_anno()$domains,
@@ -666,11 +672,11 @@ server <- function(input, output, session){
                 width = 1, height = 1,
                 fill = NA, size = 1.2, alpha = 0.5, inherit.aes = FALSE)
     p <- p +
-      geom_tile(data = na.omit(aln_df), mapping = aes(fill = effects),
+      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1, family = "Courier") +
       scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
-      scale_x_continuous(breaks=seq(1,max(aln_df$aln_pos), by = 10)) +
+      scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       scale_y_discrete() +
       # expand increases distance from axis
       xlab("") +
@@ -721,7 +727,8 @@ server <- function(input, output, session){
     # actual tooltip created as wellPanel
     wellPanel(
       style = style,
-      p(HTML(paste0("<b>seq: </b>", point$seq_name, "<br/>",
+      p(HTML(paste0("<b>symbol: </b>", point$seq_name, "<br/>",
+                    "<b>transcript: </b>", point$transcript_ID, "<br/>",
                     "<b>seq_pos: </b>", point$seq_pos, "<br/>",
                     "<b>variants: </b>", point$variants)))
     )
