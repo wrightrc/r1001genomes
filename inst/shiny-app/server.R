@@ -647,15 +647,6 @@ server <- function(input, output, session){
 
 #### tab5.aln_plot ####
   output$tab5.aln_plot <- renderPlot(expr = {
-    ## NEED TO MOVE THIS UP TO aln_df() because hover refers to aln_df()
-    ## and make sure that tab5.aln_anno() only depends on transcript_ID
-    # aln_df <- aln_df()
-    # aln_df$seq_name <- as.character(aln_df$seq_name)
-    # aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
-    # aln_df$seq_name <- as.factor(aln_df$seq_name)
-    #anno_df <- tab5.aln_anno()
-    #anno_df$domains$seq_name[!is.na(anno_df$domains$tair_symbol)] <- anno_df$domains$tair_symbol[!is.na(anno_df$domains$tair_symbol)]
-    #anno_df$domains$seq_name <- as.factor(anno_df$domains$seq_name)
     p <-
       ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
                            group = seq_pos, text = variants))
