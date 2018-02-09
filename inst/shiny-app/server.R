@@ -14,6 +14,7 @@ library(shinyBS)
 library(ggplot2)
 library(ggpmisc)
 library(dplyr)
+library(cowplot)
 
 
 parseInput <- function (textIn) {
@@ -607,6 +608,10 @@ server <- function(input, output, session){
                         by = c("transcript_ID" = "transcript_ID"))
     ## chunk up aln_df
     aln_df <- chunkAlnDF(aln_df, chunk_width = 80)
+    aln_df$seq_name <- as.character(aln_df$seq_name)
+    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
+    aln_df$seq_name <- as.factor(aln_df$seq_name)
+    print(aln_df)
     return(aln_df)
   })
 #### tab5.aln_anno ####
@@ -615,7 +620,7 @@ server <- function(input, output, session){
     anno_df <- anno_df()
 
     anno_df <- addAlnPosToAnno(anno_df, aln_df())
-    print(anno_df)
+    #print(anno_df)
     ## make chunks from aln_df
     chunks <- makeChunksDF(aln_df())
     ## chunk up annotations
@@ -628,7 +633,7 @@ server <- function(input, output, session){
       anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
       anno_df$positions$seq_name <- as.factor(anno_df$positions$tair_symbol)
     }
-
+    print(anno_df)
     return(anno_df)
   })
 
@@ -642,35 +647,27 @@ server <- function(input, output, session){
   )
 
 #### tab5.aln_plot ####
-  output$tab5.aln_plot <- renderPlot(expr = {
-    aln_df <- aln_df()
-    aln_df$seq_name <- as.character(aln_df$seq_name)
-    aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
-    aln_df$seq_name <- as.factor(aln_df$seq_name)
-    #anno_df <- tab5.aln_anno()
-    #anno_df$domains$seq_name[!is.na(anno_df$domains$tair_symbol)] <- anno_df$domains$tair_symbol[!is.na(anno_df$domains$tair_symbol)]
-    #anno_df$domains$seq_name <- as.factor(anno_df$domains$seq_name)
-    p <-
-      ggplot(aln_df, aes(x = aln_pos, y = seq_name,
-                           group = seq_pos, text = variants))
+  tab5.aln_plot <- reactive({
+    p <-ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
+                             group = seq_pos, text = variants))
     if(!is.null(input$annoFile)) p <- p +
       geom_rect(data = tab5.aln_anno()$domains,
                 mapping = aes(xmin = start_aln_pos - 0.5,
                               xmax = end_aln_pos + 0.5,
                               color = annotation,
-                ymin = as.numeric(seq_name)-0.5,
-                ymax = as.numeric(seq_name)+0.5),
+                              ymin = as.numeric(seq_name)-0.5,
+                              ymax = as.numeric(seq_name)+0.5),
                 inherit.aes = FALSE, fill = NA, size = 1.2, alpha = 0.5) +
       geom_tile(data = tab5.aln_anno()$positions,
                 mapping = aes(x = aln_pos, y = seq_name, color = annotation),
                 width = 1, height = 1,
                 fill = NA, size = 1.2, alpha = 0.5, inherit.aes = FALSE)
     p <- p +
-      geom_tile(data = na.omit(aln_df), mapping = aes(fill = effects),
+      geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1, family = "Courier") +
       scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
-      scale_x_continuous(breaks=seq(1,max(aln_df$aln_pos), by = 10)) +
+      scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       scale_y_discrete() +
       # expand increases distance from axis
       xlab("") +
@@ -681,12 +678,16 @@ server <- function(input, output, session){
       theme(strip.background = element_blank(),
             strip.text.x = element_blank(),
             legend.box = "vertical")
-    p},
-    res = 100)
-     # if(is.null(input$tab5.transcript_ID)) "400px"
-     #           else
-     #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
-     #                     "px")}
+    p})
+  output$tab5.aln_plot <- renderPlot(expr = tab5.aln_plot() +
+                                       theme(legend.position = "none"),
+                                     res = 100)
+  tab5.aln_plot_legend <- reactive({
+    get_legend(tab5.aln_plot())
+  })
+  output$tab5.aln_plot_legend <- renderPlot(plot_grid(tab5.aln_plot_legend()),
+                                            res = 100)
+
 #### plot.ui ####
   output$plot.ui <- renderUI({
     plotOutput('tab5.aln_plot', height = aln_plot_height(),
@@ -704,24 +705,35 @@ server <- function(input, output, session){
 
     # calculate point position INSIDE the image as percent of total dimensions
     # from left (horizontal) and from top (vertical)
-    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+    left_pct <- (hover$x - hover$domain$left) /
+      (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) /
+      (hover$domain$top - hover$domain$bottom)
 
     # calculate distance from left and bottom side of the picture in pixels
-    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
-    top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+    left_px <- hover$range$left + left_pct *
+      (hover$range$right - hover$range$left)
+    right_px <- (1-left_pct) *
+      (hover$range$right - hover$range$left)
+    top_px <- hover$range$top + top_pct *
+      (hover$range$bottom - hover$range$top)
 
     # create style property fot tooltip
     # background color is set so tooltip is a bit transparent
     # z-index is set so we are sure are tooltip will be on top
+    if(left_pct < .70)
     style <- paste0("position:absolute; z-index:100;
                     background-color: rgba(245, 245, 245, 0.85); ",
-                    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+                    "left:", left_px + 2, "px; top:", top_px + 2, "px;") else
+          style <- paste0("position:absolute; z-index:100;
+                    background-color: rgba(245, 245, 245, 0.85); ",
+                    "right:", right_px + 10, "px; top:", top_px + 2, "px;")
 
     # actual tooltip created as wellPanel
     wellPanel(
       style = style,
-      p(HTML(paste0("<b>seq: </b>", point$seq_name, "<br/>",
+      p(HTML(paste0("<b>symbol: </b>", point$seq_name, "<br/>",
+                    "<b>transcript: </b>", point$transcript_ID, "<br/>",
                     "<b>seq_pos: </b>", point$seq_pos, "<br/>",
                     "<b>variants: </b>", point$variants)))
     )
