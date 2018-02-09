@@ -275,7 +275,7 @@ ui <- function(request){ fluidPage(
                           style = "position:relative",
                           uiOutput("plot.ui"),
                           uiOutput("aln_plot_hover")),
-                        plotOutput('tab5.aln_plot_legend', height = "auto")
+                        plotOutput('tab5.aln_plot_legend', height = "200px")
                         ),
                # verbatimTextOutput("event")
                tags$br()#,
