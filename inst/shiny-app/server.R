@@ -14,6 +14,7 @@ library(shinyBS)
 library(ggplot2)
 library(ggpmisc)
 library(dplyr)
+library(cowplot)
 
 
 parseInput <- function (textIn) {
@@ -646,17 +647,16 @@ server <- function(input, output, session){
   )
 
 #### tab5.aln_plot ####
-  output$tab5.aln_plot <- renderPlot(expr = {
-    p <-
-      ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
-                           group = seq_pos, text = variants))
+  tab5.aln_plot <- reactive({
+    p <-ggplot(aln_df(), aes(x = aln_pos, y = seq_name,
+                             group = seq_pos, text = variants))
     if(!is.null(input$annoFile)) p <- p +
       geom_rect(data = tab5.aln_anno()$domains,
                 mapping = aes(xmin = start_aln_pos - 0.5,
                               xmax = end_aln_pos + 0.5,
                               color = annotation,
-                ymin = as.numeric(seq_name)-0.5,
-                ymax = as.numeric(seq_name)+0.5),
+                              ymin = as.numeric(seq_name)-0.5,
+                              ymax = as.numeric(seq_name)+0.5),
                 inherit.aes = FALSE, fill = NA, size = 1.2, alpha = 0.5) +
       geom_tile(data = tab5.aln_anno()$positions,
                 mapping = aes(x = aln_pos, y = seq_name, color = annotation),
@@ -678,12 +678,16 @@ server <- function(input, output, session){
       theme(strip.background = element_blank(),
             strip.text.x = element_blank(),
             legend.box = "vertical")
-    p},
-    res = 100)
-     # if(is.null(input$tab5.transcript_ID)) "400px"
-     #           else
-     #             {paste0((length(unique(aln_df()$seq_name)) * 20 + 110),
-     #                     "px")}
+    p})
+  output$tab5.aln_plot <- renderPlot(expr = tab5.aln_plot() +
+                                       theme(legend.position = "none"),
+                                     res = 100)
+  tab5.aln_plot_legend <- reactive({
+    get_legend(tab5.aln_plot())
+  })
+  output$tab5.aln_plot_legend <- renderPlot(plot_grid(tab5.aln_plot_legend()),
+                                            res = 100)
+
 #### plot.ui ####
   output$plot.ui <- renderUI({
     plotOutput('tab5.aln_plot', height = aln_plot_height(),

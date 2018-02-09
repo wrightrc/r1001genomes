@@ -274,8 +274,9 @@ ui <- function(request){ fluidPage(
                         tags$div(
                           style = "position:relative",
                           uiOutput("plot.ui"),
-                          uiOutput("aln_plot_hover"))),
-
+                          uiOutput("aln_plot_hover")),
+                        plotOutput('tab5.aln_plot_legend', height = "auto")
+                        ),
                # verbatimTextOutput("event")
                tags$br()#,
                #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
