@@ -14,6 +14,8 @@ RUN apt-get update && apt-get -y install libz-dev
 
 
 # Install r1001genomes package dependencies
+RUN R -e 'install.packages("cowplot")'
+
 RUN R -e 'install.packages("devtools")'
 
 RUN R -e 'install.packages("ggmap")'

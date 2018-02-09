@@ -1063,7 +1063,6 @@ chunkAnnotation <- function(anno_df, chunks){
       new_rows[(domain$end_aln_pos > new_rows$start_aln_pos &
                   domain$end_aln_pos < new_rows$end_aln_pos),
                "end_aln_pos"] <- domain[, "end_aln_pos"]
-      print(new_rows)
       new_rows
     }
     # or if mono-chunk-ular add chunk info
