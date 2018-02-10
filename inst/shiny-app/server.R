@@ -619,11 +619,16 @@ server <- function(input, output, session){
     print(chunks)
     anno_df <- chunkAnnotation(anno_df, chunks)
     if(is.null(input$tab5.primary_transcript)) {
-      anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID)
-      anno_df$positions$seq_name <- as.factor(anno_df$positions$transcript_ID)}
+      anno_df$domains$seq_name <- factor(anno_df$domains$transcript_ID,
+                       levels = levels(as.factor(aln_df()$transcript_ID)))
+      anno_df$positions$seq_name <-
+        factor(anno_df$positions$transcript_ID,
+                        levels = levels(as.factor(aln_df()$transcript_ID)))}
     else {
-      anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
-      anno_df$positions$seq_name <- as.factor(anno_df$positions$tair_symbol)
+      anno_df$domains$seq_name <- factor(anno_df$domains$tair_symbol,
+                        levels = levels(as.factor(aln_df()$tair_symbol)))
+      anno_df$positions$seq_name <- factor(anno_df$positions$tair_symbol,
+                       levels = levels(as.factor(aln_df()$tair_symbol)))
     }
     print(anno_df)
     return(anno_df)

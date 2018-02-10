@@ -940,7 +940,21 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #' addAlnPosToAnno(anno_df, aln_df)
 #'
 addAlnPosToAnno <- function(anno_df, aln_df){
-  aln_df$seq_pos <- as.integer(aln_df$seq_pos)
+  suppressWarnings(aln_df$seq_pos <- as.integer(aln_df$seq_pos))
+  # check anno_df
+  max_anno <- ddply(anno_df$domains, .variables = .(transcript_ID, annotation), .fun = summarise, end = max(end))
+  max_aln <- ddply(aln_df, .variables = .(transcript_ID), .fun = summarise, max = max(na.omit(as.integer(seq_pos))))
+  errors <- adply(max_anno, 1, .fun = summarise, errors = if(end > max_aln[max_aln$transcript_ID == transcript_ID, "max"]) "annotation end exceeds sequence length" else NA)
+  if(!is.null(errors)){
+  errors <- errors[!is.na(errors$errors),]
+  stop("Annotations exceed sequence dimensions! \n",
+       "Abberant annotations: \n",
+       paste(apply(errors, 1, paste, collapse =", " ), collapse = " \n"),
+       "\nand maximum lengths: \n",
+       paste(apply(max_aln[max_aln$transcript_ID %in%
+                             errors$transcript_ID, ],
+                   1, paste, collapse = ": "), collapse = " \n"))}
+  # joins
   anno_df$domains <- anno_df$domains %>%
     dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
                                "aln_pos", "transcript_ID")],
