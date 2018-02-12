@@ -971,10 +971,13 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #'
 #' @param anno_df an annotation data frame from \link{readAnnotationFile}
 #' @param aln_df an alignment data frame
+#' @param intersect_only (logical) only keep rows containing matching
+#'  positions in aln_df (default is TRUE)
 #'
 #' @return an annotation data frame with columns from an alignment data frame joined by transcript ID and position
 #' @export
 #' @importFrom magrittr "%>%"
+#' @import dplyr
 #'
 #'
 #' @examples
@@ -992,7 +995,7 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #'
 #' addAlnPosToAnno(anno_df, aln_df)
 #'
-addAlnPosToAnno <- function(anno_df, aln_df){
+addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
   suppressWarnings(aln_df$seq_pos <- as.integer(aln_df$seq_pos))
   # check anno_df
   max_anno <- ddply(anno_df$domains, .variables = .(transcript_ID, annotation), .fun = summarise, end = max(end))
@@ -1000,6 +1003,7 @@ addAlnPosToAnno <- function(anno_df, aln_df){
                    .fun = summarise,
                    max = max(na.omit(as.integer(seq_pos))))
   max_anno <- join(max_anno, max_aln, by = "transcript_ID")
+  max_anno <- max_anno[!is.na(max_anno$max),]
   max_anno$errors <- dplyr::if_else(max_anno$end > max_anno$max,
                 "annotation end exceeds sequence length", "none")
   if(sum(max_anno$errors != "none") > 0){
@@ -1028,6 +1032,12 @@ addAlnPosToAnno <- function(anno_df, aln_df){
                                "aln_pos", "transcript_ID")],
                      by = c("transcript_ID" = "transcript_ID",
                             "position" = "seq_pos"))
+  if(intersect_only) {
+    anno_df$domains <- anno_df$domains[
+      !is.na(anno_df$domains$start_aln_pos), ]
+    anno_df$positions <- anno_df$positions[
+      !is.na(anno_df$positions$aln_pos), ]
+  }
   return(anno_df)
 }
 

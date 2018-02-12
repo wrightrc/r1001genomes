@@ -4,12 +4,15 @@
 \alias{addAlnPosToAnno}
 \title{Add alignment positions to an annotation data frame}
 \usage{
-addAlnPosToAnno(anno_df, aln_df)
+addAlnPosToAnno(anno_df, aln_df, intersect_only = TRUE)
 }
 \arguments{
 \item{anno_df}{an annotation data frame from \link{readAnnotationFile}}
 
 \item{aln_df}{an alignment data frame}
+
+\item{intersect_only}{(logical) only keep rows containing matching
+positions in aln_df (default is TRUE)}
 }
 \value{
 an annotation data frame with columns from an alignment data frame joined by transcript ID and position
