@@ -947,18 +947,14 @@ addAlnPosToAnno <- function(anno_df, aln_df){
                    .fun = summarise,
                    max = max(na.omit(as.integer(seq_pos))))
   max_anno <- join(max_anno, max_aln, by = "transcript_ID")
-  errors <-  adply(max_anno, 1, .fun = summarise,
-                  errors = if(end > max)
-                    "annotation end exceeds sequence length" else NA)
-  errors <- errors[!is.na(errors$errors),]
-  if(nrow(errors) > 0){
-  stop("Annotations exceed sequence dimensions! \n",
+  max_anno$errors <- dplyr::if_else(max_anno$end > max_anno$max,
+                "annotation end exceeds sequence length", "none")
+  if(sum(max_anno$errors != "none") > 0){
+    errors <- max_anno[max_anno$errors != "none",]
+    stop("Annotations exceed sequence dimensions! \n",
        "Abberant annotations: \n",
-       paste(apply(errors, 1, paste, collapse =", " ), collapse = " \n"),
-       "\nand maximum lengths: \n",
-       paste(apply(max_aln[max_aln$transcript_ID %in%
-                             errors$transcript_ID, ],
-                   1, paste, collapse = ": "), collapse = " \n"))}
+       paste(apply(errors, 1, paste, collapse =", " ), collapse = " \n"))
+  }
   # joins
   anno_df$domains <- anno_df$domains %>%
     dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
@@ -1059,6 +1055,7 @@ chunkAnnotation <- function(anno_df, chunks){
       (domain$start_aln_pos <= chunks$end &
          domain$start_aln_pos >= chunks$start) | #chunks at the beginning
       (domain$end_aln_pos >= chunks$start & domain$end_aln_pos <= chunks$end)
+    print(rows)
       # chunks at the end
     #print(rows)
     if(sum(rows) > 1){
