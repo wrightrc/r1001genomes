@@ -946,10 +946,9 @@ addAlnPosToAnno <- function(anno_df, aln_df){
   max_aln <- ddply(aln_df, .variables = .(transcript_ID),
                    .fun = summarise,
                    max = max(na.omit(as.integer(seq_pos))))
-  if(exists("max_aln")){
-  errors <- adply(max_anno, 1, .fun = summarise,
-                  errors = if(end > max_aln[max_aln$transcript_ID ==
-                                            transcript_ID, "max"])
+  max_anno <- join(max_anno, max_aln, by = "transcript_ID")
+  errors <-  adply(max_anno, 1, .fun = summarise,
+                  errors = if(end > max)
                     "annotation end exceeds sequence length" else NA)
   errors <- errors[!is.na(errors$errors),]
   if(nrow(errors) > 0){
@@ -959,7 +958,7 @@ addAlnPosToAnno <- function(anno_df, aln_df){
        "\nand maximum lengths: \n",
        paste(apply(max_aln[max_aln$transcript_ID %in%
                              errors$transcript_ID, ],
-                   1, paste, collapse = ": "), collapse = " \n"))}}
+                   1, paste, collapse = ": "), collapse = " \n"))}
   # joins
   anno_df$domains <- anno_df$domains %>%
     dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
