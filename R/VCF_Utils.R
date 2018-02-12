@@ -1128,12 +1128,12 @@ chunkAnnotation <- function(anno_df, chunks){
         chunks[rows, c("chunk", "start","end")]
       #print(new_rows)
       # if the domain starts after the chunk starts extend the "start_aln_pos"
-      new_rows[(domain$start_aln_pos < new_rows$end_aln_pos &
-                  domain$start_aln_pos > new_rows$start_aln_pos),
+      new_rows[(domain$start_aln_pos <= new_rows$end_aln_pos &
+                  domain$start_aln_pos >= new_rows$start_aln_pos),
                "start_aln_pos"] <- domain[, "start_aln_pos"]
       # if the domain ends before the chunk does shorten "end_aln_pos"
-      new_rows[(domain$end_aln_pos > new_rows$start_aln_pos &
-                  domain$end_aln_pos < new_rows$end_aln_pos),
+      new_rows[(domain$end_aln_pos >= new_rows$start_aln_pos &
+                  domain$end_aln_pos <= new_rows$end_aln_pos),
                "end_aln_pos"] <- domain[, "end_aln_pos"]
       new_rows
     }
