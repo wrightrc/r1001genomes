@@ -4,8 +4,7 @@
 \alias{geneInfoFromFile}
 \title{make geneInfo dataframe based on .csv file of tair loci and names/symbols}
 \usage{
-geneInfoFromFile(fname, firstOnly = TRUE, inputType = "tair_locus",
-  useCache = TRUE)
+geneInfoFromFile(fname, firstOnly = TRUE, useCache = TRUE)
 }
 \arguments{
 \item{fname}{filename of csv files containing "tair_locus" and "name" fields}
