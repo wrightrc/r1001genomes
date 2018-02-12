@@ -277,8 +277,11 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #'
 #' @param genes a character vector of tair IDs of the genes to retrieve
 #' @param firstOnly logical, if true only return transcript IDs containing ".1"
-#' @param inputType
 #' @param useCache logical, read from and write to a file of cached genes?
+#' @param source the source to retrieve gene information from. "tair10" will
+#' use the tair 10 database via biomart (requires internet), "araport11" uses a
+#' gff file of the araport11 data stored locally in  the r1001genomes R package.
+#' a file path to a .gff or .gff.gz file may also be used.
 #'
 #' @returna table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
@@ -288,12 +291,11 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @importFrom utils read.table write.table
 #'
 #' @examples
-getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
-
+getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   retrievedInfo <- NULL
   genes2 <- genes
   cacheFile <- system.file("shiny-app", "geneInfoCache.txt", package="r1001genomes")
-
+  output <- NULL
   if (useCache == TRUE){
     geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
     retrievedInfo <- geneInfoCache[geneInfoCache$tair_locus %in% genes, ]
@@ -301,33 +303,89 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
     print("new genes:")
     print(genes2)   # list new genes, not found in cache
   }
-
-  output <- NULL
   if (length(genes2) > 0){
-    tair10 <- useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
-    output <- getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
-                                 "end_position", "strand", "transcript_start", "transcript_end"
-                                  ), filters=inputType, values=genes2, mart=tair10)
-    # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
-    output$regionString <- as.character(alply(output, .fun=makeRegionString, .margins=1, .expand=FALSE))
-    names(output)[names(output) == "ensembl_transcript_id"] <- "transcript_ID"
-    output$transcript_length <- abs(output$transcript_end - output$transcript_start)
-
+    if (source == "tair10") {
+      tair10 <- useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
+      output <- getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
+                                   "end_position", "strand", "transcript_start", "transcript_end"
+                                    ), filters="tair_locus", values=genes2, mart=tair10)
+      # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
+      output$regionString <- as.character(alply(output, .fun=makeRegionString, .margins=1, .expand=FALSE))
+      names(output)[names(output) == "ensembl_transcript_id"] <- "transcript_ID"
+      output$transcript_length <- abs(output$transcript_end - output$transcript_start)
+    } else if (source == "araport11"){
+      gffFile <- system.file("extdata", "Araport11_GFF3_genes_transposons.201606.gff.gz", package="r1001genomes")
+      output <- geneInfoFromGff(genes2, gffFile)
+    } else if (file.exists(source)) {
+      output <- geneInfoFromGff(genes2, source)
+    } else {
+      print("Error 'source' argument of getGeneInfo() is not valid")
+    }
   }
   if (useCache == TRUE) {
     # append cache
     geneInfoCache <- unique(rbind(geneInfoCache, output))
     write.table(geneInfoCache, file=cacheFile, row.names=FALSE)
   }
-
   output <- rbind(retrievedInfo, output)
-
   if (firstOnly == TRUE) {
     # if firstOnly is TRUE, only return transcript IDs containing ".1"
     output <- output[(grepl(".1", output$transcript_ID, fixed=TRUE)), ]
   }
   return (output)
 }
+
+#' get gene information from .gff file
+#'
+#' @param genes a character vector of tair IDs of the genes to retrieve
+#' @param gffFile file path to the gff file or gz compressed gff file.
+#'
+#' @return gene info in same format as getGeneInfo, but including all transcripts.
+#' @export
+#'
+#' @examples
+geneInfoFromGff <- function(genes, gffFile){
+  gffData <- ape::read.gff(gffFile)
+
+  # only look at entries of type "gene" and "protein"
+  gffData <- gffData[gffData$type %in% c("gene", "protein"), ]
+
+  # filter for entries matching the gene IDs
+  gffData <- gffData[grep(pattern=paste("ID=", genes, sep="", collapse="|"), gffData$attributes), ]
+
+  # process entries of the "gene" type
+  geneData <- gffData[gffData$type %in% "gene", ]
+  geneData$tair_locus <- stringr::str_match(geneData$attributes, "Name=(.*?);")[,2]
+  geneData$tair_symbol <- stringr::str_match(geneData$attributes, "symbol=(.*?);")[,2]
+  geneData$start_position <- geneData$start
+  geneData$end_position <- geneData$end
+  geneData <- subset(geneData, select=-c(strand))
+
+  # process entries of the "protein" type
+  proteinData <- gffData[gffData$type %in% "protein", ]
+  proteinData$transcript_ID <- stringr::str_match(proteinData$attributes, "Name=(.*?);")[, 2]
+  proteinData$tair_locus <- stringr::str_match(proteinData$transcript_ID, "AT[1-5]G[0-9]{5}")[, 1]
+  proteinData$chromosome_name <- as.integer(stringr::str_match(as.character(proteinData$seqid), "Chr([0-9])")[,2])
+  proteinData$transcript_start <- proteinData$start
+  proteinData$transcript_end <- proteinData$end
+  proteinData$regionString <- as.character(alply(proteinData, .fun=makeRegionString, .margins=1, .expand=FALSE))
+  proteinData$transcript_length <- abs(proteinData$transcript_end - proteinData$transcript_start)
+  proteinData$strand <- as.integer(paste(proteinData$strand,"1", sep=""))
+
+  # join the gene and protein entries
+  geneInfoOutput <- dplyr::inner_join(geneData, proteinData, by="tair_locus")
+
+  # order columns same as getGeneInfo function
+  geneInfoOutput <- geneInfoOutput[, c("tair_locus", "tair_symbol",
+                                       "transcript_ID", "chromosome_name",
+                                       "start_position", "end_position",
+                                       "strand", "transcript_start",
+                                       "transcript_end", "regionString",
+                                       "transcript_length" )]
+
+  return(geneInfoOutput)
+}
+
 
 #' Rename TAIR symbols of geneInfo table based on .csv file
 #'
@@ -360,24 +418,19 @@ relableTairSymbol <- function(geneInfo, fnames) {
 #'
 #' @param fname filename of csv files containing "tair_locus" and "name" fields
 #' @param firstOnly logical, if true only return transcript IDs containing ".1"
-#' @param inputType
 #' @param useCache logical, read from and write to a file of cached genes?
 #'
 #' @return geneInfo dataframe see getGeneInfo
 #' @export
 #'
 #' @examples
-geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
+geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE) {
   geneIDTable <- read.csv(fname, colClasses="character")
   genes <- geneIDTable$tair_locus
-
-  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, inputType=inputType, useCache=useCache)
-
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache)
   geneInfo <- relableTairSymbol(geneInfo, fname)
-
   return(geneInfo)
 }
-
 
 
 #' Calculate Nei's nucleotide diversity statistic for a single position,
