@@ -294,7 +294,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   retrievedInfo <- NULL
   genes2 <- genes
-  cacheFile <- system.file("shiny-app", "geneInfoCache.txt", package="r1001genomes")
+  cacheFile <- system.file("extdata", "geneInfoCache.csv", package="r1001genomes")
   output <- NULL
   if (useCache == TRUE){
     geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
@@ -424,10 +424,10 @@ relableTairSymbol <- function(geneInfo, fnames) {
 #' @export
 #'
 #' @examples
-geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE) {
+geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   geneIDTable <- read.csv(fname, colClasses="character")
   genes <- geneIDTable$tair_locus
-  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache)
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache, source=source)
   geneInfo <- relableTairSymbol(geneInfo, fname)
   return(geneInfo)
 }
