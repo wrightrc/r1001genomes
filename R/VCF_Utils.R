@@ -400,6 +400,9 @@ relableTairSymbol <- function(geneInfo, fnames) {
  geneIdTable <- ldply(fnames, read.csv, colClasses="character")
 
  colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
+ # remove any leading and trailing whitespace
+ geneIdTable$tair_symbol <- trimws(geneIdTable$tair_symbol)
+ geneIdTable$tair_locus <- trimws(geneIdTable$tair_locus)
 
  geneInfoOut <- merge(geneInfo, geneIdTable[, c("tair_locus", "tair_symbol")], by="tair_locus", all.x=TRUE)
 
@@ -426,7 +429,7 @@ relableTairSymbol <- function(geneInfo, fnames) {
 #' @examples
 geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   geneIDTable <- read.csv(fname, colClasses="character")
-  genes <- geneIDTable$tair_locus
+  genes <- trimws(geneIDTable$tair_locus)
   geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache, source=source)
   geneInfo <- relableTairSymbol(geneInfo, fname)
   return(geneInfo)
@@ -927,6 +930,9 @@ cut_number
 readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
                                gene_info = NULL){
   anno_df <- read.csv(filename, stringsAsFactors = FALSE)
+  # remove leading and trailing whitespace from character columns
+  anno_df <- data.frame(lapply(anno_df, function(x){if(class(x) == "character")
+    {trimws(x)}else{x}}), stringsAsFactors = FALSE)
   if(!is.null(gene_info)){
     tair_locus <- dplyr::quo(tair_locus)
     tair_symbol <- dplyr::quo(tair_symbol)
