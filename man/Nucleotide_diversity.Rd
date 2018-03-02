@@ -17,3 +17,18 @@ input with Diversity field appended
 \description{
 Calculate nucleotide diversity for each position in the coding sequence
 }
+\examples{
+
+## make a gene info DF
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## calculate site-wise nucleotide diversity of a single VCF
+myVCFWithDiv <- Nucleotide_diversity(myVCF)
+
+## This function can also be applied to a list of VCF files created by the
+## `VCFList()` function, see example in the documentation for VCFList()
+
+}

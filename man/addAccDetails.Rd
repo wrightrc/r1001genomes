@@ -12,3 +12,18 @@ addAccDetails(tidyVCF, allAccs = FALSE)
 \description{
 Add accession metadata to a dataset containing ecotype IDs
 }
+\examples{
+
+#' ## make a gene info DF
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## add accession details to a single VCF
+myVCFWithAccDets <- addAccDetails(myVCF)
+
+## This function can also be applied to a list of VCF files created by the
+## `VCFList()` function, see example in the documentation for VCFList()
+
+}

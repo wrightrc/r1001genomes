@@ -17,3 +17,18 @@ list of VCF objects
 \description{
 download and store several VCFs in a list structure, named by their transcirpt ID
 }
+\examples{
+
+## first make a gene info DF
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download and compile a list of VCF files
+myVCFList <- VCFList(geneInfo)
+
+## other functions in this package that operate on VCF data can be applied
+## to VCFList objects using plyr::llply()
+myVCFList <- plyr::llply(myVCFList, parseEFF)
+myVCFList <- plyr::llply(myVCFList, Nucleotide_diversity)
+myVCFList <- plyr::llply(myVCFList, addAccDetails)
+
+}
