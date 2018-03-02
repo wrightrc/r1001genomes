@@ -859,7 +859,7 @@ makeAlnDF <- function(alignment){
 #'
 #' @param aln_df an alignment data frame resulting from
 #'  \link[r1001genomes]{makeAlnDF}
-#' @param SNPs a data frame of SNPs
+#' @param SNPs a data frame of SNPs as returned from \link[r1001genomes]{getCodingDiv}
 #' @param by_aln_SNPs a named list of character objects with each equivalency
 #' representing matching columns in `aln_df` (on the LHS) and `SNPs`
 #' (on the RHS), e.g. `"seq_name" = "transcript_id"`
