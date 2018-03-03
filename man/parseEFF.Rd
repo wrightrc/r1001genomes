@@ -18,3 +18,18 @@ new tidyVCF object with added columns for the parsed effect fields
 \description{
 Parse the EFF field of the VCF files from 1001genomes.org
 }
+\examples{
+
+## make a gene info DF
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## Parse the EFF field of a single VCF
+myParsedVCF <- parseEFF(myVCF)
+
+## This function can also be applied to a list of VCF files created by the
+## `VCFList()` function, see example in the documentation for VCFList()
+
+}

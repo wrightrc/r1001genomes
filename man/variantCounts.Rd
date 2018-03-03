@@ -16,3 +16,17 @@ variantCounts(data, unique = TRUE)
 counts number of variants in certain affect categories
 use with ldply() on VCFList objects to create a table.
 }
+\examples{
+
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download and compile a list of VCF files
+myVCFList <- VCFList(geneInfo)
+
+## tabultate unique variants
+ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+
+# tabulate total counts of variants relative to the reference sequence.
+ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+
+}

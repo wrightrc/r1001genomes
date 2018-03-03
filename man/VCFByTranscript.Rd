@@ -4,7 +4,7 @@
 \alias{VCFByTranscript}
 \title{download VCF, optionally in tidyVCF format}
 \usage{
-VCFByTranscript(geneInfo, strains, tidy = TRUE, dataOnly = TRUE)
+VCFByTranscript(geneInfo, strains = NULL, tidy = TRUE, dataOnly = TRUE)
 }
 \arguments{
 \item{geneInfo}{single row of geneInfo dataframe}
@@ -21,4 +21,13 @@ the VCF, in the format as requested by the parameters of the function
 }
 \description{
 download VCF, optionally in tidyVCF format
+}
+\examples{
+
+## make a gene info DF
+geneInfo <- getGeneInfo(genes = "AT3G62980")
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo)
+
 }

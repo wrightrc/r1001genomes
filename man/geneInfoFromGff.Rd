@@ -17,3 +17,9 @@ gene info in same format as getGeneInfo, but including all transcripts.
 \description{
 get gene information from .gff file
 }
+\examples{
+gffFile <- system.file("extdata",
+                       "Araport11_GFF3_genes_transposons.201606.gff.gz",
+                       package="r1001genomes")
+geneInfo <- geneInfoFromGff(genes = c("AT3G62980", "AT3G26810"), gffFile)
+}

@@ -36,7 +36,7 @@ vcf <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
 vcf <- ldply(.data = vcf, .fun = subset,
   !is.na(Transcript_ID) & gt_GT != "0|0")
 coding_vcf <- getCodingDiv(vcf)
-addSNPsToAlnDF(aln_df, coding_vcf, seq_name = Transcript_ID,
+(aln_df, coding_vcf, seq_name = Transcript_ID,
 seq_pos = Codon_Number)
 
 }
