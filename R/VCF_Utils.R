@@ -170,7 +170,7 @@ parseEFF <- function (tidyVCF){
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
   attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
   attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
-  return (output)
+  return (tibble::as_tibble(output))
 }
 
 #' Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
@@ -189,7 +189,7 @@ parseEFF <- function (tidyVCF){
   # split by comma to generate a vector of different effects
   effect <- stringr::str_split(effect, pattern=",", simplify=TRUE)
   # split by "(", "|", and ")" to separate fields
-  effect <- data.frame(stringr::str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE)
+  effect <- tibble::as_tibble(data.frame(stringr::str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE))
   # remove last column of empty strings ""found after ")"
   effect <- effect[, 1:12, drop=FALSE]
   # add column names to effects
@@ -207,7 +207,7 @@ parseEFF <- function (tidyVCF){
     #create a "gt_GT" column in the effect dataframe that matches the format of the VCF$dat
     effect$gt_GT <- paste(effect$Genotype_Number, "|", effect$Genotype_Number, sep = "")
     # merge the effect df with the original data df by the gt_GT field
-    output <- merge(data, effect, by="gt_GT", all.x=TRUE)
+    output <- left_join(data, effect, by="gt_GT")
   }
 
   else{  #if there are no effects matching the transcript ID, return the data unaltered
@@ -216,6 +216,9 @@ parseEFF <- function (tidyVCF){
 
   return(output)
 }
+
+
+
 
 #' download VCF, optionally in tidyVCF format
 #'
@@ -314,6 +317,8 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @importFrom utils read.table write.table
 #'
 #' @examples
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
 getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   retrievedInfo <- NULL
   genes2 <- genes
@@ -367,6 +372,10 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
 #' @export
 #'
 #' @examples
+#' gffFile <- system.file("extdata",
+#'                        "Araport11_GFF3_genes_transposons.201606.gff.gz",
+#'                        package="r1001genomes")
+#' geneInfo <- geneInfoFromGff(genes = c("AT3G62980", "AT3G26810"), gffFile)
 geneInfoFromGff <- function(genes, gffFile){
   gffData <- ape::read.gff(gffFile)
 
@@ -416,10 +425,8 @@ geneInfoFromGff <- function(genes, gffFile){
 #' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
 #'
 #' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
-#' @export
 #'
-#' @examples
-relableTairSymbol <- function(geneInfo, fnames) {
+.relableTairSymbol <- function(geneInfo, fnames) {
  geneIdTable <- ldply(fnames, read.csv, colClasses="character")
 
  colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
@@ -450,11 +457,14 @@ relableTairSymbol <- function(geneInfo, fnames) {
 #' @export
 #'
 #' @examples
+#' geneIdFile <- system.file("extdata", "AFB_gene_ids.csv", package="r1001genomes")
+#' geneInfoFromFile(fname = geneIdFile)
+#'
 geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   geneIDTable <- read.csv(fname, colClasses="character")
   genes <- trimws(geneIDTable$tair_locus)
   geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache, source=source)
-  geneInfo <- relableTairSymbol(geneInfo, fname)
+  geneInfo <- .relableTairSymbol(geneInfo, fname)
   return(geneInfo)
 }
 
@@ -465,9 +475,7 @@ geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair1
 #' @param GTfreq numeric vector listing counts of uninque genotypes
 #'
 #' @return numeric value nucleotide diversity
-#' @export
-#'
-#' @examples
+#.
 .calcDiversity <- function (GTfreq){
   result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
@@ -477,9 +485,7 @@ geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair1
 #' @param groupFreq a group GT_Frequencies tibble for a single position
 #'
 #' @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
-#' @export
 #'
-#' @examples
 .approxRefGt <- function(groupFreq) {
   if ("0|0" %in% groupFreq$gt_GT){  # if 0
     return(0)
@@ -538,6 +544,18 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
 #' @export
 #'
 #' @examples
+#'
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download and compile a list of VCF files
+#' myVCFList <- VCFList(geneInfo)
+#'
+#' ## tabultate unique variants
+#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#'
+#' # tabulate total counts of variants relative to the reference sequence.
+#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#'
 variantCounts <- function(data, unique=TRUE) {
   effects <- c("5_prime_UTR_variant",
                "intron_variant",

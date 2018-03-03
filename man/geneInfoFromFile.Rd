@@ -20,3 +20,8 @@ geneInfo dataframe see getGeneInfo
 \description{
 make geneInfo dataframe based on .csv file of tair loci and names/symbols
 }
+\examples{
+geneIdFile <- system.file("extdata", "AFB_gene_ids.csv", package="r1001genomes")
+geneInfoFromFile(fname = geneIdFile)
+
+}

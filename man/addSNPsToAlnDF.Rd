@@ -11,7 +11,7 @@ addSNPsToAlnDF(aln_df, SNPs, seq_name = Transcript_ID,
 \item{aln_df}{an alignment data frame resulting from
 \link[r1001genomes]{makeAlnDF}}
 
-\item{SNPs}{a data frame of SNPs}
+\item{SNPs}{a data frame of SNPs as returned from \link[r1001genomes]{getCodingDiv}}
 
 \item{by_aln_SNPs}{a named list of character objects with each equivalency
 representing matching columns in `aln_df` (on the LHS) and `SNPs`

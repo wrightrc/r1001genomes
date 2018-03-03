@@ -57,19 +57,19 @@ server <- function(input, output, session){
   all.Genes <- eventReactive({tab1.buttons$total_presses},{
     req(tab1.buttons$last_button!="none pressed")
     if (tab1.buttons$last_button == "file_submit"){
-      genes <- geneInfoFromFile(input$genesFile$datapath)
+      genes <- geneInfoFromFile(input$genesFile$datapath, source="araport11")
       req(genes != FALSE)
       return(genes)
     }
     if (input$STATS_quick_demo){
       names <- c("AT3G62980", "AT3G26810")
-      genes <- getGeneInfo(names)
+      genes <- getGeneInfo(names, source="araport11")
       req(genes != FALSE)
       return(genes)
     }
     # list of genes for tab 1, updated on pressing submit button
     names <- parseInput(input$gene_ids)
-    genes <- getGeneInfo(names)
+    genes <- getGeneInfo(names, source="araport11")
     req(genes != FALSE)
     return(genes)
   })

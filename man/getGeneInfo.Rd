@@ -22,3 +22,7 @@ a file path to a .gff or .gff.gz file may also be used.}
 Get the start and end position of each transcript of a set of
  genes using `bioMart` package to query the TAIR10 database via plants.ensembl.org
 }
+\examples{
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+}
