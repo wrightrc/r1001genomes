@@ -57,19 +57,19 @@ server <- function(input, output, session){
   all.Genes <- eventReactive({tab1.buttons$total_presses},{
     req(tab1.buttons$last_button!="none pressed")
     if (tab1.buttons$last_button == "file_submit"){
-      genes <- geneInfoFromFile(input$genesFile$datapath)
+      genes <- geneInfoFromFile(input$genesFile$datapath, source="araport11")
       req(genes != FALSE)
       return(genes)
     }
     if (input$STATS_quick_demo){
       names <- c("AT3G62980", "AT3G26810")
-      genes <- getGeneInfo(names)
+      genes <- getGeneInfo(names, source="araport11")
       req(genes != FALSE)
       return(genes)
     }
     # list of genes for tab 1, updated on pressing submit button
     names <- parseInput(input$gene_ids)
-    genes <- getGeneInfo(names)
+    genes <- getGeneInfo(names, source="araport11")
     req(genes != FALSE)
     return(genes)
   })
@@ -230,13 +230,6 @@ server <- function(input, output, session){
   tab2.tableData <- eventReactive(input$tab2.Submit, {
     tab2data <- all.VCFList()[[input$tab2.transcript_ID]]
     coding_variants <- getCodingDiv(tab2data)
-    # order the rows so missense and synonymous appear first
-    coding_variants <- rbind(coding_variants[coding_variants$Effect == "synonymous_variant", ],
-                             coding_variants[coding_variants$Effect == "missense_variant", ],
-                             coding_variants[!(coding_variants$Effect %in% c("missense_variant","synonymous_variant")), ]
-                             )
-    # make Effect column a factor, preserving the order above
-    coding_variants$Effect <- factor(coding_variants$Effect, levels=unique(coding_variants$Effect))
     return(coding_variants)
   })
 #### Diversity_Table ####
@@ -280,7 +273,6 @@ server <- function(input, output, session){
     hover <- input$div_plot_hover
     point <- nearPoints(tab2.tableData(), hover, "Codon_Number", "Diversity", maxpoints=1)
     if (nrow(point) == 0) return(NULL)
-
 
     # calculate point position INSIDE the image as percent of total dimensions
     # from left (horizontal) and from top (vertical)
@@ -627,11 +619,16 @@ server <- function(input, output, session){
     print(chunks)
     anno_df <- chunkAnnotation(anno_df, chunks)
     if(is.null(input$tab5.primary_transcript)) {
-      anno_df$domains$seq_name <- as.factor(anno_df$domains$transcript_ID)
-      anno_df$positions$seq_name <- as.factor(anno_df$positions$transcript_ID)}
+      anno_df$domains$seq_name <- factor(anno_df$domains$transcript_ID,
+                       levels = levels(as.factor(aln_df()$transcript_ID)))
+      anno_df$positions$seq_name <-
+        factor(anno_df$positions$transcript_ID,
+                        levels = levels(as.factor(aln_df()$transcript_ID)))}
     else {
-      anno_df$domains$seq_name <- as.factor(anno_df$domains$tair_symbol)
-      anno_df$positions$seq_name <- as.factor(anno_df$positions$tair_symbol)
+      anno_df$domains$seq_name <- factor(anno_df$domains$tair_symbol,
+                        levels = levels(as.factor(aln_df()$tair_symbol)))
+      anno_df$positions$seq_name <- factor(anno_df$positions$tair_symbol,
+                       levels = levels(as.factor(aln_df()$tair_symbol)))
     }
     print(anno_df)
     return(anno_df)

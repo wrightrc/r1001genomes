@@ -12,3 +12,6 @@ Runs the app
 \description{
 Run 1001 genomes browser shiny app
 }
+\examples{
+run1001genomes()
+}

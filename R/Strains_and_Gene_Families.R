@@ -78,7 +78,7 @@ strains <-
     10018,10020,10022,10023,10027,14312,14313,14314,14315,14318,14319,15560,
     15591,15592,15593,18694,18696,19949,19950,19951)
 
-save(strains, file = "data/strains.RData")
+# save(strains, file = "data/strains.RData")
 
 
 ARFgenes <- genes <- c("AT3G62980",

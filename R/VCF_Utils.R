@@ -34,6 +34,7 @@
 #' @export
 #'
 #' @examples
+#' run1001genomes()
 run1001genomes <- function() {
   appDir <- system.file("shiny-app", package = "r1001genomes")
   if (appDir == "") {
@@ -52,11 +53,8 @@ run1001genomes <- function() {
 #' @param data a data.frame with columns `chromosome_name`, `transcript_start`, and `transcript_end`
 #'
 #' @return a vector of strings with the format "chrom:start-stop"
-#' @export
 #'
-#' @examples
-#'
-makeRegionString <- function (data) {
+.makeRegionString <- function (data) {
   # format "chrom:start-stop"
   return(paste(c(as.character(data$chromosome_name),
                  ":",
@@ -79,11 +77,9 @@ makeRegionString <- function (data) {
 #'     FALSE, the file will not be downloaded, the URL will still be returned
 #'
 #' @return The URL used for the download
-#' @export
-#' @importFrom utils download.file
 #'
-#' @examples
-downloadData <- function (fName, strainStr, regionStr,
+#' @importFrom utils download.file
+.downloadData <- function (fName, strainStr, regionStr,
                           download=TRUE) {
   url <- c("http://tools.1001genomes.org/api/v1/vcfsubset/strains/", strainStr, "/regions/",
            regionStr, "/type/snpeff/format/vcf")
@@ -105,10 +101,9 @@ downloadData <- function (fName, strainStr, regionStr,
 #'    directly in the construction of the URL
 #'
 #' @return a vcfR object of teh combined vcf file
-#' @export
 #'
-#' @examples my.VCF <- downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
-downloadMerge <- function (fName, strainVect, regionStr) {
+#' @examples my.VCF <- .downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
+.downloadMerge <- function (fName, strainVect, regionStr) {
   strains <- as.character(strainVect)
   # the URL to download the VCF for all 1135 strains is too long so we have to split it into two sets
 
@@ -117,11 +112,11 @@ downloadMerge <- function (fName, strainVect, regionStr) {
   # first file
   strainString <- paste(as.character(strains[1:splitPoint]), collapse=",")
     tempFile1 <- tempfile(fileext=".vcf")
-  downloadData(tempFile1, strainString, regionStr)
+  .downloadData(tempFile1, strainString, regionStr)
   # second file
   strainString <- paste(as.character(strains[(splitPoint + 1):length(strains)]), collapse=",")
   tempFile2 <- tempfile(fileext=".vcf")
-  downloadData(tempFile2, strainString, regionStr)
+  .downloadData(tempFile2, strainString, regionStr)
   #
   #load the two temporary vcf files then delete the temp files
   data1 <- vcfR::read.vcfR(tempFile1, verbose=FALSE, convertNA=TRUE)
@@ -150,6 +145,19 @@ downloadMerge <- function (fName, strainVect, regionStr) {
 #' @import plyr
 #'
 #' @examples
+#'
+#' ## make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## Parse the EFF field of a single VCF
+#' myParsedVCF <- parseEFF(myVCF)
+#'
+#' ## This function can also be applied to a list of VCF files created by the
+#' ## `VCFList()` function, see example in the documentation for VCFList()
+#'
 parseEFF <- function (tidyVCF){
   EFFColNames = c("Effect", "Effect_Impact", "Functional_Class", "Codon_Change",
                   "Amino_Acid_Change", "Amino_Acid_Length", "Gene_Name", "Transcript_BioType",
@@ -158,11 +166,11 @@ parseEFF <- function (tidyVCF){
   # stop if there is no "transcript_ID" attribute
   if (is.null(attr(tidyVCF, "transcript_ID"))) stop("Can not parse EFF field without transcript ID")
   transcript_ID <- attr(tidyVCF, "transcript_ID")
-  output <- ddply(data, "POS", .fun=parseEFFKernel, transcript_ID, EFFColNames)
+  output <- ddply(data, "POS", .fun=.parseEFFKernel, transcript_ID, EFFColNames)
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
   attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
   attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
-  return (output)
+  return (tibble::as_tibble(output))
 }
 
 #' Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
@@ -172,10 +180,7 @@ parseEFF <- function (tidyVCF){
 #' @param EFFColNames the column names to be used for the effect fields of the 'EFF' column
 #'
 #' @return a data frame row consisting of the original data row with the parsed effect columns appended to it.
-#' @export
-#'
-#' @examples
-parseEFFKernel <- function (data, transcript_ID, EFFColNames){
+.parseEFFKernel <- function (data, transcript_ID, EFFColNames){
   if (length(unique(data$EFF)) > 1) {
     warning("warning multiple effects found")
   }
@@ -184,7 +189,7 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
   # split by comma to generate a vector of different effects
   effect <- stringr::str_split(effect, pattern=",", simplify=TRUE)
   # split by "(", "|", and ")" to separate fields
-  effect <- data.frame(stringr::str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE)
+  effect <- tibble::as_tibble(data.frame(stringr::str_split(effect, pattern="\\(|\\||\\)", simplify=TRUE), stringsAsFactors = FALSE))
   # remove last column of empty strings ""found after ")"
   effect <- effect[, 1:12, drop=FALSE]
   # add column names to effects
@@ -202,7 +207,7 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
     #create a "gt_GT" column in the effect dataframe that matches the format of the VCF$dat
     effect$gt_GT <- paste(effect$Genotype_Number, "|", effect$Genotype_Number, sep = "")
     # merge the effect df with the original data df by the gt_GT field
-    output <- merge(data, effect, by="gt_GT", all.x=TRUE)
+    output <- left_join(data, effect, by="gt_GT")
   }
 
   else{  #if there are no effects matching the transcript ID, return the data unaltered
@@ -211,6 +216,9 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
 
   return(output)
 }
+
+
+
 
 #' download VCF, optionally in tidyVCF format
 #'
@@ -224,26 +232,31 @@ parseEFFKernel <- function (data, transcript_ID, EFFColNames){
 #' @export
 #'
 #' @examples
-VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
+#'
+#' ## make a gene info DF
+#' geneInfo <- getGeneInfo(genes = "AT3G62980")
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo)
+#'
+VCFByTranscript <- function (geneInfo, strains=NULL, tidy=TRUE, dataOnly=TRUE){
+  if (is.null(strains)){
+    strains <- readRDS(system.file("extdata", "strains.rds", package = "r1001genomes"))
+  }
   transcript_ID <- as.character(geneInfo$transcript_ID)
   regionString <- as.character(geneInfo$regionString)
-
   fName <- tempfile(fileext=".vcf.gz")
-  VCF.out <- downloadMerge(fName, strains, regionString)
-
+  VCF.out <- .downloadMerge(fName, strains, regionString)
   if (tidy == TRUE){
     VCF.out <- vcfR::vcfR2tidy(VCF.out, single_frame = TRUE, info_fields = c("AC", "EFF"), format_fields = ("GT"))
     VCF.out$dat <- VCF.out$dat[!(is.na(VCF.out$dat$gt_GT)), ]
   }
-
   if (dataOnly){
     VCF.out <- VCF.out$dat
   }
-
   attr(VCF.out, "transcript_ID") <- transcript_ID # add transcript_ID attribute to the output object
   attr(VCF.out, "tair_locus") <- geneInfo$tair_locus
   attr(VCF.out, "tair_symbol") <- geneInfo$tair_symbol
-
   return (VCF.out)
 }
 
@@ -259,8 +272,21 @@ VCFByTranscript <- function (geneInfo, strains, tidy=TRUE, dataOnly=TRUE){
 #' @import plyr
 #'
 #' @examples
+#'
+#' ## first make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download and compile a list of VCF files
+#' myVCFList <- VCFList(geneInfo)
+#'
+#' ## other functions in this package that operate on VCF data can be applied
+#' ## to VCFList objects using plyr::llply()
+#' myVCFList <- plyr::llply(myVCFList, parseEFF)
+#' myVCFList <- plyr::llply(myVCFList, Nucleotide_diversity)
+#' myVCFList <- plyr::llply(myVCFList, addAccDetails)
+#'
 VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
-  output <- alply(geneInfo,.margins=1, .fun=VCFByTranscript, strains=strains)
+  output <- alply(geneInfo,.margins=1, .fun=VCFByTranscript)
   for (i in 1:length(output)){
     names(output)[i] <- attr(output[[i]], "transcript_ID")
   }
@@ -277,8 +303,11 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #'
 #' @param genes a character vector of tair IDs of the genes to retrieve
 #' @param firstOnly logical, if true only return transcript IDs containing ".1"
-#' @param inputType
 #' @param useCache logical, read from and write to a file of cached genes?
+#' @param source the source to retrieve gene information from. "tair10" will
+#' use the tair 10 database via biomart (requires internet), "araport11" uses a
+#' gff file of the araport11 data stored locally in  the r1001genomes R package.
+#' a file path to a .gff or .gff.gz file may also be used.
 #'
 #' @returna table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
@@ -288,12 +317,13 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @importFrom utils read.table write.table
 #'
 #' @examples
-getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
-
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   retrievedInfo <- NULL
   genes2 <- genes
-  cacheFile <- system.file("shiny-app", "geneInfoCache.txt", package="r1001genomes")
-
+  cacheFile <- system.file("extdata", "geneInfoCache.csv", package="r1001genomes")
+  output <- NULL
   if (useCache == TRUE){
     geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
     retrievedInfo <- geneInfoCache[geneInfoCache$tair_locus %in% genes, ]
@@ -301,27 +331,31 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
     print("new genes:")
     print(genes2)   # list new genes, not found in cache
   }
-
-  output <- NULL
   if (length(genes2) > 0){
-    tair10 <- useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
-    output <- getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
-                                 "end_position", "strand", "transcript_start", "transcript_end"
-                                  ), filters=inputType, values=genes2, mart=tair10)
-    # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
-    output$regionString <- as.character(alply(output, .fun=makeRegionString, .margins=1, .expand=FALSE))
-    names(output)[names(output) == "ensembl_transcript_id"] <- "transcript_ID"
-    output$transcript_length <- abs(output$transcript_end - output$transcript_start)
-
+    if (source == "tair10") {
+      tair10 <- useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
+      output <- getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
+                                   "end_position", "strand", "transcript_start", "transcript_end"
+                                    ), filters="tair_locus", values=genes2, mart=tair10)
+      # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
+      output$regionString <- as.character(alply(output, .fun=.makeRegionString, .margins=1, .expand=FALSE))
+      names(output)[names(output) == "ensembl_transcript_id"] <- "transcript_ID"
+      output$transcript_length <- abs(output$transcript_end - output$transcript_start)
+    } else if (source == "araport11"){
+      gffFile <- system.file("extdata", "Araport11_GFF3_genes_transposons.201606.gff.gz", package="r1001genomes")
+      output <- geneInfoFromGff(genes2, gffFile)
+    } else if (file.exists(source)) {
+      output <- geneInfoFromGff(genes2, source)
+    } else {
+      print("Error 'source' argument of getGeneInfo() is not valid")
+    }
   }
   if (useCache == TRUE) {
     # append cache
     geneInfoCache <- unique(rbind(geneInfoCache, output))
     write.table(geneInfoCache, file=cacheFile, row.names=FALSE)
   }
-
   output <- rbind(retrievedInfo, output)
-
   if (firstOnly == TRUE) {
     # if firstOnly is TRUE, only return transcript IDs containing ".1"
     output <- output[(grepl(".1", output$transcript_ID, fixed=TRUE)), ]
@@ -329,19 +363,76 @@ getGeneInfo <- function (genes, firstOnly=TRUE, inputType="tair_locus", useCache
   return (output)
 }
 
+#' get gene information from .gff file
+#'
+#' @param genes a character vector of tair IDs of the genes to retrieve
+#' @param gffFile file path to the gff file or gz compressed gff file.
+#'
+#' @return gene info in same format as getGeneInfo, but including all transcripts.
+#' @export
+#'
+#' @examples
+#' gffFile <- system.file("extdata",
+#'                        "Araport11_GFF3_genes_transposons.201606.gff.gz",
+#'                        package="r1001genomes")
+#' geneInfo <- geneInfoFromGff(genes = c("AT3G62980", "AT3G26810"), gffFile)
+geneInfoFromGff <- function(genes, gffFile){
+  gffData <- ape::read.gff(gffFile)
+
+  # only look at entries of type "gene" and "protein"
+  gffData <- gffData[gffData$type %in% c("gene", "protein"), ]
+
+  # filter for entries matching the gene IDs
+  gffData <- gffData[grep(pattern=paste("ID=", genes, sep="", collapse="|"), gffData$attributes), ]
+
+  # process entries of the "gene" type
+  geneData <- gffData[gffData$type %in% "gene", ]
+  geneData$tair_locus <- stringr::str_match(geneData$attributes, "Name=(.*?);")[,2]
+  geneData$tair_symbol <- stringr::str_match(geneData$attributes, "symbol=(.*?);")[,2]
+  geneData$start_position <- geneData$start
+  geneData$end_position <- geneData$end
+  geneData <- subset(geneData, select=-c(strand))
+
+  # process entries of the "protein" type
+  proteinData <- gffData[gffData$type %in% "protein", ]
+  proteinData$transcript_ID <- stringr::str_match(proteinData$attributes, "Name=(.*?);")[, 2]
+  proteinData$tair_locus <- stringr::str_match(proteinData$transcript_ID, "AT[1-5]G[0-9]{5}")[, 1]
+  proteinData$chromosome_name <- as.integer(stringr::str_match(as.character(proteinData$seqid), "Chr([0-9])")[,2])
+  proteinData$transcript_start <- proteinData$start
+  proteinData$transcript_end <- proteinData$end
+  proteinData$regionString <- as.character(alply(proteinData, .fun=.makeRegionString, .margins=1, .expand=FALSE))
+  proteinData$transcript_length <- abs(proteinData$transcript_end - proteinData$transcript_start)
+  proteinData$strand <- as.integer(paste(proteinData$strand,"1", sep=""))
+
+  # join the gene and protein entries
+  geneInfoOutput <- dplyr::inner_join(geneData, proteinData, by="tair_locus")
+
+  # order columns same as getGeneInfo function
+  geneInfoOutput <- geneInfoOutput[, c("tair_locus", "tair_symbol",
+                                       "transcript_ID", "chromosome_name",
+                                       "start_position", "end_position",
+                                       "strand", "transcript_start",
+                                       "transcript_end", "regionString",
+                                       "transcript_length" )]
+
+  return(geneInfoOutput)
+}
+
+
 #' Rename TAIR symbols of geneInfo table based on .csv file
 #'
 #' @param geneInfo geneInfo dataframe, see getGeneInfo() function
 #' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
 #'
 #' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
-#' @export
 #'
-#' @examples
-relableTairSymbol <- function(geneInfo, fnames) {
+.relableTairSymbol <- function(geneInfo, fnames) {
  geneIdTable <- ldply(fnames, read.csv, colClasses="character")
 
  colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
+ # remove any leading and trailing whitespace
+ geneIdTable$tair_symbol <- trimws(geneIdTable$tair_symbol)
+ geneIdTable$tair_locus <- trimws(geneIdTable$tair_locus)
 
  geneInfoOut <- merge(geneInfo, geneIdTable[, c("tair_locus", "tair_symbol")], by="tair_locus", all.x=TRUE)
 
@@ -360,24 +451,22 @@ relableTairSymbol <- function(geneInfo, fnames) {
 #'
 #' @param fname filename of csv files containing "tair_locus" and "name" fields
 #' @param firstOnly logical, if true only return transcript IDs containing ".1"
-#' @param inputType
 #' @param useCache logical, read from and write to a file of cached genes?
 #'
 #' @return geneInfo dataframe see getGeneInfo
 #' @export
 #'
 #' @examples
-geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useCache=TRUE) {
+#' geneIdFile <- system.file("extdata", "AFB_gene_ids.csv", package="r1001genomes")
+#' geneInfoFromFile(fname = geneIdFile)
+#'
+geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair10") {
   geneIDTable <- read.csv(fname, colClasses="character")
-  genes <- geneIDTable$tair_locus
-
-  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, inputType=inputType, useCache=useCache)
-
-  geneInfo <- relableTairSymbol(geneInfo, fname)
-
+  genes <- trimws(geneIDTable$tair_locus)
+  geneInfo <- getGeneInfo(genes, firstOnly=firstOnly, useCache=useCache, source=source)
+  geneInfo <- .relableTairSymbol(geneInfo, fname)
   return(geneInfo)
 }
-
 
 
 #' Calculate Nei's nucleotide diversity statistic for a single position,
@@ -386,10 +475,8 @@ geneInfoFromFile <- function(fname, firstOnly=TRUE, inputType="tair_locus", useC
 #' @param GTfreq numeric vector listing counts of uninque genotypes
 #'
 #' @return numeric value nucleotide diversity
-#' @export
-#'
-#' @examples
-calcDiversity <- function (GTfreq){
+#.
+.calcDiversity <- function (GTfreq){
   result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
 
@@ -398,10 +485,8 @@ calcDiversity <- function (GTfreq){
 #' @param groupFreq a group GT_Frequencies tibble for a single position
 #'
 #' @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
-#' @export
 #'
-#' @examples
-approxRefGt <- function(groupFreq) {
+.approxRefGt <- function(groupFreq) {
   if ("0|0" %in% groupFreq$gt_GT){  # if 0
     return(0)
   } else {
@@ -418,15 +503,28 @@ approxRefGt <- function(groupFreq) {
 #' @export
 #'
 #' @examples
+#'
+#' ## make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## calculate site-wise nucleotide diversity of a single VCF
+#' myVCFWithDiv <- Nucleotide_diversity(myVCF)
+#'
+#' ## This function can also be applied to a list of VCF files created by the
+#' ## `VCFList()` function, see example in the documentation for VCFList()
+#'
 Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
   data <- unique(tidyVCF[, c("POS", "gt_GT", "Indiv")])
   GT_Frequencies <- plyr::count(data, c("POS", "gt_GT"))
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
   if (approxMissingRefGt){
-    # add a row at each position, with frequency determined by the approxRefGt() function
-    GT_Frequencies <- do(GT_Frequencies, add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=approxRefGt(.)))
+    # add a row at each position, with frequency determined by the .approxRefGt() function
+    GT_Frequencies <- do(GT_Frequencies, add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=.approxRefGt(.)))
   }
-  diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = calcDiversity(freq))
+  diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = .calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
 
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
@@ -446,6 +544,18 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
 #' @export
 #'
 #' @examples
+#'
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download and compile a list of VCF files
+#' myVCFList <- VCFList(geneInfo)
+#'
+#' ## tabultate unique variants
+#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#'
+#' # tabulate total counts of variants relative to the reference sequence.
+#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#'
 variantCounts <- function(data, unique=TRUE) {
   effects <- c("5_prime_UTR_variant",
                "intron_variant",
@@ -554,33 +664,26 @@ getCodingDiv <- function(data){
 #'
 #' @examples
 plotCodingDiv <- function(uniqueCodingVars){
-  # build a color data.frame
-  effectColor <- data.frame("color" = brewer.pal(n = 8, name = "RdYlBu")[8:1],
-                            "Effect" = c("synonymous_variant",
-                                         "stop_retained_variant",
-                      "5_prime_UTR_premature_start_codon_gain_variant",
-                                         "splice_donor_variant",
-                      "splice_region_variant",
-                                         "missense_variant",
-                      "frameshift_variant",
-                                         "stop_gained"),
-                            "labels" = c("synonymous", "stop_retained",
-                                         "premature start codon",
-                                         "splice donor", "splice region",
-                                         "missense", "frameshift",
-                                         "stop gained"))
-  # join the color data.frame with coding_vcf
-  uniqueCodingVars <- uniqueCodingVars %>%
-    dplyr::left_join(effectColor, by = "Effect")
-  effects <- effectColor$Effect %in% unique(uniqueCodingVars$Effect)
+
+  effectClasses <- readRDS(system.file("data", "effect_classes.rds", package="r1001genomes"))
+
+  classColors <- data.frame("color" = brewer.pal(n = 5, name = "RdYlBu")[5:1],
+                            "Class" = c("Synonymous", "Non_Coding", "Splice",
+                                        "Missense", "Nonsense"),
+                            "labels" = c("Synonymous", "Non_Coding", "Splice",
+                                        "Missense", "Nonsense"), stringsAsFactors=FALSE)
+
+  uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, effectClasses, by = "Effect")
+  uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, classColors, by = "Class")
+  classes <- classColors$Class %in% unique(uniqueCodingVars$Class)
   #plot the diversity
   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
     geom_point(size = 4) +
     scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
     ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
-    scale_color_identity("Effect", breaks = effectColor$color[effects],
-                         labels = effectColor$labels[effects],
+    scale_color_identity("Class", breaks = classColors$color[classes],
+                         labels = classColors$labels[classes],
                          guide = "legend")
   return(plot)
 }
@@ -596,6 +699,19 @@ plotCodingDiv <- function(uniqueCodingVars){
 #' @import dplyr
 #'
 #' @examples
+#'
+#' #' ## make a gene info DF
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## add accession details to a single VCF
+#' myVCFWithAccDets <- addAccDetails(myVCF)
+#'
+#' ## This function can also be applied to a list of VCF files created by the
+#' ## `VCFList()` function, see example in the documentation for VCFList()
+#'
 addAccDetails <- function(tidyVCF, allAccs=FALSE) {
   # add ecotype details (location, collector, sequencer) to any df containing an "Indiv" column
   ecoIDs <- r1001genomes::accessions
@@ -630,7 +746,7 @@ labelBySNPs <- function(data, collapse=TRUE) {
   # creates a df with a single row per individual, with a new column "SNPs" that
   # has a single text string detailing the
 
-  output <- ddply(data, .variables="Indiv", .fun=labelBySNPsKernel, collapse=collapse)
+  output <- ddply(data, .variables="Indiv", .fun=.labelBySNPsKernel, collapse=collapse)
 
   output <- addAccDetails(output)
   return(output)
@@ -643,11 +759,11 @@ labelBySNPs <- function(data, collapse=TRUE) {
 #' @param indivData
 #' @param collapse
 #'
-#' @return
-#' @export
+#' @return a dataframe with a single row, containing the column "SNPs" that
+#'  has a single text string detailing all the variants from data within that
+#'  accession
 #'
-#' @examples
-labelBySNPsKernel <- function(indivData, collapse=TRUE) {
+.labelBySNPsKernel <- function(indivData, collapse=TRUE) {
   #if collapse == TRUE, each accession will be a single line.
 
   # store ecotypeID as a single value
@@ -761,7 +877,7 @@ makeAlnDF <- function(alignment){
 #'
 #' @param aln_df an alignment data frame resulting from
 #'  \link[r1001genomes]{makeAlnDF}
-#' @param SNPs a data frame of SNPs
+#' @param SNPs a data frame of SNPs as returned from \link[r1001genomes]{getCodingDiv}
 #' @param by_aln_SNPs a named list of character objects with each equivalency
 #' representing matching columns in `aln_df` (on the LHS) and `SNPs`
 #' (on the RHS), e.g. `"seq_name" = "transcript_id"`
@@ -784,7 +900,7 @@ makeAlnDF <- function(alignment){
 #' vcf <- ldply(.data = vcf, .fun = subset,
 #'   !is.na(Transcript_ID) & gt_GT != "0|0")
 #' coding_vcf <- getCodingDiv(vcf)
-#' addSNPsToAlnDF(aln_df, coding_vcf, seq_name = Transcript_ID,
+#' (aln_df, coding_vcf, seq_name = Transcript_ID,
 #' seq_pos = Codon_Number)
 #'
 addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
@@ -881,6 +997,9 @@ cut_number
 readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
                                gene_info = NULL){
   anno_df <- read.csv(filename, stringsAsFactors = FALSE)
+  # remove leading and trailing whitespace from character columns
+  anno_df <- data.frame(lapply(anno_df, function(x){if(class(x) == "character")
+    {trimws(x)}else{x}}), stringsAsFactors = FALSE)
   if(!is.null(gene_info)){
     tair_locus <- dplyr::quo(tair_locus)
     tair_symbol <- dplyr::quo(tair_symbol)
@@ -925,10 +1044,13 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #'
 #' @param anno_df an annotation data frame from \link{readAnnotationFile}
 #' @param aln_df an alignment data frame
+#' @param intersect_only (logical) only keep rows containing matching
+#'  positions in aln_df (default is TRUE)
 #'
 #' @return an annotation data frame with columns from an alignment data frame joined by transcript ID and position
 #' @export
 #' @importFrom magrittr "%>%"
+#' @import dplyr
 #'
 #'
 #' @examples
@@ -946,8 +1068,24 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #'
 #' addAlnPosToAnno(anno_df, aln_df)
 #'
-addAlnPosToAnno <- function(anno_df, aln_df){
-  aln_df$seq_pos <- as.integer(aln_df$seq_pos)
+addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
+  suppressWarnings(aln_df$seq_pos <- as.integer(aln_df$seq_pos))
+  # check anno_df
+  max_anno <- ddply(anno_df$domains, .variables = .(transcript_ID, annotation), .fun = summarise, end = max(end))
+  max_aln <- ddply(aln_df, .variables = .(transcript_ID),
+                   .fun = summarise,
+                   max = max(na.omit(as.integer(seq_pos))))
+  max_anno <- join(max_anno, max_aln, by = "transcript_ID")
+  max_anno <- max_anno[!is.na(max_anno$max),]
+  max_anno$errors <- dplyr::if_else(max_anno$end > max_anno$max,
+                "annotation end exceeds sequence length", "none")
+  if(sum(max_anno$errors != "none") > 0){
+    errors <- max_anno[max_anno$errors != "none",]
+    stop("Annotations exceed sequence dimensions! \n",
+       "Abberant annotations: \n",
+       paste(apply(errors, 1, paste, collapse =", " ), collapse = " \n"))
+  }
+  # joins
   anno_df$domains <- anno_df$domains %>%
     dplyr::left_join(aln_df[,c("seq_name", "seq_pos",
                                "aln_pos", "transcript_ID")],
@@ -967,6 +1105,12 @@ addAlnPosToAnno <- function(anno_df, aln_df){
                                "aln_pos", "transcript_ID")],
                      by = c("transcript_ID" = "transcript_ID",
                             "position" = "seq_pos"))
+  if(intersect_only) {
+    anno_df$domains <- anno_df$domains[
+      !is.na(anno_df$domains$start_aln_pos), ]
+    anno_df$positions <- anno_df$positions[
+      !is.na(anno_df$positions$aln_pos), ]
+  }
   return(anno_df)
 }
 
@@ -1047,6 +1191,7 @@ chunkAnnotation <- function(anno_df, chunks){
       (domain$start_aln_pos <= chunks$end &
          domain$start_aln_pos >= chunks$start) | #chunks at the beginning
       (domain$end_aln_pos >= chunks$start & domain$end_aln_pos <= chunks$end)
+    print(rows)
       # chunks at the end
     #print(rows)
     if(sum(rows) > 1){
@@ -1056,12 +1201,12 @@ chunkAnnotation <- function(anno_df, chunks){
         chunks[rows, c("chunk", "start","end")]
       #print(new_rows)
       # if the domain starts after the chunk starts extend the "start_aln_pos"
-      new_rows[(domain$start_aln_pos < new_rows$end_aln_pos &
-                  domain$start_aln_pos > new_rows$start_aln_pos),
+      new_rows[(domain$start_aln_pos <= new_rows$end_aln_pos &
+                  domain$start_aln_pos >= new_rows$start_aln_pos),
                "start_aln_pos"] <- domain[, "start_aln_pos"]
       # if the domain ends before the chunk does shorten "end_aln_pos"
-      new_rows[(domain$end_aln_pos > new_rows$start_aln_pos &
-                  domain$end_aln_pos < new_rows$end_aln_pos),
+      new_rows[(domain$end_aln_pos >= new_rows$start_aln_pos &
+                  domain$end_aln_pos <= new_rows$end_aln_pos),
                "end_aln_pos"] <- domain[, "end_aln_pos"]
       new_rows
     }
