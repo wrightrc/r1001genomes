@@ -30,8 +30,11 @@ ui <- function(request){ fluidPage(
                                column(5,
                                       tags$h3("Select Genes"),
                                       tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-                                      textAreaInput(inputId = "gene_ids", label = NULL,
-                                                    width = "375px", height = 75, value = "AT3G62980, AT3G26810"),
+                                      selectInput("geneFamSelect", label = NULL,
+                                                  choices=c(
+                                        "IAAs" = "IAAs_VCF.rds",
+                                        "TPLs" = "TPL_VCF.rds",
+                                        "AFBs" = "AFBs_VCF.rds")),
                                       checkboxInput("STATS_quick_demo", label="Quick Demo"),
                                       actionButton(inputId="STATS_submit", label = "Submit")
 
