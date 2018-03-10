@@ -117,18 +117,12 @@ server <- function(input, output, session){
     #                  output <- llply(output, addAccDetails)
     #                  setProgress(value=1)
     # })
-
     all.Genes()
     geneFile <- file.path("gene_family_data", strsplit(isolate(input$geneFam), split="\\|")[[1]][1])
     output <- isolate(readRDS(file=geneFile))
     return(output)
   })
 
-
-  output$mainDebug <- renderPrint({
-    #strsplit(input$geneFam, split="\\|")[[1]][2]
-    file.path("gene_family_data", strsplit(input$geneFam, split="\\|")[[1]][2])
-  })
 
 
   ##   _________

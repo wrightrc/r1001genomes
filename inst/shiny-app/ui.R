@@ -29,12 +29,14 @@ ui <- function(request){ fluidPage(
                              fluidRow(
                                column(5,
                                       tags$h3("Select Genes"),
-                                      tags$h5("Type a list of gene loci in the box below, separated by commas. "),
+                                      tags$h5("Select gene family below. "),
                                       selectInput("geneFam", label = NULL,
                                                   choices=c(
                                         "IAAs" = "IAAs_VCF.rds|IAA_gene_ids.csv",
                                         "TPLs" = "TPL_VCF.rds|TPL_gene_ids.csv",
-                                        "AFBs" = "AFBs_VCF.rds|AFB_gene_ids.csv" )),
+                                        "AFBs" = "AFBs_VCF.rds|AFB_gene_ids.csv",
+                                        "ARFs" = "ARF_VCF.rds|ARF_gene_ids.csv"
+                                        )),
                                       checkboxInput("STATS_quick_demo", label="Quick Demo"),
                                       actionButton(inputId="STATS_submit", label = "Submit")
                                ),
@@ -72,7 +74,7 @@ ui <- function(request){ fluidPage(
 
             ), # BS collapse End
 
-  verbatimTextOutput("mainDebug"),
+
   tags$br(),
   tags$div(class="navbar-margin",navbarPage(title="TABS:",
       tabPanel("SNP Stats",
