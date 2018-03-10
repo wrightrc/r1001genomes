@@ -30,14 +30,13 @@ ui <- function(request){ fluidPage(
                                column(5,
                                       tags$h3("Select Genes"),
                                       tags$h5("Type a list of gene loci in the box below, separated by commas. "),
-                                      selectInput("geneFamSelect", label = NULL,
+                                      selectInput("geneFam", label = NULL,
                                                   choices=c(
-                                        "IAAs" = "IAAs_VCF.rds",
-                                        "TPLs" = "TPL_VCF.rds",
-                                        "AFBs" = "AFBs_VCF.rds")),
+                                        "IAAs" = "IAAs_VCF.rds|IAA_gene_ids.csv",
+                                        "TPLs" = "TPL_VCF.rds|TPL_gene_ids.csv",
+                                        "AFBs" = "AFBs_VCF.rds|AFB_gene_ids.csv" )),
                                       checkboxInput("STATS_quick_demo", label="Quick Demo"),
                                       actionButton(inputId="STATS_submit", label = "Submit")
-
                                ),
                                column(2, align="center", tags$h3("OR")),
                                column(5,
@@ -49,7 +48,7 @@ ui <- function(request){ fluidPage(
 
                                       )
                              )
-             ),
+             ), #
              bsCollapsePanel(
                title=tagList("Annotation Files", tags$h6(style= "display:inline", "(click to expand/collapse)")),
                value="Annotation Files",
@@ -69,11 +68,11 @@ ui <- function(request){ fluidPage(
                                       actionButton(inputId="annoSubmit", label = "Submit")
                                )
                                )
-  )
+             ) # panel end
 
-             ),
+            ), # BS collapse End
 
-
+  verbatimTextOutput("mainDebug"),
   tags$br(),
   tags$div(class="navbar-margin",navbarPage(title="TABS:",
       tabPanel("SNP Stats",

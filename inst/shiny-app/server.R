@@ -68,9 +68,12 @@ server <- function(input, output, session){
       return(genes)
     }
     # list of genes for tab 1, updated on pressing submit button
-    names <- parseInput(input$gene_ids)
-    genes <- getGeneInfo(names, source="araport11")
-    req(genes != FALSE)
+    # names <- parseInput(input$gene_ids)
+    # genes <- getGeneInfo(names, source="araport11")
+    geneFile <- file.path("gene_family_data", strsplit(input$geneFam, split="\\|")[[1]][2])
+    genes <- geneInfoFromFile(geneFile, source="araport11")
+
+    #req(genes != FALSE)
     return(genes)
   })
 #### all.GeneChoices ####
@@ -101,21 +104,32 @@ server <- function(input, output, session){
       return(readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
                                         package = "r1001genomes")))
     }
-    withProgress(message="downloading data from 1001genomes.org",
-                   detail="this will take a while, progress bar will not move",
-                   value=0.3, {
-                     output <- VCFList(all.Genes())
-                     setProgress(value=0.7, message="downloading complete, processing data...",
-                                 detail="Parsing EFF field")
-                     output <- llply(output, parseEFF)
-                     setProgress(value=0.9, message=NULL,
-                                 detail="Calculating nucleotide diversity")
-                     output <- llply(output, Nucleotide_diversity)
-                     output <- llply(output, addAccDetails)
-                     setProgress(value=1)
-    })
+    # withProgress(message="downloading data from 1001genomes.org",
+    #                detail="this will take a while, progress bar will not move",
+    #                value=0.3, {
+    #                  output <- VCFList(all.Genes())
+    #                  setProgress(value=0.7, message="downloading complete, processing data...",
+    #                              detail="Parsing EFF field")
+    #                  output <- llply(output, parseEFF)
+    #                  setProgress(value=0.9, message=NULL,
+    #                              detail="Calculating nucleotide diversity")
+    #                  output <- llply(output, Nucleotide_diversity)
+    #                  output <- llply(output, addAccDetails)
+    #                  setProgress(value=1)
+    # })
+
+    all.Genes()
+    geneFile <- file.path("gene_family_data", strsplit(isolate(input$geneFam), split="\\|")[[1]][1])
+    output <- isolate(readRDS(file=geneFile))
     return(output)
   })
+
+
+  output$mainDebug <- renderPrint({
+    #strsplit(input$geneFam, split="\\|")[[1]][2]
+    file.path("gene_family_data", strsplit(input$geneFam, split="\\|")[[1]][2])
+  })
+
 
   ##   _________
   ##  /  tab1   \
