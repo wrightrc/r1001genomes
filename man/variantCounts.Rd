@@ -12,6 +12,9 @@ variantCounts(data, unique = TRUE)
 
 \item{unique}{logical, if true only unique variants will be counted}
 }
+\value{
+a single row dataframe with variant counts
+}
 \description{
 counts number of variants in certain affect categories
 use with ldply() on VCFList objects to create a table.

@@ -48,12 +48,12 @@ run1001genomes <- function() {
 ### UTILITY FUNCTIONS =========================================================
 
 
-#' Make a string containing the desired genomic ranges
-#' of the format "chrom:start-stop"
-#' @param data a data.frame with columns `chromosome_name`, `transcript_start`, and `transcript_end`
-#'
-#' @return a vector of strings with the format "chrom:start-stop"
-#'
+# Make a string containing the desired genomic ranges
+# of the format "chrom:start-stop"
+# @param data a data.frame with columns `chromosome_name`, `transcript_start`, and `transcript_end`
+#
+# @return a vector of strings with the format "chrom:start-stop"
+#
 .makeRegionString <- function (data) {
   # format "chrom:start-stop"
   return(paste(c(as.character(data$chromosome_name),
@@ -64,21 +64,21 @@ run1001genomes <- function() {
 }
 
 
-#' Download and save a .VCF file from 1001genomes.org.
-#'
-#' @param fName the file name the downloaded vcf will be saved as eg.
-#'    "data1.vcf"
-#' @param strainStr A character string of comma separated strain or
-#'    "Ecotype ID"s used in the construction of the URL
-#' @param regionStr A character string of the format "[chrom]:[start]-[stop]"
-#'    where [chrom], [start], and [stop] are numbers. this string is used
-#'    directly in the construction of the URL
-#' @param download A logical, if TRUE (default) the file will be downloaded, if
-#'     FALSE, the file will not be downloaded, the URL will still be returned
-#'
-#' @return The URL used for the download
-#'
-#' @importFrom utils download.file
+# Download and save a .VCF file from 1001genomes.org.
+#
+# @param fName the file name the downloaded vcf will be saved as eg.
+#    "data1.vcf"
+# @param strainStr A character string of comma separated strain or
+#    "Ecotype ID"s used in the construction of the URL
+# @param regionStr A character string of the format "[chrom]:[start]-[stop]"
+#    where [chrom], [start], and [stop] are numbers. this string is used
+#    directly in the construction of the URL
+# @param download A logical, if TRUE (default) the file will be downloaded, if
+#     FALSE, the file will not be downloaded, the URL will still be returned
+#
+# @return The URL used for the download
+#
+# @importFrom utils download.file
 .downloadData <- function (fName, strainStr, regionStr,
                           download=TRUE) {
   url <- c("http://tools.1001genomes.org/api/v1/vcfsubset/strains/", strainStr, "/regions/",
@@ -92,17 +92,17 @@ run1001genomes <- function() {
 
 
 
-#' Download two vcf files from 1001genomes.org and merge their contents
-#'
-#' @param fName a character string of the file name to save the final .vcf file to
-#' @param strainVect numeric vector list of the strains
-#' @param regionStr A character string of the format "[chrom]:[start]-[stop]"
-#'    where [chrom], [start], and [stop] are numbers. this string is used
-#'    directly in the construction of the URL
-#'
-#' @return a vcfR object of teh combined vcf file
-#'
-#' @examples my.VCF <- .downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
+# Download two vcf files from 1001genomes.org and merge their contents
+#
+# @param fName a character string of the file name to save the final .vcf file to
+# @param strainVect numeric vector list of the strains
+# @param regionStr A character string of the format "[chrom]:[start]-[stop]"
+#    where [chrom], [start], and [stop] are numbers. this string is used
+#    directly in the construction of the URL
+#
+# @return a vcfR object of teh combined vcf file
+#
+# @examples my.VCF <- .downloadMerge("myFullVCF.vcf.gz", strains, "1:4368760-4371298")
 .downloadMerge <- function (fName, strainVect, regionStr) {
   strains <- as.character(strainVect)
   # the URL to download the VCF for all 1135 strains is too long so we have to split it into two sets
@@ -173,13 +173,13 @@ parseEFF <- function (tidyVCF){
   return (tibble::as_tibble(output))
 }
 
-#' Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
-#'
-#' @param data Single row of tidyVCF with "EFF" field
-#' @param transcript_ID the transcript ID to be used to parse the 'EFF' field
-#' @param EFFColNames the column names to be used for the effect fields of the 'EFF' column
-#'
-#' @return a data frame row consisting of the original data row with the parsed effect columns appended to it.
+# Kernel of the parseEFF funciton, operates on a single row of data and parses the 'EFF' field
+#
+# @param data Single row of tidyVCF with "EFF" field
+# @param transcript_ID the transcript ID to be used to parse the 'EFF' field
+# @param EFFColNames the column names to be used for the effect fields of the 'EFF' column
+#
+# @return a data frame row consisting of the original data row with the parsed effect columns appended to it.
 .parseEFFKernel <- function (data, transcript_ID, EFFColNames){
   if (length(unique(data$EFF)) > 1) {
     warning("warning multiple effects found")
@@ -294,8 +294,6 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 }
 
 
-
-
 #' Get gene information
 #'
 #' @description Get the start and end position of each transcript of a set of
@@ -309,7 +307,7 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' gff file of the araport11 data stored locally in  the r1001genomes R package.
 #' a file path to a .gff or .gff.gz file may also be used.
 #'
-#' @returna table containing fields from the Tair database on the provided genes
+#' @return a table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
 #' @import plyr
@@ -419,13 +417,13 @@ geneInfoFromGff <- function(genes, gffFile){
 }
 
 
-#' Rename TAIR symbols of geneInfo table based on .csv file
-#'
-#' @param geneInfo geneInfo dataframe, see getGeneInfo() function
-#' @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
-#'
-#' @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
-#'
+# Rename TAIR symbols of geneInfo table based on .csv file
+#
+# @param geneInfo geneInfo dataframe, see getGeneInfo() function
+# @param fnames vector of filenames of csv files containing "tair_locus" and "name" fields
+#
+# @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
+#
 .relableTairSymbol <- function(geneInfo, fnames) {
  geneIdTable <- ldply(fnames, read.csv, colClasses="character")
 
@@ -468,24 +466,23 @@ geneInfoFromFile <- function(fname, firstOnly=TRUE, useCache=TRUE, source="tair1
   return(geneInfo)
 }
 
-
-#' Calculate Nei's nucleotide diversity statistic for a single position,
-#' given a vector of counts of uninque genotypes at that location
-#'
-#' @param GTfreq numeric vector listing counts of uninque genotypes
-#'
-#' @return numeric value nucleotide diversity
-#.
+# Calculate Nei's nucleotide diversity statistic for a single position,
+# given a vector of counts of uninque genotypes at that location
+#
+# @param GTfreq numeric vector listing counts of uninque genotypes
+#
+# @return numeric vector of nucleotide diversity
 .calcDiversity <- function (GTfreq){
+
   result <- (sum(GTfreq)**2 - sum(GTfreq**2))/(sum(GTfreq)**2)
 }
 
-#' return a count of accessions with undetermined genotype or 0 depending on if there are 0|0 genotpyes present
-#'
-#' @param groupFreq a group GT_Frequencies tibble for a single position
-#'
-#' @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
-#'
+# return a count of accessions with undetermined genotype or 0 depending on if there are 0|0 genotpyes present
+#
+# @param groupFreq a group GT_Frequencies tibble for a single position
+#
+# @return 0 if 0|0 genotypes are present or (1135 - number of determined genotypes) if no 0|0 genotypes are present.
+#
 .approxRefGt <- function(groupFreq) {
   if ("0|0" %in% groupFreq$gt_GT){  # if 0
     return(0)
@@ -540,7 +537,7 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
 #' @param data tidyVCF with 'EFF' field parsed
 #' @param unique logical, if true only unique variants will be counted
 #'
-#' @return
+#' @return a single row dataframe with variant counts
 #' @export
 #'
 #' @examples
@@ -600,6 +597,21 @@ variantCounts <- function(data, unique=TRUE) {
 #' @export
 #'
 #' @examples
+#'
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download and compile a list of VCF files
+#' myVCFList <- VCFList(geneInfo)
+#'
+#' ## Parse EFF field
+#' myVCFList <- llply(myVCFList, parseEFF)
+#'
+#' ## calculate site-wise nucleotide diversity
+#' myVCFList <- llply(myVCFList, Nucleotide_diversity)
+#'
+#' ## tabulate diversity statistics
+#' ldply(myVCFList, diversityStats, .id="transcript_ID")
+#'
 diversityStats <- function(data, geneInfo=NULL) {
   tableData <- data.frame(row.names=attr(data,"transcript_ID"))
 
@@ -626,22 +638,39 @@ diversityStats <- function(data, geneInfo=NULL) {
   return(tableData)
 }
 
-#' Title
+#' produce dataframe of unique variants on the coding sequence
 #'
-#' @param data tidyVCF with 'EFF' field parsed and 'Diversity' field
+#' @param data tidyVCF with 'EFF' field parsed and 'Diversity' field calculated
 #'
-#' @return
+#' @return a dataframe of unique variants on the coding sequence
 #' @export
 #'
 #' @examples
+#'
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## Parse the EFF field of a single VCF:
+#' myVCF <- parseEFF(myVCF)
+#'
+#' ## calculate site-wise nucleotide diversity of a single VCF
+#' myVCF <- Nucleotide_diversity(myVCF)
+#'
+#' # get unique coding variants with diversity
+#' myCodingVariants <- getCodingDiv(myVCF)
+#'
+#' ## plot diversity of coding variants
+#' plotCodingDiv(myCodingVariants)
+#'
 getCodingDiv <- function(data){
-  #input is tidy tibble/df with EFF field parsed and diversity calculated:
+  # input is tidy tibble/df with EFF field parsed and diversity calculated:
   # eg.
   # myvcf <- VCFByTranscript(geneInfo[1, ], strains)
   # mydata <- parseEFF(myvcf)
   # mydata <- Nucleotide_diversity(mydata)
   # coding_Diversity_Plot(mydata)
-
   coding_variants <- data[!is.na(data$Codon_Number), ]
   #extract uniuqe position and effect
   uniqueCodingVars <- unique(coding_variants[ , c("POS", "Codon_Number", "Effect",
@@ -651,28 +680,44 @@ getCodingDiv <- function(data){
   return(uniqueCodingVars)
 }
 
-#' Title
+#' Plot nucleotide diversity over the coding sequence by codon
 #'
 #' @param uniqueCodingVars
 #'
-#' @return
+#' @return plot object
 #' @export
 #' @import ggplot2
 #' @import ggthemes
 #' @import dplyr
 #' @importFrom magrittr "%>%"
+#' @import RColorBrewer
 #'
 #' @examples
+#'
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## Parse the EFF field of a single VCF:
+#' myVCF <- parseEFF(myVCF)
+#'
+#' ## calculate site-wise nucleotide diversity of a single VCF
+#' myVCF <- Nucleotide_diversity(myVCF)
+#'
+#' # get unique coding variants with diversity
+#' myCodingVariants <- getCodingDiv(myVCF)
+#'
+#' ## plot diversity of coding variants
+#' plotCodingDiv(myCodingVariants)
+#'
 plotCodingDiv <- function(uniqueCodingVars){
-
   effectClasses <- readRDS(system.file("data", "effect_classes.rds", package="r1001genomes"))
-
   classColors <- data.frame("color" = brewer.pal(n = 5, name = "RdYlBu")[5:1],
                             "Class" = c("Synonymous", "Non_Coding", "Splice",
                                         "Missense", "Nonsense"),
                             "labels" = c("Synonymous", "Non_Coding", "Splice",
                                         "Missense", "Nonsense"), stringsAsFactors=FALSE)
-
   uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, effectClasses, by = "Effect")
   uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, classColors, by = "Class")
   classes <- classColors$Class %in% unique(uniqueCodingVars$Class)
@@ -689,18 +734,18 @@ plotCodingDiv <- function(uniqueCodingVars){
 }
 
 
-#' Add accession metadata to a dataset containing ecotype IDs
+#' Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column
 #'
-#' @param data
-#' @param ecotypeColumn
+#' @param tidyVCF Tidy format VCF data.
+#' @param allAccs logical, if `TRUE` include rows for all accessions even if no
+#' rows in the data exist with that accession.
 #'
-#' @return
+#' @return dataframe with accession details added
 #' @export
 #' @import dplyr
 #'
 #' @examples
-#'
-#' #' ## make a gene info DF
+#' ## make a gene info DF
 #' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 #'
 #' ## download a single VCF
@@ -713,7 +758,6 @@ plotCodingDiv <- function(uniqueCodingVars){
 #' ## `VCFList()` function, see example in the documentation for VCFList()
 #'
 addAccDetails <- function(tidyVCF, allAccs=FALSE) {
-  # add ecotype details (location, collector, sequencer) to any df containing an "Indiv" column
   ecoIDs <- r1001genomes::accessions
   data <- tidyVCF
   data$Indiv <- as.numeric(data$Indiv)
@@ -722,18 +766,16 @@ addAccDetails <- function(tidyVCF, allAccs=FALSE) {
   } else{
     output <- left_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
   }
-
   attr(output, "transcript_ID") <- attr(data, "transcript_ID")
   attr(output, "tair_locus") <- attr(data, "tair_locus")
   attr(output, "tair_symbol") <- attr(data, "tair_symbol")
-
   return(output)
 }
 
 #' Label accessions with the variants they contain
 #'
 #' @param data a data frame of variants with a column named "Indiv"
-#' @param collapse should each accession will be a single line
+#' @param collapse logicial value, should each accession be a single line?
 #'
 #' @return a df with a single row per accession, with a new column "SNPs" that
 #'  has a single text string detailing all the variants from data within that
@@ -743,30 +785,26 @@ addAccDetails <- function(tidyVCF, allAccs=FALSE) {
 #'
 #' @examples
 labelBySNPs <- function(data, collapse=TRUE) {
-  # creates a df with a single row per individual, with a new column "SNPs" that
-  # has a single text string detailing the
-
   output <- ddply(data, .variables="Indiv", .fun=.labelBySNPsKernel, collapse=collapse)
-
   output <- addAccDetails(output)
   return(output)
 }
 
 
 
-#' Title
-#'
-#' @param indivData
-#' @param collapse
-#'
-#' @return a dataframe with a single row, containing the column "SNPs" that
-#'  has a single text string detailing all the variants from data within that
-#'  accession
-#'
+# kernel function used by labelBySNPs
+#
+# @param indivData
+# @param collapse
+#
+# @return a dataframe with a single row, containing the column "SNPs" that
+#  has a single text string detailing all the variants from data within that
+#  accession
+#
 .labelBySNPsKernel <- function(indivData, collapse=TRUE) {
   #if collapse == TRUE, each accession will be a single line.
 
-  # store ecotypeID as a single value
+  # store Indiv as a single value
   Indiv <- indivData[1,"Indiv"]
 
   # filter only rows with an effect (ie not reference or NA)

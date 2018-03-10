@@ -9,7 +9,7 @@ labelBySNPs(data, collapse = TRUE)
 \arguments{
 \item{data}{a data frame of variants with a column named "Indiv"}
 
-\item{collapse}{should each accession will be a single line}
+\item{collapse}{logicial value, should each accession be a single line?}
 }
 \value{
 a df with a single row per accession, with a new column "SNPs" that
@@ -18,4 +18,9 @@ a df with a single row per accession, with a new column "SNPs" that
 }
 \description{
 Label accessions with the variants they contain
+}
+\examples{
+
+
+
 }

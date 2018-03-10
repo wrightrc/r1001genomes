@@ -18,6 +18,10 @@ use the tair 10 database via biomart (requires internet), "araport11" uses a
 gff file of the araport11 data stored locally in  the r1001genomes R package.
 a file path to a .gff or .gff.gz file may also be used.}
 }
+\value{
+a table containing fields from the Tair database on the provided genes
+including "transcript_ID" and "regionString" columns required for other fuctions in this code
+}
 \description{
 Get the start and end position of each transcript of a set of
  genes using `bioMart` package to query the TAIR10 database via plants.ensembl.org

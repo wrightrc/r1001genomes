@@ -19,3 +19,20 @@ a row with nucleotide diversity statistics of the transcript.
 calculate nucleotide diversity statsistics for a gene/transcript
 use with ldply() on VCFList objects to create a table.
 }
+\examples{
+
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download and compile a list of VCF files
+myVCFList <- VCFList(geneInfo)
+
+## Parse EFF field
+myVCFList <- llply(myVCFList, parseEFF)
+
+## calculate site-wise nucleotide diversity
+myVCFList <- llply(myVCFList, Nucleotide_diversity)
+
+## tabulate diversity statistics
+ldply(myVCFList, diversityStats, .id="transcript_ID")
+
+}
