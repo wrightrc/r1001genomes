@@ -628,8 +628,12 @@ diversityStats <- function(data, geneInfo=NULL) {
   tableData$Pi_syn <- sum(reducedData[reducedData$Effect %in% "synonymous_variant", "Diversity"]) / (3*AA_Length)
   tableData$Pi_NS_Ratio <- tableData$Pi_non_syn / tableData$Pi_syn
 
-  #tableData$Pi_coding <- sum(unique(reducedData[reducedData$Effect %in% c("synonymous_variant","missense_variant") , c("POS", "Diversity")])$Diversity) / (3*AA_Length)
-   tableData$Pi_coding <- tableData$Pi_non_syn + tableData$Pi_syn
+  tableData$Pi_coding <- sum(reducedData[reducedData$Effect %in% c("missense_variant",
+                                                                     "stop_gained",
+                                                                     "frameshift_variant",
+                                                                     "synonymous_variant"),
+                                           "Diversity"]) / (3*AA_Length)
+
 
   if (!is.null(geneInfo)){
     transcript_length <- geneInfo$transcript_length[geneInfo$transcript_ID == attr(data,"transcript_ID")]
