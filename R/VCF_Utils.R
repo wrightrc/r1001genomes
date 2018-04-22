@@ -1,29 +1,5 @@
 # clean up object names to be consistent with bioconductor style (camelCaps)
-# diversity_calc -> calcDiversity
-# GT_freq -> GTfreq
-# get_coding_diversity -> getCodingDiv
-# plot_coding_diversity -> plotCodingDiv
-# unique_coding_variants -> uniqueCodingVars
-# add_ecotype_details -> addAccDetails
-# Ecotype_column -> ecotypeColumn
-# label_bySNPs -> labelBySNPs
-# label_by_SNPs_kernel -> labelBySNPsKernel
 
-
-
-
-### LIBRARIES ==================================================================
-
-#library(VariantAnnotation)
-#library(plyr)
-#library(stringr)
-#library(biomaRt)
-#library(ggplot2)
-#library(reshape2)
-#library(vcfR)
-#library(dplyr)
-#library(ggmap)
-#library(ggthemes)
 
 ### APP FUNCTIONS =============================================================
 
@@ -142,7 +118,6 @@ run1001genomes <- function() {
 #'
 #' @return new tidyVCF object with added columns for the parsed effect fields
 #' @export
-#' @import plyr
 #'
 #' @examples
 #'
@@ -166,7 +141,7 @@ parseEFF <- function (tidyVCF){
   # stop if there is no "transcript_ID" attribute
   if (is.null(attr(tidyVCF, "transcript_ID"))) stop("Can not parse EFF field without transcript ID")
   transcript_ID <- attr(tidyVCF, "transcript_ID")
-  output <- ddply(data, "POS", .fun=.parseEFFKernel, transcript_ID, EFFColNames)
+  output <- plyr::ddply(data, "POS", .fun=.parseEFFKernel, transcript_ID, EFFColNames)
   attr(output, "transcript_ID") <- attr(tidyVCF, "transcript_ID")
   attr(output, "tair_locus") <- attr(tidyVCF, "tair_locus")
   attr(output, "tair_symbol") <- attr(tidyVCF, "tair_symbol")
@@ -269,7 +244,6 @@ VCFByTranscript <- function (geneInfo, strains=NULL, tidy=TRUE, dataOnly=TRUE){
 #'
 #' @return list of VCF objects
 #' @export
-#' @import plyr
 #'
 #' @examples
 #'
@@ -286,7 +260,7 @@ VCFByTranscript <- function (geneInfo, strains=NULL, tidy=TRUE, dataOnly=TRUE){
 #' myVCFList <- plyr::llply(myVCFList, addAccDetails)
 #'
 VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
-  output <- alply(geneInfo,.margins=1, .fun=VCFByTranscript)
+  output <- plyr::alply(geneInfo,.margins=1, .fun=VCFByTranscript)
   for (i in 1:length(output)){
     names(output)[i] <- attr(output[[i]], "transcript_ID")
   }
@@ -310,7 +284,6 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @return a table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
-#' @import plyr
 #' @import biomaRt
 #' @importFrom utils read.table write.table
 #'
@@ -336,7 +309,7 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
                                    "end_position", "strand", "transcript_start", "transcript_end"
                                     ), filters="tair_locus", values=genes2, mart=tair10)
       # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
-      output$regionString <- as.character(alply(output, .fun=.makeRegionString, .margins=1, .expand=FALSE))
+      output$regionString <- as.character(plyr::alply(output, .fun=.makeRegionString, .margins=1, .expand=FALSE))
       names(output)[names(output) == "ensembl_transcript_id"] <- "transcript_ID"
       output$transcript_length <- abs(output$transcript_end - output$transcript_start)
     } else if (source == "araport11"){
@@ -398,7 +371,7 @@ geneInfoFromGff <- function(genes, gffFile){
   proteinData$chromosome_name <- as.integer(stringr::str_match(as.character(proteinData$seqid), "Chr([0-9])")[,2])
   proteinData$transcript_start <- proteinData$start
   proteinData$transcript_end <- proteinData$end
-  proteinData$regionString <- as.character(alply(proteinData, .fun=.makeRegionString, .margins=1, .expand=FALSE))
+  proteinData$regionString <- as.character(plyr::alply(proteinData, .fun=.makeRegionString, .margins=1, .expand=FALSE))
   proteinData$transcript_length <- abs(proteinData$transcript_end - proteinData$transcript_start)
   proteinData$strand <- as.integer(paste(proteinData$strand,"1", sep=""))
 
@@ -425,7 +398,7 @@ geneInfoFromGff <- function(genes, gffFile){
 # @return geneInfo dataframe, where the tair_symbol of the original geneInfo is replaced
 #
 .relableTairSymbol <- function(geneInfo, fnames) {
- geneIdTable <- ldply(fnames, read.csv, colClasses="character")
+ geneIdTable <- plyr::ldply(fnames, read.csv, colClasses="character")
 
  colnames(geneIdTable)[colnames(geneIdTable) == "name"] <- "tair_symbol"
  # remove any leading and trailing whitespace
@@ -532,7 +505,7 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
 }
 
 #' counts number of variants in certain affect categories
-#' use with ldply() on VCFList objects to create a table.
+#' use with plyr::ldply() on VCFList objects to create a table.
 #'
 #' @param data tidyVCF with 'EFF' field parsed
 #' @param unique logical, if true only unique variants will be counted
@@ -548,10 +521,10 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
 #' myVCFList <- VCFList(geneInfo)
 #'
 #' ## tabultate unique variants
-#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#' plyr::ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
 #'
 #' # tabulate total counts of variants relative to the reference sequence.
-#' ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+#' plyr::ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
 #'
 variantCounts <- function(data, unique=TRUE) {
   effects <- c("5_prime_UTR_variant",
@@ -588,7 +561,7 @@ variantCounts <- function(data, unique=TRUE) {
 
 
 #' calculate nucleotide diversity statsistics for a gene/transcript
-#' use with ldply() on VCFList objects to create a table.
+#' use with plyr::ldply() on VCFList objects to create a table.
 #'
 #' @param data tidyVCF with 'EFF' field parsed and diversity calculated by position
 #' @param geneInfo
@@ -604,13 +577,13 @@ variantCounts <- function(data, unique=TRUE) {
 #' myVCFList <- VCFList(geneInfo)
 #'
 #' ## Parse EFF field
-#' myVCFList <- llply(myVCFList, parseEFF)
+#' myVCFList <- plyr::llply(myVCFList, parseEFF)
 #'
 #' ## calculate site-wise nucleotide diversity
-#' myVCFList <- llply(myVCFList, Nucleotide_diversity)
+#' myVCFList <- plyr::llply(myVCFList, Nucleotide_diversity)
 #'
 #' ## tabulate diversity statistics
-#' ldply(myVCFList, diversityStats, .id="transcript_ID")
+#' plyr::ldply(myVCFList, diversityStats, .id="transcript_ID")
 #'
 diversityStats <- function(data, geneInfo=NULL) {
   tableData <- data.frame(row.names=attr(data,"transcript_ID"))
@@ -693,7 +666,6 @@ getCodingDiv <- function(data){
 #' @export
 #' @import ggplot2
 #' @import ggthemes
-#' @import dplyr
 #' @importFrom magrittr "%>%"
 #' @import RColorBrewer
 #'
@@ -747,7 +719,6 @@ plotCodingDiv <- function(uniqueCodingVars){
 #'
 #' @return dataframe with accession details added
 #' @export
-#' @import dplyr
 #'
 #' @examples
 #' ## make a gene info DF
@@ -767,9 +738,9 @@ addAccDetails <- function(tidyVCF, allAccs=FALSE) {
   data <- tidyVCF
   data$Indiv <- as.numeric(data$Indiv)
   if (allAccs) {
-    output <- full_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+    output <- dplyr::full_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
   } else{
-    output <- left_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
+    output <- dplyr::left_join(data, ecoIDs, by=c("Indiv"="Ecotype.ID"))
   }
   attr(output, "transcript_ID") <- attr(data, "transcript_ID")
   attr(output, "tair_locus") <- attr(data, "tair_locus")
@@ -786,11 +757,10 @@ addAccDetails <- function(tidyVCF, allAccs=FALSE) {
 #'  has a single text string detailing all the variants from data within that
 #'  accession
 #' @export
-#' @import plyr
 #'
 #' @examples
 labelBySNPs <- function(data, collapse=TRUE) {
-  output <- ddply(data, .variables="Indiv", .fun=.labelBySNPsKernel, collapse=collapse)
+  output <- plyr::ddply(data, .variables="Indiv", .fun=.labelBySNPsKernel, collapse=collapse)
   output <- addAccDetails(output)
   return(output)
 }
@@ -893,15 +863,12 @@ alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
 #'
 makeAlnDF <- function(alignment){
   seqs <- strsplit(as.character(alignment), split = NULL)
-  #devtools::use_package("plyr")
   aln_df <- plyr::ldply(.data = seqs, .id = "transcript_ID", .fun = function(sequence){
     data.frame(
       "letter" = sequence,
       "aln_pos" = 1:length(sequence)
     )
   })
-  #devtools::use_package("magrittr")
-  #devtools::use_package("dplyr")
   aln_df$seq_name <- aln_df$transcript_ID
   aln_df <- aln_df %>% dplyr::group_by(seq_name) %>% dplyr::mutate(
     seq_pos = {
@@ -940,7 +907,7 @@ makeAlnDF <- function(alignment){
 #' # load a VCF list
 #' vcf <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
 #'    package = "r1001genomes"))
-#' vcf <- ldply(.data = vcf, .fun = subset,
+#' vcf <- plyr::ldply(.data = vcf, .fun = subset,
 #'   !is.na(Transcript_ID) & gt_GT != "0|0")
 #' coding_vcf <- getCodingDiv(vcf)
 #' (aln_df, coding_vcf, seq_name = Transcript_ID,
@@ -1029,7 +996,6 @@ cut_number
 #'
 #' @export
 #' @importFrom magrittr "%>%"
-#' @import dplyr
 #' @import reshape2
 #' @import stringr
 #' @import tidyr
@@ -1056,7 +1022,7 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
     names(anno_df.loci)[which(names(anno_df.loci) == "gene")] <-
       "tair_locus"
     anno_df.loci <- anno_df.loci[,names(anno_df.symbol)]
-    anno_df <- bind_rows(anno_df.symbol, anno_df.loci)
+    anno_df <- dplyr::bind_rows(anno_df.symbol, anno_df.loci)
   }
   if(wide){
     anno.domain <- reshape2::melt(data = anno_df,
@@ -1093,7 +1059,6 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 #' @return an annotation data frame with columns from an alignment data frame joined by transcript ID and position
 #' @export
 #' @importFrom magrittr "%>%"
-#' @import dplyr
 #'
 #'
 #' @examples
@@ -1114,11 +1079,11 @@ readAnnotationFile <- function(filename, wide = FALSE, domains = TRUE,
 addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
   suppressWarnings(aln_df$seq_pos <- as.integer(aln_df$seq_pos))
   # check anno_df
-  max_anno <- ddply(anno_df$domains, .variables = .(transcript_ID, annotation), .fun = summarise, end = max(end))
-  max_aln <- ddply(aln_df, .variables = .(transcript_ID),
-                   .fun = summarise,
+  max_anno <- plyr::ddply(anno_df$domains, .variables = .(transcript_ID, annotation), .fun = dplyr::summarise, end = max(end))
+  max_aln <- plyr::ddply(aln_df, .variables = .(transcript_ID),
+                   .fun = dplyr::summarise,
                    max = max(na.omit(as.integer(seq_pos))))
-  max_anno <- join(max_anno, max_aln, by = "transcript_ID")
+  max_anno <- plyr::join(max_anno, max_aln, by = "transcript_ID")
   max_anno <- max_anno[!is.na(max_anno$max),]
   max_anno$errors <- dplyr::if_else(max_anno$end > max_anno$max,
                 "annotation end exceeds sequence length", "none")
@@ -1126,7 +1091,7 @@ addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
     errors <- max_anno[max_anno$errors != "none",]
     stop("Annotations exceed sequence dimensions! \n",
        "Abberant annotations: \n",
-       paste(apply(errors, 1, paste, collapse =", " ), collapse = " \n"))
+       paste(plyr::apply(errors, 1, paste, collapse =", " ), collapse = " \n"))
   }
   # joins
   anno_df$domains <- anno_df$domains %>%
@@ -1227,7 +1192,7 @@ makeChunksDF <- function(aln_df){
 #' chunkAnnotation(anno_df, chunks)
 #'
 chunkAnnotation <- function(anno_df, chunks){
-  chunks.anno.domain <- adply(anno_df$domains, 1, function(domain) {
+  chunks.anno.domain <- plyr::adply(anno_df$domains, 1, function(domain) {
     #check which chunks the domain spans
     rows <- (domain$start_aln_pos <= chunks$start &
                domain$end_aln_pos >= chunks$end) | # chunks it encompases
@@ -1321,11 +1286,11 @@ promoterVariantToString<-function(SNPs, genome, ranges, files_out = TRUE){
   #ranges(SNPs) <- ranges(mapToTranscripts(SNPs, ranges))
   #mcols(SNPs)$GENEID <- seqnames(mapToTranscripts(SNPs, ranges))
   #loop to generate accession sequences for each seq of each gene
-  llply(mcols(ranges)$names,function(gene) {
+  plyr::llply(mcols(ranges)$names,function(gene) {
     #pull all coding snps mapped to gene
-    genes<-subset(SNPs, mcols(SNPs)$GENEID == gsub("\\..*$","",gene))
+    genes <- subset(SNPs, mcols(SNPs)$GENEID == gsub("\\..*$","",gene))
     #for each unique accession in the new SNP_list
-    geneList<-llply(unique(sampleNames(SNPs)),function(acc) {
+    geneList <- plyr::llply(unique(sampleNames(SNPs)),function(acc) {
       #get variants in the strain
       variants <- unique(subset(genes, sampleNames(genes) == acc))
       #create sequence

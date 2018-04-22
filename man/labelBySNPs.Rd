@@ -19,8 +19,3 @@ a df with a single row per accession, with a new column "SNPs" that
 \description{
 Label accessions with the variants they contain
 }
-\examples{
-
-
-
-}
