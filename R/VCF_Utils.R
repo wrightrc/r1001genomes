@@ -54,14 +54,13 @@ run1001genomes <- function() {
 #
 # @return The URL used for the download
 #
-# @importFrom utils download.file
 .downloadData <- function (fName, strainStr, regionStr,
                           download=TRUE) {
   url <- c("http://tools.1001genomes.org/api/v1/vcfsubset/strains/", strainStr, "/regions/",
            regionStr, "/type/snpeff/format/vcf")
   url <- paste(url, collapse="")
   if (download == TRUE) {
-    download.file(url, fName)
+    utils::download.file(url, fName)
   }
   return (url)
 }
@@ -284,8 +283,6 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @return a table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
-#' @import biomaRt
-#' @importFrom utils read.table write.table
 #'
 #' @examples
 #' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
@@ -296,7 +293,7 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
   cacheFile <- system.file("extdata", "geneInfoCache.csv", package="r1001genomes")
   output <- NULL
   if (useCache == TRUE){
-    geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
+    geneInfoCache <- utils::read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
     retrievedInfo <- geneInfoCache[geneInfoCache$tair_locus %in% genes, ]
     genes2 <- genes[!(genes %in% geneInfoCache$tair_locus)] #remove genes present in the cache from genes list
     print("new genes:")
@@ -304,8 +301,8 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
   }
   if (length(genes2) > 0){
     if (source == "tair10") {
-      tair10 <- useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
-      output <- getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
+      tair10 <- biomaRt::useMart("plants_mart", host="plants.ensembl.org", dataset="athaliana_eg_gene")
+      output <- biomaRt::getBM(attributes=c("tair_locus", "tair_symbol","ensembl_transcript_id", "chromosome_name", "start_position",
                                    "end_position", "strand", "transcript_start", "transcript_end"
                                     ), filters="tair_locus", values=genes2, mart=tair10)
       # create a list of strings encoding the chromosome and start and end position of all transcript IDs to be analyzed
@@ -324,7 +321,7 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
   if (useCache == TRUE) {
     # append cache
     geneInfoCache <- unique(rbind(geneInfoCache, output))
-    write.table(geneInfoCache, file=cacheFile, row.names=FALSE)
+    utils::write.table(geneInfoCache, file=cacheFile, row.names=FALSE)
   }
   output <- rbind(retrievedInfo, output)
   if (firstOnly == TRUE) {
@@ -664,10 +661,6 @@ getCodingDiv <- function(data){
 #'
 #' @return plot object
 #' @export
-#' @import ggplot2
-#' @import ggthemes
-#' @importFrom magrittr "%>%"
-#' @import RColorBrewer
 #'
 #' @examples
 #'
@@ -690,7 +683,7 @@ getCodingDiv <- function(data){
 #'
 plotCodingDiv <- function(uniqueCodingVars){
   effectClasses <- readRDS(system.file("data", "effect_classes.rds", package="r1001genomes"))
-  classColors <- data.frame("color" = brewer.pal(n = 5, name = "RdYlBu")[5:1],
+  classColors <- data.frame("color" = RColorBrewer::brewer.pal(n = 5, name = "RdYlBu")[5:1],
                             "Class" = c("Synonymous", "Non_Coding", "Splice",
                                         "Missense", "Nonsense"),
                             "labels" = c("Synonymous", "Non_Coding", "Splice",
@@ -699,12 +692,11 @@ plotCodingDiv <- function(uniqueCodingVars){
   uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, classColors, by = "Class")
   classes <- classColors$Class %in% unique(uniqueCodingVars$Class)
   #plot the diversity
-  plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
-    geom_point(size = 4) +
-    scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
-    #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-    ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
-    scale_color_identity("Class", breaks = classColors$color[classes],
+  plot <- ggplot2::ggplot(uniqueCodingVars, ggplot2::aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
+    ggplot2::geom_point(size = 4) +
+    ggplot2::scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
+    ggplot2::ylab("nucleotide diversity, log scale") + ggthemes::theme_few(base_size = 18) +
+    ggplot2::scale_color_identity("Class", breaks = classColors$color[classes],
                          labels = classColors$labels[classes],
                          guide = "legend")
   return(plot)
@@ -812,9 +804,6 @@ labelBySNPs <- function(data, collapse=TRUE) {
 #'
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
-#' @import GenomicFeatures
-#' @importFrom XVector "subseq"
-#' @import Biostrings
 #'
 #' @examples
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
@@ -853,7 +842,6 @@ alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
 #'
 #' @return a tidy long data frame of the alignment with columns `seq_name`, `letter`, `aln_pos`, and `seq_pos`, where `aln_pos` is the position of the letter in the alignment of all sequences and `seq_pos` is the position of the letter in the native sequence.
 #' @importFrom magrittr "%>%"
-#' @import DECIPHER
 #' @export
 #'
 #' @examples
@@ -964,10 +952,9 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
 #'
 chunkAlnDF <- function(aln_df, chunk_width = 80){
   chunk_num <- round(max(aln_df$aln_pos)/chunk_width, 1)
-  aln_df$chunk <- cut_number(aln_df$aln_pos, n = chunk_num, dig.lab = 6)
+  aln_df$chunk <- ggplot2::cut_number(aln_df$aln_pos, n = chunk_num, dig.lab = 6)
   return(aln_df)
 }
-cut_number
 
 #' Read an annotation file
 #'
@@ -996,9 +983,6 @@ cut_number
 #'
 #' @export
 #' @importFrom magrittr "%>%"
-#' @import reshape2
-#' @import stringr
-#' @import tidyr
 #'
 #' @examples
 #'readAnnotationFile(filename = system.file("extdata", "AFB_annotations.csv",
@@ -1249,22 +1233,22 @@ chunkAnnotation <- function(anno_df, chunks){
 #'
 #' @examples
 geom_str_align <- function(mapping = NULL, data = NULL){
-  ggplot(aln_plot, aes(x, as.integer(seqname), group = seqPos)) +
-    geom_rect(data = na.omit(aln_plot), aes(xmin = x - 0.5, xmax = x + 0.5,
+  ggplot2::ggplot(aln_plot, ggplot2::aes(x, as.integer(seqname), group = seqPos)) +
+    ggplot2::geom_rect(data = na.omit(aln_plot), ggplot2::aes(xmin = x - 0.5, xmax = x + 0.5,
                                             ymin = as.integer(seqname) - 0.5,
                                             ymax = as.integer(seqname) + 0.5,
                                             fill = variants), alpha = 0.8) +
-    geom_text(aes(label=letter), alpha= 1,
+    ggplot2::geom_text(aes(label=letter), alpha= 1,
               check_overlap = TRUE) +
-    scale_x_continuous(breaks=seq(1,max(aln_plot$x), by = 10)) +
-    scale_y_continuous(breaks = c(1:length(levels(aln_plot$seqname))),
+    ggplot2::scale_x_continuous(breaks=seq(1,max(aln_plot$x), by = 10)) +
+    ggplot2::scale_y_continuous(breaks = c(1:length(levels(aln_plot$seqname))),
                        labels = levels(aln_plot$seqname)) +
     # expand increases distance from axis
-    xlab("") +
-    ylab("") +
+    ggplot2::xlab("") +
+    ggplot2::ylab("") +
     #scale_size_manual(values=c(5, 6)) + # does nothing unless 'size' is mapped
-    theme_logo(base_family = "Courier") +
-    theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
+    ggseqlogo::theme_logo(base_family = "Courier") +
+    ggplot2::theme(panel.grid = element_blank(), panel.grid.minor = element_blank())
 }
 
 #' make DNAStrings of sequences for each gene of each accession
