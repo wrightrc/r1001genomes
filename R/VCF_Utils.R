@@ -693,8 +693,9 @@ plotCodingDiv <- function(uniqueCodingVars){
   classes <- classColors$Class %in% unique(uniqueCodingVars$Class)
   #plot the diversity
   plot <- ggplot2::ggplot(uniqueCodingVars, ggplot2::aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
-    ggplot2::geom_point(size = 4) +
-    ggplot2::scale_y_log10(breaks=c(0.0001, 0.001, 0.01, 0.1),limits=c(0.0001, 1)) +
+    ggplot2::geom_point(size = 4, position = "jitter") +
+    ggplot2::scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
+    #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
     ggplot2::ylab("nucleotide diversity, log scale") + ggthemes::theme_few(base_size = 18) +
     ggplot2::scale_color_identity("Class", breaks = classColors$color[classes],
                          labels = classColors$labels[classes],
