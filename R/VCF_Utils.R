@@ -1132,7 +1132,7 @@ addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
 #'
 makeChunksDF <- function(aln_df){
   chunks <- data.frame("chunk" = levels(aln_df$chunk)) %>%
-    separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
+    tidyr::separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
   chunks$start <- if_else(condition = str_detect(chunks$start, "\\("),
                           true = as.numeric(str_extract(chunks$start, "\\d+"))
                           + 1, false = as.numeric(str_extract(chunks$start,
