@@ -9,7 +9,7 @@ We are developing this package and web application as open source resources (MIT
 While the package and app are in development, you can install this package in your R instance and run the app on your computer using the following code:
 ```{r}
 require("devtools")
-devtools::install_bitbucket('nemhauserlab/natural-variation-webtool')
+devtools::install_github('wrightrc/r1001genomes')
 run1001genomes()
 ```
 
