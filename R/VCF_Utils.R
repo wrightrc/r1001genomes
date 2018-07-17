@@ -306,10 +306,11 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @param useCache logical, read from and write to a file of cached genes?
 #' @param source the source to retrieve gene information from. "tair10" will
 #' use the tair 10 database via biomart (requires internet), "araport11" uses a
-#' gff file of the araport11 data stored locally in  the r1001genomes R package.
+#' gff file of the araport11 data stored locally in  the r1001genomes R package
 #' a file path to a .gff or .gff.gz file may also be used.
+#' @param verbose TRUE or FALSE, print new genes added to cache in console?
 #'
-#' @returna table containing fields from the Tair database on the provided genes
+#' @return table containing fields from the Tair database on the provided genes
 #' including "transcript_ID" and "regionString" columns required for other fuctions in this code
 #' @export
 #' @import plyr
@@ -319,7 +320,8 @@ VCFList <- function (geneInfo, by="transcript", tidy=TRUE) {
 #' @examples
 #' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 #'
-getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") {
+getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10",
+                         verbose = FALSE) {
   retrievedInfo <- NULL
   genes2 <- genes
   cacheFile <- system.file("extdata", "geneInfoCache.csv", package="r1001genomes")
@@ -328,8 +330,11 @@ getGeneInfo <- function (genes, firstOnly=TRUE, useCache=TRUE, source="tair10") 
     geneInfoCache <- read.table(file=cacheFile, header=TRUE, stringsAsFactors=FALSE)
     retrievedInfo <- geneInfoCache[geneInfoCache$tair_locus %in% genes, ]
     genes2 <- genes[!(genes %in% geneInfoCache$tair_locus)] #remove genes present in the cache from genes list
-    print("new genes:")
-    print(genes2)   # list new genes, not found in cache
+    if(verbose){
+      print("new genes:")
+      print(genes2)   # list new genes, not found in cache
+    }
+
   }
   if (length(genes2) > 0){
     if (source == "tair10") {
