@@ -4,7 +4,7 @@
 \alias{alignCDS}
 \title{Make an alignment of Coding sequences}
 \usage{
-alignCDS(IDs, primary_only = TRUE, all = FALSE)
+alignCDS(IDs, primary_only = TRUE, all = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{IDs}{a vector of TAIR transcript IDs, e.g. "AT3G26890.1"}
@@ -12,8 +12,10 @@ alignCDS(IDs, primary_only = TRUE, all = FALSE)
 \item{primary_only}{TRUE or FALSE should only the primary transcript coding
 sequences be aligned?}
 
-\item{all}{TRUE or FALSE should the coding sequences of all known transcripts
-be aligned}
+\item{all}{TRUE or FALSE, should the coding sequences of all known transcripts
+be aligned?}
+
+\item{verbose}{TRUE or FALSE, should progress be displayed in the console?}
 }
 \value{
 aligned CDS and amino acid sequences as a list of XStringSet objects

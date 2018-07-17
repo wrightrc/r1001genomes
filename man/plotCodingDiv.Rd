@@ -8,7 +8,13 @@ plotCodingDiv(uniqueCodingVars)
 }
 \arguments{
 \item{uniqueCodingVars}{}
+
+\item{uniqueCodingVars}{}
 }
 \description{
 Title
+}
+\examples{
+New Plot Coding Div
+
 }
