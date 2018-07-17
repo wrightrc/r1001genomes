@@ -794,8 +794,9 @@ labelBySNPs <- function(data, collapse=TRUE) {
 #' @param IDs a vector of TAIR transcript IDs, e.g. "AT3G26890.1"
 #' @param primary_only TRUE or FALSE should only the primary transcript coding
 #' sequences be aligned?
-#' @param all TRUE or FALSE should the coding sequences of all known transcripts
-#' be aligned
+#' @param all TRUE or FALSE, should the coding sequences of all known transcripts
+#' be aligned?
+#' @param verbose TRUE or FALSE, should progress be displayed in the console?
 #'
 #' @return aligned CDS and amino acid sequences as a list of XStringSet objects
 #' @export
@@ -807,7 +808,7 @@ labelBySNPs <- function(data, collapse=TRUE) {
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
 #' alignment <- alignCDS(IDs)
 #' browseSeqs(alignment[[2]])
-alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
+alignCDS <- function(IDs, primary_only = TRUE, all = FALSE, verbose = FALSE) {
   #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
   #use_package("GenomicFeatures", "imports")
@@ -830,7 +831,8 @@ alignCDS <- function(IDs, primary_only = TRUE, all = FALSE) {
   if(!all) CDSseqs.xstop <- CDSseqs.xstop[names(CDSseqs.xstop) %in% IDs]
   #devtools::use_package("DECIPHER", "depends")
   # Update to imports once DECIPHER has fixed environment issue
-  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both")
+  CDSAlignment <- DECIPHER::AlignTranslation(CDSseqs.xstop, type = "both",
+                                             verbose = verbose)
   return(CDSAlignment)
 }
 
