@@ -687,9 +687,9 @@ getCodingDiv <- function(data){
 plotCodingDiv <- function(uniqueCodingVars){
   plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity,
                                        color=Effect)) +
-    geom_point(size = 4, position = "jitter") +
+    geom_point(size = 4, position = "jitter", shape = 1) +
     scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
-    ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
+    ylab("nucleotide diversity, log scale") +
     xlab("codon") +
     scale_color_viridis(option = "A", discrete = TRUE)
   return(plot)
