@@ -686,8 +686,8 @@ plotCodingDiv <- function(uniqueCodingVars){
     geom_point(size = 4, position = "jitter") +
     scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
     #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-    ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
-    scale_color_identity("Class", breaks = classColors$color[classes],
+    ggplot2::ylab("nucleotide diversity, log scale") +
+    ggplot2::scale_color_identity("Class", breaks = classColors$color[classes],
                          labels = classColors$labels[classes],
                          guide = "legend")
   return(plot)
