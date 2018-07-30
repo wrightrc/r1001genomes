@@ -668,7 +668,6 @@ getCodingDiv <- function(data){
 #' @export
 #'
 #' @examples
-#'
 #' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 #'
 #' ## download a single VCF
@@ -685,31 +684,18 @@ getCodingDiv <- function(data){
 #'
 #' ## plot diversity of coding variants
 #' plotCodingDiv(myCodingVariants)
-#'
 plotCodingDiv <- function(uniqueCodingVars){
-  effectClasses <- readRDS(system.file("data", "effect_classes.rds", package="r1001genomes"))
-  classColors <- data.frame("color" = RColorBrewer::brewer.pal(n = 5, name = "RdYlBu")[5:1],
-                            "Class" = c("Synonymous", "Non_Coding", "Splice",
-                                        "Missense", "Nonsense"),
-                            "labels" = c("Synonymous", "Non_Coding", "Splice",
-                                        "Missense", "Nonsense"), stringsAsFactors=FALSE)
-  uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, effectClasses, by = "Effect")
-  uniqueCodingVars <- dplyr::left_join(uniqueCodingVars, classColors, by = "Class")
-  classes <- classColors$Class %in% unique(uniqueCodingVars$Class)
-  #plot the diversity
-  plot <- ggplot2::ggplot(uniqueCodingVars, ggplot2::aes(x=Codon_Number,y=Diversity, colour=color, shape = Effect)) +
-    ggplot2::geom_point(size = 4, position = "jitter") +
-    ggplot2::scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
-    #scale_colour_manual(values=c(synonymous_diversity="blue", missense_diversity="red")) +
-    ggplot2::ylab("nucleotide diversity, log scale") +
-    ggplot2::scale_color_identity("Class", breaks = classColors$color[classes],
-                         labels = classColors$labels[classes],
-                         guide = "legend")
+  plot <- ggplot(uniqueCodingVars, aes(x=Codon_Number,y=Diversity,
+                                       color=Effect)) +
+    geom_point(size = 4, position = "jitter") +
+    scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
+    ylab("nucleotide diversity, log scale") + theme_few(base_size = 18) +
+    xlab("codon") +
+    scale_color_viridis(option = "A", discrete = TRUE)
   return(plot)
 }
 
-
-#' Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column
+#' Add accession metadata to a dataset containing ecotype IDs
 #'
 #' @param tidyVCF Tidy format VCF data.
 #' @param allAccs logical, if `TRUE` include rows for all accessions even if no
@@ -902,6 +888,7 @@ makeAlnDF <- function(alignment){
 #' @param by_aln_SNPs a named list of character objects with each equivalency
 #' representing matching columns in `aln_df` (on the LHS) and `SNPs`
 #' (on the RHS), e.g. `"seq_name" = "transcript_id"`
+#' @param effect_order a \code[data.frame] containing an integer vector named 'strength' representing the strength of the effect, paired with a character vector named 'effect' of possible effects. This will be used to order single and multiple effects.
 #'
 #' @return aln_df with the addition of a `variants` column containing a string
 #'  listing the variant types at each position
@@ -936,22 +923,23 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
   temp <- SNPs %>%
     dplyr::group_by(!!seq_name, !!seq_pos) %>%
     dplyr::summarise(effects = {switch(as.character(length(unique(!!effect))),
-                                 "0" = NA,
-                                 "1" = unique(!!effect),
-                                 paste(sort(unique(!!effect)),
-                                       collapse = " & "))},
+                                       "0" = NA,
+                                       "1" = unique(!!effect),
+                                       paste(sort(unique(!!effect)),
+                                             collapse = " & "))},
                      variants = {switch(as.character(length(unique(!!variant))),
-                                    "0" = NA,
-                                    "1" = unique(!!variant),
-                                    paste(sort(unique(!!variant)),
-                                          collapse = " & "))})
+                                        "0" = NA,
+                                        "1" = unique(!!variant),
+                                        paste(sort(unique(!!variant)),
+                                              collapse = " & "))},
+                     strength = max(effect_order[which(effect_order$effect %in% unique(!!effect)), "strength"]))
   temp[[rlang::quo_name(seq_pos)]] <- as.character(x = temp[[rlang::quo_name(seq_pos)]])
   aln_df <- dplyr::left_join(x = aln_df, y = temp,
-                        by = c("seq_name" = rlang::quo_name(seq_name),
-                               "seq_pos" = rlang::quo_name(seq_pos)))
+                             by = c("seq_name" = rlang::quo_name(seq_name),
+                                    "seq_pos" = rlang::quo_name(seq_pos)))
   aln_df$seq_name <- as.factor(aln_df$seq_name)
   aln_df$effects <- gsub(pattern = "_variant", replacement = "",
-                          x = aln_df$effects)
+                         x = aln_df$effects)
   return(aln_df)
 }
 
