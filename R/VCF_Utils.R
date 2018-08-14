@@ -181,7 +181,7 @@ parseEFF <- function (tidyVCF){
     #create a "gt_GT" column in the effect dataframe that matches the format of the VCF$dat
     effect$gt_GT <- paste(effect$Genotype_Number, "|", effect$Genotype_Number, sep = "")
     # merge the effect df with the original data df by the gt_GT field
-    output <- left_join(data, effect, by="gt_GT")
+    output <- dplyr::left_join(data, effect, by="gt_GT")
   }
 
   else{  #if there are no effects matching the transcript ID, return the data unaltered
@@ -752,6 +752,21 @@ addAccDetails <- function(tidyVCF, allAccs=FALSE) {
 #' @export
 #'
 #' @examples
+#' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+#'
+#' ## download a single VCF
+#' myVCF <- VCFByTranscript(geneInfo[1, ])
+#'
+#' ## Parse the EFF field of a single VCF:
+#' myVCF <- parseEFF(myVCF)
+#'
+#' ## When using Collapse=TRUE, each accession will be a single row of the output
+#' labelBySNPs(myVCF, collapse=TRUE)[1:3,]
+#'
+#' ## When using collapse=FALSE, each SNP of each accession will have it's own row.
+#' labelBySNPs(myVCF, collapse=FALSE)[1:3,]
+#'
+#'
 labelBySNPs <- function(data, collapse=TRUE) {
   output <- plyr::ddply(data, .variables="Indiv", .fun=.labelBySNPsKernel, collapse=collapse)
   output <- addAccDetails(output)
@@ -936,8 +951,8 @@ addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
 #' Chunk up an alignment data frame to allow facetting over
 #' multiple rows
 #'
-#' @param aln_df
-#' @param chunk_width
+#' @param aln_df An alignment data frame
+#' @param chunk_width The number of units (bp or aa) in a chunk.
 #'
 #' @return \code{aln_df} with the addition of a \code{chunk} column for
 #'  wrapping the alignment across facets
@@ -1114,8 +1129,8 @@ addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
 #' To allow similar chunking of annotation layers for facetting
 #' across multiple rows
 #'
-#' @param aln_df
-#' @param chunk_width
+#' @param aln_df An alignment dataframe
+#' @param chunk_width number of units (bases or amino acids) in a single chunk
 #'
 #' @return a chunks data frame containing the start, end, and chunk name for
 #' each chunk of the alignment
