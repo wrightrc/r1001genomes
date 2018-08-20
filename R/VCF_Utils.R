@@ -937,7 +937,8 @@ makeAlnDF <- function(alignment){
 #'
 addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
                            seq_pos = Codon_Number, effect = Effect,
-                           variant = Amino_Acid_Change, effect_order){
+                           variant = Amino_Acid_Change,
+                           effect_order = SNPeff_order){
   seq_name <- dplyr::enquo(seq_name)
   seq_pos <- dplyr::enquo(seq_pos)
   effect <- dplyr::enquo(effect)
