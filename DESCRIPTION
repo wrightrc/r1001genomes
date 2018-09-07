@@ -31,7 +31,7 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     rlang,
     shinyBS,
     tidyr
-Suggests: knitr, ggrepel, ggpmisc, cowplot
+Suggests: knitr, ggrepel, ggpmisc, ggseqlogo, cowplot
 License: Artistic-2.0
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
