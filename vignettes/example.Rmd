@@ -189,7 +189,7 @@ This downloads the gene model from ENSEMBL plants.
 ```{r}
 
 tair_ids <- c("AT3G62980", "AT3G26810")
-geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, inputType = "tair_locus", useCache = TRUE)
+geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, useCache = TRUE)
 ```
 
 Now we can give this table a look. We can also freshen up the table a bit with `datatable`. 

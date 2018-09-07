@@ -5,13 +5,16 @@
 \title{Add SNPs and indels to an alignment data frame}
 \usage{
 addSNPsToAlnDF(aln_df, SNPs, seq_name = Transcript_ID,
-  seq_pos = Codon_Number, effect = Effect, variant = Amino_Acid_Change)
+  seq_pos = Codon_Number, effect = Effect,
+  variant = Amino_Acid_Change, effect_order = SNPeff_order)
 }
 \arguments{
 \item{aln_df}{an alignment data frame resulting from
 \link[r1001genomes]{makeAlnDF}}
 
 \item{SNPs}{a data frame of SNPs as returned from \link[r1001genomes]{getCodingDiv}}
+
+\item{effect_order}{a \code[data.frame] containing an integer vector named 'strength' representing the strength of the effect, paired with a character vector named 'effect' of possible effects. This will be used to order single and multiple effects.}
 
 \item{by_aln_SNPs}{a named list of character objects with each equivalency
 representing matching columns in `aln_df` (on the LHS) and `SNPs`
@@ -33,7 +36,7 @@ aln_df <- makeAlnDF(alignment[[2]])
 # load a VCF list
 vcf <- readRDS(file = system.file("shiny-app", "demo_VCFs.rds",
    package = "r1001genomes"))
-vcf <- ldply(.data = vcf, .fun = subset,
+vcf <- plyr::ldply(.data = vcf, .fun = subset,
   !is.na(Transcript_ID) & gt_GT != "0|0")
 coding_vcf <- getCodingDiv(vcf)
 (aln_df, coding_vcf, seq_name = Transcript_ID,

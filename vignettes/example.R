@@ -24,12 +24,13 @@ library(biomaRt)
 ## ------------------------------------------------------------------------
 
 tair_ids <- c("AT3G62980", "AT3G26810")
-geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, inputType = "tair_locus", useCache = TRUE)
+geneInfo <- getGeneInfo(genes = tair_ids, firstOnly = TRUE, useCache = TRUE)
 
 ## ------------------------------------------------------------------------
-datatable(geneInfo[, -c(5,6,9)], colnames = c("tair locus", "symbol", "transcript", 
-                                              "Chr", "transcript \nstart", "transcript \nend", 
-                                              "transcript \nlength"), rownames = FALSE, 
+datatable(geneInfo[, -c(5,6,7,10)], colnames = c("tair locus", "symbol", "transcript", 
+                                      "Chr", "transcript \nstart", 
+                                      "transcript \nend", "transcript \nlength"), 
+          rownames = FALSE, 
           options=list(paging=FALSE, searching=FALSE))
 
 ## ------------------------------------------------------------------------
@@ -45,9 +46,10 @@ paste(AFB_loci$tair_locus, collapse = ",")
 
 ## ------------------------------------------------------------------------
 formatRound(datatable(TIR1_AFB2_nonunique_variants,
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
-                               "coding \n total"), 
+                               "stop\ngained", "frameshift\nvariant",
+                               "upstream", "coding \n total"), 
                   escape = FALSE, rownames = FALSE,
     options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
 
@@ -55,9 +57,10 @@ formatRound(datatable(TIR1_AFB2_nonunique_variants,
 TIR1_AFB2_unique_variants <- ldply(YFG_VCF, variantCounts, unique = TRUE, .id = "Transcript_ID")
 
 formatRound(datatable(TIR1_AFB2_unique_variants,
-                  colnames = c("transcript", "5' UTR", "intron", "3' UTR",
+                  colnames = c("transcript", "symbol",  "5' UTR", "intron", "3' UTR",
                                "coding \n synonymous", "coding \n missense",
-                               "coding \n total"), 
+                               "stop\ngained", "frameshift\nvariant",
+                               "upstream", "coding \n total"), 
                   escape = FALSE, rownames = FALSE,
     options=list(paging=FALSE, searching=FALSE)), columns = 2:7, digits = 0)
 
@@ -66,11 +69,12 @@ TIR1_AFB2_diversity_table <- ldply(YFG_VCF, diversityStats, geneInfo = geneInfo,
 
 formatRound(datatable(TIR1_AFB2_diversity_table,
                   colnames = c("transcript",
-                               "&pi; transcript",
-                               "&pi; coding",
+                               "symbol",
                                "&pi;<sub>N</sub>",
                                "&pi;<sub>S</sub>",
-                               "&pi;<sub>N</sub>/&pi;<sub>S</sub>"), 
+                               "&pi;<sub>N</sub>/&pi;<sub>S</sub>",
+                               "&pi; coding",
+                               "&pi; transcript"), 
                   escape = FALSE,
                   options = list(paging=FALSE, searching=FALSE)),
                 columns = 1:6, digits = 6)

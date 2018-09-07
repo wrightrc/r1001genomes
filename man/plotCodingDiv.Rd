@@ -2,7 +2,7 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{plotCodingDiv}
 \alias{plotCodingDiv}
-\title{Title}
+\title{Plot nucleotide diversity over the coding sequence by codon}
 \usage{
 plotCodingDiv(uniqueCodingVars)
 }
@@ -11,8 +11,11 @@ plotCodingDiv(uniqueCodingVars)
 
 \item{uniqueCodingVars}{}
 }
+\value{
+plot object
+}
 \description{
-Title
+Plot nucleotide diversity over the coding sequence by codon
 }
 \examples{
 New Plot Coding Div

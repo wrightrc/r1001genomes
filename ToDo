@@ -6,6 +6,8 @@ Little fixes
 - add colorbar legend to top of alignment
 - fix legend on diversity plot
 - tidy ordering of genes by name on all tabs
+- add some padding to around the alignment
+- add color scheme to aln_plot
 - add alignment diversity plot
 - add example/template tair_locus and name file
 - "Diversity plot" handling for premature stops (and frame shifts)?

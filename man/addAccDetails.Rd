@@ -7,14 +7,19 @@
 addAccDetails(tidyVCF, allAccs = FALSE)
 }
 \arguments{
-\item{ecotypeColumn}{}
+\item{tidyVCF}{Tidy format VCF data.}
+
+\item{allAccs}{logical, if `TRUE` include rows for all accessions even if no
+rows in the data exist with that accession.}
+}
+\value{
+dataframe with accession details added
 }
 \description{
 Add accession metadata to a dataset containing ecotype IDs
 }
 \examples{
-
-#' ## make a gene info DF
+## make a gene info DF
 geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 
 ## download a single VCF

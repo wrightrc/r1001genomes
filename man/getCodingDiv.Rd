@@ -2,13 +2,36 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{getCodingDiv}
 \alias{getCodingDiv}
-\title{Title}
+\title{produce dataframe of unique variants on the coding sequence}
 \usage{
 getCodingDiv(data)
 }
 \arguments{
-\item{data}{tidyVCF with 'EFF' field parsed and 'Diversity' field}
+\item{data}{tidyVCF with 'EFF' field parsed and 'Diversity' field calculated}
+}
+\value{
+a dataframe of unique variants on the coding sequence
 }
 \description{
-Title
+produce dataframe of unique variants on the coding sequence
+}
+\examples{
+
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## Parse the EFF field of a single VCF:
+myVCF <- parseEFF(myVCF)
+
+## calculate site-wise nucleotide diversity of a single VCF
+myVCF <- Nucleotide_diversity(myVCF)
+
+# get unique coding variants with diversity
+myCodingVariants <- getCodingDiv(myVCF)
+
+## plot diversity of coding variants
+plotCodingDiv(myCodingVariants)
+
 }
