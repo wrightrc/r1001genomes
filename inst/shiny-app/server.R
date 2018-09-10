@@ -15,6 +15,7 @@ library(ggplot2)
 library(ggpmisc)
 library(dplyr)
 library(cowplot)
+library(viridis)
 
 
 parseInput <- function (textIn) {
@@ -663,7 +664,6 @@ server <- function(input, output, session){
       geom_tile(data = na.omit(aln_df()), mapping = aes(fill = effects),
                 width = 1, height = 1, alpha = 0.8) +
       geom_text(aes(label=letter), alpha= 1, family = "Courier") +
-      scale_fill_brewer(type = "qual", palette = 1, direction = -1) +
       scale_x_continuous(breaks=seq(1,max(aln_df()$aln_pos), by = 10)) +
       scale_y_discrete() +
       # expand increases distance from axis
@@ -674,7 +674,8 @@ server <- function(input, output, session){
       facet_wrap(facets = ~chunk, ncol = 1, scales = "free") +
       theme(strip.background = element_blank(),
             strip.text.x = element_blank(),
-            legend.box = "vertical")
+            legend.box = "vertical") +
+      scale_fill_viridis(option = "A", discrete = TRUE)
     p})
   output$tab5.aln_plot <- renderPlot(expr = tab5.aln_plot() +
                                        theme(legend.position = "none"),

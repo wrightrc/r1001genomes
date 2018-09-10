@@ -8,7 +8,9 @@ multiple rows}
 chunkAlnDF(aln_df, chunk_width = 80)
 }
 \arguments{
-\item{chunk_width}{}
+\item{aln_df}{An alignment data frame}
+
+\item{chunk_width}{The number of units (bp or aa) in a chunk.}
 }
 \value{
 \code{aln_df} with the addition of a \code{chunk} column for

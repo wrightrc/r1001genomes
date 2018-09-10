@@ -9,7 +9,7 @@ labelBySNPs(data, collapse = TRUE)
 \arguments{
 \item{data}{a data frame of variants with a column named "Indiv"}
 
-\item{collapse}{should each accession will be a single line}
+\item{collapse}{logicial value, should each accession be a single line?}
 }
 \value{
 a df with a single row per accession, with a new column "SNPs" that
@@ -18,4 +18,21 @@ a df with a single row per accession, with a new column "SNPs" that
 }
 \description{
 Label accessions with the variants they contain
+}
+\examples{
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## Parse the EFF field of a single VCF:
+myVCF <- parseEFF(myVCF)
+
+## When using Collapse=TRUE, each accession will be a single row of the output
+labelBySNPs(myVCF, collapse=TRUE)[1:3,]
+
+## When using collapse=FALSE, each SNP of each accession will have it's own row.
+labelBySNPs(myVCF, collapse=FALSE)[1:3,]
+
+
 }

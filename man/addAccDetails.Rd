@@ -2,19 +2,24 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{addAccDetails}
 \alias{addAccDetails}
-\title{Add accession metadata to a dataset containing ecotype IDs}
+\title{Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column}
 \usage{
 addAccDetails(tidyVCF, allAccs = FALSE)
 }
 \arguments{
-\item{ecotypeColumn}{}
+\item{tidyVCF}{Tidy format VCF data.}
+
+\item{allAccs}{logical, if `TRUE` include rows for all accessions even if no
+rows in the data exist with that accession.}
+}
+\value{
+dataframe with accession details added
 }
 \description{
-Add accession metadata to a dataset containing ecotype IDs
+Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column
 }
 \examples{
-
-#' ## make a gene info DF
+## make a gene info DF
 geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 
 ## download a single VCF

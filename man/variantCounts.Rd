@@ -3,7 +3,7 @@
 \name{variantCounts}
 \alias{variantCounts}
 \title{counts number of variants in certain affect categories
-use with ldply() on VCFList objects to create a table.}
+use with plyr::ldply() on VCFList objects to create a table.}
 \usage{
 variantCounts(data, unique = TRUE)
 }
@@ -12,9 +12,12 @@ variantCounts(data, unique = TRUE)
 
 \item{unique}{logical, if true only unique variants will be counted}
 }
+\value{
+a single row dataframe with variant counts
+}
 \description{
 counts number of variants in certain affect categories
-use with ldply() on VCFList objects to create a table.
+use with plyr::ldply() on VCFList objects to create a table.
 }
 \examples{
 
@@ -24,9 +27,9 @@ geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 myVCFList <- VCFList(geneInfo)
 
 ## tabultate unique variants
-ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+plyr::ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
 
 # tabulate total counts of variants relative to the reference sequence.
-ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
+plyr::ldply(myVCFList, variantCounts, unique=TRUE, .id="transcript_ID")
 
 }

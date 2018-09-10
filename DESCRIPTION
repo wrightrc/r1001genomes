@@ -2,7 +2,7 @@ Package: r1001genomes
 Type: Package
 Title: Access and analyze the 1001 genomes Arabidopsis resequencing dataset
 Version: 0.2.0
-Authors@R: c(person("Morgan O.", "Hamm", email = "mohamm@gmail.com", 
+Authors@R: c(person("Morgan O.", "Hamm", email = "morganohamm@gmail.com", 
         role = "aut"), person("R. Clay", "Wright", email =
         "wright.clay@gmail.com", role = c("aut", "cre")))
 Maintainer: R. Clay Wright <wright.clay@gmail.com>
@@ -31,7 +31,7 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
     rlang,
     shinyBS,
     tidyr
-Suggests: knitr, ggrepel, ggpmisc, cowplot
+Suggests: knitr, ggrepel, ggpmisc, ggseqlogo, cowplot
 License: Artistic-2.0
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1

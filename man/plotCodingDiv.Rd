@@ -2,13 +2,36 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{plotCodingDiv}
 \alias{plotCodingDiv}
-\title{Title}
+\title{Plot nucleotide diversity over the coding sequence by codon}
 \usage{
 plotCodingDiv(uniqueCodingVars)
 }
 \arguments{
 \item{uniqueCodingVars}{}
 }
+\value{
+plot object
+}
 \description{
-Title
+Plot nucleotide diversity over the coding sequence by codon
+}
+\examples{
+
+geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
+
+## download a single VCF
+myVCF <- VCFByTranscript(geneInfo[1, ])
+
+## Parse the EFF field of a single VCF:
+myVCF <- parseEFF(myVCF)
+
+## calculate site-wise nucleotide diversity of a single VCF
+myVCF <- Nucleotide_diversity(myVCF)
+
+# get unique coding variants with diversity
+myCodingVariants <- getCodingDiv(myVCF)
+
+## plot diversity of coding variants
+plotCodingDiv(myCodingVariants)
+
 }

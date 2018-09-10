@@ -7,7 +7,9 @@
 makeChunksDF(aln_df)
 }
 \arguments{
-\item{chunk_width}{}
+\item{aln_df}{An alignment dataframe}
+
+\item{chunk_width}{number of units (bases or amino acids) in a single chunk}
 }
 \value{
 a chunks data frame containing the start, end, and chunk name for
