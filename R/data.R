@@ -16,7 +16,7 @@
 #'   \item{Sequenced.by}{institution which sequenced the accession}
 #' }
 #'
-#' @source \url<https://www.googleapis.com/fusiontables/v2/query?sql=SELECT%20id%20AS%20tg_ecotypeid,%20name,%20CS_number,%20country,%20latitude,%20longitude,%20collector,%20seq_by%20FROM%201oabIAuVSTkoG3qTAqM2sj-qiurysSWc5JEMq-TWm%20ORDER%20by%20id&key=AIzaSyB1GbyVSIOK12RJbFMkaIJjwhVNG-b8fjc&alt=csv>
+#' @source <http://1001genomes.org/accessions.html>
 "accessions"
 
 
