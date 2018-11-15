@@ -16,7 +16,7 @@ library(ggpmisc)
 library(dplyr)
 library(cowplot)
 library(viridis)
-
+library(gginnards)
 
 parseInput <- function (textIn) {
   names <- str_extract_all(textIn, "AT[1-5]G[0-9]{5}")
