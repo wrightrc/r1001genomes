@@ -4,7 +4,8 @@
 \alias{VCFByTranscript}
 \title{download VCF, optionally in tidyVCF format}
 \usage{
-VCFByTranscript(geneInfo, strains = NULL, tidy = TRUE, dataOnly = TRUE)
+VCFByTranscript(geneInfo, strains = NULL, tidy = TRUE,
+  dataOnly = TRUE)
 }
 \arguments{
 \item{geneInfo}{single row of geneInfo dataframe}

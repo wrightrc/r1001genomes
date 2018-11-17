@@ -16,7 +16,6 @@ plot object
 Plot nucleotide diversity over the coding sequence by codon
 }
 \examples{
-
 geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 
 ## download a single VCF
@@ -33,5 +32,4 @@ myCodingVariants <- getCodingDiv(myVCF)
 
 ## plot diversity of coding variants
 plotCodingDiv(myCodingVariants)
-
 }

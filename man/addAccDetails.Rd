@@ -2,7 +2,7 @@
 % Please edit documentation in R/VCF_Utils.R
 \name{addAccDetails}
 \alias{addAccDetails}
-\title{Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column}
+\title{Add accession metadata to a dataset containing ecotype IDs}
 \usage{
 addAccDetails(tidyVCF, allAccs = FALSE)
 }
@@ -16,7 +16,7 @@ rows in the data exist with that accession.}
 dataframe with accession details added
 }
 \description{
-Add accession metadata (location, collector, sequencer) to any df containing an "Indiv" column
+Add accession metadata to a dataset containing ecotype IDs
 }
 \examples{
 ## make a gene info DF
