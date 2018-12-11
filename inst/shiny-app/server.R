@@ -739,29 +739,65 @@ server <- function(input, output, session){
 
   ##                                        _________
   ##                                      /   tab6   \
-  ## --------------------------------------           ----------------
-  ## Tab 5 #########################
+  ## -------------------------------------            ----------------
+  ## Tab 6 #########################
 
 
   #### tab6.selectGene ####
   output$tab6.selectGene <- renderUI({
     tagList(
-      checkboxGroupInput("tab6.transcript_ID",
-                         label=NULL, choices=all.GeneChoices()),
-      actionButton(inputId="tab6.Submit", label = "Submit"),
-      checkboxInput(inputId = "tab6.primary_transcript",
-                    label = "Primary transcripts only?",
-                    value = TRUE),
-      radioButtons(inputId = "tab6.type",
-                   label = "Alignment type:",
-                   choices = c("DNA", "AA"),
-                   selected = "AA", inline = TRUE)
+      fluidRow(
+        column(5,
+               tags$h3("Generate Tree based on Alignment"),
+               tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
+               checkboxGroupInput("tab6.transcript_ID",
+                                  label=NULL, choices=all.GeneChoices()),
+               actionButton(inputId="tab6.alnSubmit", label = "Submit"),
+               # checkboxInput(inputId = "tab6.primary_transcript",
+               #               label = "Primary transcripts only?",
+               #               value = TRUE),
+               radioButtons(inputId = "tab6.type",
+                            label = "Alignment type:",
+                            choices = c("DNA", "AA"),
+                            selected = "AA", inline = TRUE)
+               ),
+        column(2, align="center", tags$h3("OR")),
+        column(5,
+               tags$h3("Upload Tree File"),
+               tags$h5("Upload a tree file of one of these file types:"),
+
+               tags$h5("NOTE: Tree File names must match with gene names/'symbol' from SNP Stats tab"),
+               fileInput("tab6.treeFile", label=NULL),
+               actionButton(inputId="tab6.fileSubmit", label = "Submit")
+               )
+      )
     )
   })
+
+  #### tab6.buttons ####
+  tab6.buttons <- reactiveValues(last_button="none pressed", total_presses=0)
+  observeEvent(input$tab6.alnSubmit,{
+    if (input$tab6.alnSubmit > 0){
+      tab6.buttons$last_button <- "alnSubmit"
+      tab6.buttons$total_presses <- tab6.buttons$total_presses + 1
+    }
+  })
+  observeEvent(input$tab6.fileSubmit,{
+    if (input$tab6.fileSubmit > 0){
+      tab6.buttons$last_button <- "fileSubmit"
+      tab6.buttons$total_presses <- tab6.buttons$total_presses + 1
+    }
+  })
+
+  #### tab6.debug ####
+  output$tab6.debug <- renderPrint({
+    # temporary debug output
+    print(input$tab3.filter_value)
+  })
   #### tab6.Genes ####
-  tab6.Genes <- eventReactive(input$tab5.Submit, {
-    #gene Info for gene on tab 5, updates on 'submit' button press
-    return(input$tab5.transcript_ID)
+  tab6.Genes <- eventReactive({tab6.buttons$total_presses}, {
+    #gene Info for gene on tab 6, updates on 'submit' button press
+    return(input$tab6.transcript_ID)
   })
   #### debug ####
   output$tab6.debug <- renderPrint({
