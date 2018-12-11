@@ -289,6 +289,29 @@ ui <- function(request){ fluidPage(
                #   )
                # ),
       ),
+
+      # Tab 6 - Alignments #########################################################
+      tabPanel("Gene Family Tree",
+               #tags$br(),
+               tags$div(class="input-format",
+                        tags$h3("Select Genes and Type"),
+                        tags$h5("Select one or more transcript IDs below and the type of alignment to show"),
+                        uiOutput("tab6.selectGene")
+               ),
+               tags$br(),
+               # tags$div(class = "output-format",
+               #          tags$h3("Sequence Alignment"),
+               #          tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), ". The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel"), ". 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
+               #          tags$div(
+               #            style = "position:relative",
+               #            uiOutput("plot.ui"),
+               #            uiOutput("aln_plot_hover")),
+               #          plotOutput('tab5.aln_plot_legend', height = "200px")
+               # ),
+               # verbatimTextOutput("event")
+               tags$br()#,
+
+      ),
       tabPanel("About",
                ## About Tab ######################################################
                #tags$br(),

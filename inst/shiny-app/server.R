@@ -736,5 +736,46 @@ server <- function(input, output, session){
                     "<b>variants: </b>", point$variants)))
     )
   })
+
+  ##                                        _________
+  ##                                      /   tab6   \
+  ## --------------------------------------           ----------------
+  ## Tab 5 #########################
+
+
+  #### tab6.selectGene ####
+  output$tab6.selectGene <- renderUI({
+    tagList(
+      checkboxGroupInput("tab6.transcript_ID",
+                         label=NULL, choices=all.GeneChoices()),
+      actionButton(inputId="tab6.Submit", label = "Submit"),
+      checkboxInput(inputId = "tab6.primary_transcript",
+                    label = "Primary transcripts only?",
+                    value = TRUE),
+      radioButtons(inputId = "tab6.type",
+                   label = "Alignment type:",
+                   choices = c("DNA", "AA"),
+                   selected = "AA", inline = TRUE)
+    )
+  })
+  #### tab6.Genes ####
+  tab6.Genes <- eventReactive(input$tab5.Submit, {
+    #gene Info for gene on tab 5, updates on 'submit' button press
+    return(input$tab5.transcript_ID)
+  })
+  #### debug ####
+  output$tab6.debug <- renderPrint({
+    aln_df()})
+  #### type ####
+  type <- reactive({
+    return(switch(input$tab6.type, "AA" = 2, "DNA" = 1))
+  })
+  #### alignment ####
+  alignment <- eventReactive(input$tab6.Submit, {
+    alignment <- alignCDS(IDs = tab6.Genes(), primary_only = input$tab6.primary_transcript, all = {if(input$tab5.primary_transcript) FALSE else TRUE})
+    return(alignment)
+  })
+
+
 }
 
