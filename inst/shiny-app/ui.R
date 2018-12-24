@@ -14,8 +14,9 @@ ui <- function(request){ fluidPage(
   ),
   titlePanel(
     tags$div(class= "title-panel",
-             "Arabidopsis Natural Variation Webtool"
-    )
+             h1("ViVa: Visualizing Variation"), h2(
+             "in the ", em("Arabidopsis thaliana"),
+             " 1001 genomes project")), windowTitle = "ViVa: Visualizing Variation"
   ),
   "This app provides an interface to examine the natural variation of specified genes of interest in the 1001 Genomes project dataset. To save or share a state of this app, use the bookmark button.", HTML("</br>"),
   bookmarkButton(),
