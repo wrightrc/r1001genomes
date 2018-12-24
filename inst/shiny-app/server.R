@@ -64,13 +64,13 @@ server <- function(input, output, session){
     }
     if (input$STATS_quick_demo){
       names <- c("AT3G62980", "AT3G26810")
-      genes <- getGeneInfo(names, source="araport11")
+      genes <- getGeneInfo(names, source="araport11", useCache = FALSE)
       req(genes != FALSE)
       return(genes)
     }
     # list of genes for tab 1, updated on pressing submit button
     names <- parseInput(input$gene_ids)
-    genes <- getGeneInfo(names, source="araport11")
+    genes <- getGeneInfo(names, source="araport11", useCache = FALSE)
     req(genes != FALSE)
     return(genes)
   })
