@@ -356,6 +356,11 @@ server <- function(input, output, session){
     # temporary debug output
       print(input$tab3.filter_value)
   })
+
+
+
+
+
 #### tab3.filteredByDiv ####
   tab3.filteredByDiv <- reactive({
     # filter by diversity slider and SNP type radio button then add SNPs column
@@ -743,6 +748,7 @@ server <- function(input, output, session){
   ## Tab 6 #########################
 
 
+
   #### tab6.selectGene ####
   output$tab6.selectGene <- renderUI({
     tagList(
@@ -753,13 +759,20 @@ server <- function(input, output, session){
                checkboxGroupInput("tab6.transcript_ID",
                                   label=NULL, choices=all.GeneChoices()),
                actionButton(inputId="tab6.alnSubmit", label = "Submit"),
-               # checkboxInput(inputId = "tab6.primary_transcript",
-               #               label = "Primary transcripts only?",
-               #               value = TRUE),
+               checkboxInput(inputId = "tab6.primary_transcript",
+                             label = "Primary transcripts only?",
+                             value = TRUE),
                radioButtons(inputId = "tab6.type",
                             label = "Alignment type:",
                             choices = c("DNA", "AA"),
-                            selected = "AA", inline = TRUE)
+                            selected = "AA", inline = TRUE),
+               selectInput(inputId = "tab6.tree_method",
+                           label = "Method Select",
+                           choices=c(
+                             "Neighbor joining (BIONJ)",
+                             "Minimum Evolution (FastME)",
+                             "Minimum Variance Reduction (MVR)"
+                           ))
                ),
         column(2, align="center", tags$h3("OR")),
         column(5,
@@ -789,28 +802,65 @@ server <- function(input, output, session){
     }
   })
 
-  #### tab6.debug ####
+
+  #### tab6_debug ####
   output$tab6.debug <- renderPrint({
     # temporary debug output
-    print(input$tab3.filter_value)
+    print(list(
+      "presses" = tab6.buttons$total_presses,
+      "last_pressed" = tab6.buttons$last_button,
+      "genes" = tab6.Genes(),
+      "type" = tab6.type(),
+      "methon" = input$tab6.tree_method,
+      "alignment" = tab6.alignment()
+    ))
   })
+
+
+
   #### tab6.Genes ####
   tab6.Genes <- eventReactive({tab6.buttons$total_presses}, {
     #gene Info for gene on tab 6, updates on 'submit' button press
     return(input$tab6.transcript_ID)
   })
-  #### debug ####
-  output$tab6.debug <- renderPrint({
-    aln_df()})
+
   #### type ####
-  type <- reactive({
+  tab6.type <- reactive({
     return(switch(input$tab6.type, "AA" = 2, "DNA" = 1))
   })
   #### alignment ####
-  alignment <- eventReactive(input$tab6.Submit, {
-    alignment <- alignCDS(IDs = tab6.Genes(), primary_only = input$tab6.primary_transcript, all = {if(input$tab5.primary_transcript) FALSE else TRUE})
+  tab6.alignment <- eventReactive({tab6.buttons$total_presses}, {
+    if (tab6.buttons$last_button == "alnSubmit") {
+      alignment <- alignCDS(IDs = tab6.Genes(), primary_only = input$tab6.primary_transcript, all = {if(input$tab6.primary_transcript) FALSE else TRUE})
+    } else {alignment <- NULL}
     return(alignment)
   })
+
+  #### tab6 plot output ####
+  tab6.tree_plot <- reactive({
+    if (tab6.buttons$last_button == "alnSubmit"){
+      # run code to generate tree plot based on alignment
+
+
+
+      # temp code to plot cos() from 0 to 2*pi
+      x <- seq(0,2*pi, 0.1)
+      tree_plot <- plot(x, cos(x))
+    } else if (tab6.buttons$last_button == "fileSubmit"){
+      # run code to generate tree plot object based on uploaded file
+
+
+
+      # temp code to plot sin() from 0 to 2*pi
+      x <- seq(0,2*pi, 0.1)
+      tree_plot <- plot(x, sin(x))
+    } else {tree_plot <- NULL}
+
+    return(tree_plot)
+  })
+
+  output$tab6.tree_plot <- renderPlot(expr = tab6.tree_plot())
+
 
 
 }
