@@ -271,12 +271,20 @@ ui <- function(request){ fluidPage(
                tags$div(class = "output-format",
                         tags$h3("Sequence Alignment"),
                         tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), ". The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel"), ". 'seq_pos' is the position in the sequence with name 'seq_name' of the type chosen above."),
+                        tags$h4("Dense Alignment"),
+                        tags$div(
+                          style = "position:relative",
+                          uiOutput("cond_aln_plot.ui"),
+                          uiOutput("cond_aln_plot_hover_ui")),
+                        plotOutput('tab5.cond_aln_plot_legend', height = "200px"),
+
+                        tags$h4("Symbolic Alignment"),
                         tags$div(
                           style = "position:relative",
                           uiOutput("plot.ui"),
                           uiOutput("aln_plot_hover")),
                         plotOutput('tab5.aln_plot_legend', height = "200px")
-                        ),
+               ),
                # verbatimTextOutput("event")
                tags$br()#,
                #tags$h5("Click and drag to pan. Made with", tags$a(href="https://zachcp.github.io/msaR/", "msaR")),
@@ -290,7 +298,7 @@ ui <- function(request){ fluidPage(
                # ),
       ),
 
-      # Tab 6 - Alignments #########################################################
+      # Tab 6 - Gene Tree ######################################################
       tabPanel("Gene Family Tree",
                #tags$br(),
                tags$div(class="input-format",

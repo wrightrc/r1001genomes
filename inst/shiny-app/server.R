@@ -609,6 +609,7 @@ server <- function(input, output, session){
     aln_df$seq_name <- as.character(aln_df$seq_name)
     aln_df$seq_name[!is.na(aln_df$tair_symbol)] <- aln_df$tair_symbol[!is.na(aln_df$tair_symbol)]
     aln_df$seq_name <- as.factor(aln_df$seq_name)
+    aln_df$gap <- aln_df$seq_pos == "-"
     print(aln_df)
     return(aln_df)
   })
@@ -648,6 +649,113 @@ server <- function(input, output, session){
       return(ceiling(height))
     }
   )
+
+
+### tab5.cond_aln_plot ####
+  tab5.cond_aln_plot <- reactive({
+    p <-ggplot(aln_df(), aes(x = aln_pos, y = seq_name)) +
+      geom_raster(mapping = aes(fill = strength,
+                                alpha = gap)) +
+      scale_alpha_manual(values = c("TRUE" = 0, "FALSE" = 1),
+                         labels = c("aligned", "gap"),
+                         guide = guide_legend(override.aes =
+                                                list(fill = c("grey85", "white")),
+                                              title = "alignment",
+                                              direction = "vertical")) +
+      scale_fill_viridis(breaks = range(SNPeff_order$strength),
+                         limits = range(SNPeff_order$strength),
+                         na.value = "grey85",
+                         direction = -1,
+                         labels = c("neutral", "deleterious"),
+                         option = "A",
+                         guide = guide_colorbar(ticks = FALSE,
+                                                title.vjust = .8,
+                                                title.position = "top",
+                                                title.hjust = 0.5)) +
+      scale_y_discrete(expand = c(0,0)) +
+      scale_x_continuous(expand = c(0,0)) +  # expand increases distance from axis
+      labs(x = "codon position in alignment", y = "", fill = "variant effect") +
+      theme_logo(base_family = "Helvetica") +
+      theme(panel.grid = element_blank(),
+            panel.grid.minor = element_blank(),
+            strip.background = element_blank(),
+            strip.text.x = element_blank(),
+            #panel.background = element_rect(fill = "grey85", color = "white"),
+            legend.position = c("bottom"),
+            legend.key = element_rect(linetype = "solid"),
+            legend.spacing = unit(4, "char"),
+            legend.box.spacing = unit(0.1,"line"))
+
+
+  })
+
+  output$tab5.cond_aln_plot <- renderPlot(expr = tab5.cond_aln_plot() +
+                                       theme(legend.position = "none"),
+                                     res = 100)
+  tab5.cond_aln_plot_legend <- reactive({
+    get_legend(tab5.cond_aln_plot())
+  })
+  output$tab5.cond_aln_plot_legend <- renderPlot(plot_grid(tab5.cond_aln_plot_legend()),
+                                            res = 100)
+
+#### cond_aln_plot_height ####
+  cond_aln_plot_height <- reactive({
+    N <- length(unique(aln_df()$seq_name))
+    height <- 70 + 15*N
+    return(ceiling(height))
+  })
+
+#### cond_aln_plot.ui ####
+  output$cond_aln_plot.ui <- renderUI({
+    plotOutput('tab5.cond_aln_plot', height = cond_aln_plot_height(),
+               hover = hoverOpts("cond_aln_plot_hover", delay = 100,
+                                 delayType = "debounce"))
+  })
+
+#### cond_aln_plot_hover ####
+  output$cond_aln_plot_hover_ui <- renderUI({
+    hover <- input$cond_aln_plot_hover
+    point <- nearPoints(aln_df(), coordinfo = hover, xvar = "aln_pos",
+                        yvar = "seq_name", threshold = 8,
+                        maxpoints = 1, addDist = TRUE)
+    if (nrow(point) == 0) return(NULL)
+
+    # calculate point position INSIDE the image as percent of total dimensions
+    # from left (horizontal) and from top (vertical)
+    left_pct <- (hover$x - hover$domain$left) /
+      (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) /
+      (hover$domain$top - hover$domain$bottom)
+
+    # calculate distance from left and bottom side of the picture in pixels
+    left_px <- hover$range$left + left_pct *
+      (hover$range$right - hover$range$left)
+    right_px <- (1-left_pct) *
+      (hover$range$right - hover$range$left)
+    top_px <- hover$range$top + top_pct *
+      (hover$range$bottom - hover$range$top)
+
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    if(left_pct < .70)
+      style <- paste0("position:absolute; z-index:100;
+                    background-color: rgba(245, 245, 245, 0.85); ",
+                      "left:", left_px + 2, "px; top:", top_px + 2, "px;") else
+                        style <- paste0("position:absolute; z-index:100;
+                    background-color: rgba(245, 245, 245, 0.85); ",
+                                        "right:", right_px + 10, "px; top:", top_px + 2, "px;")
+
+    # actual tooltip created as wellPanel
+    wellPanel(
+      style = style,
+      p(HTML(paste0("<b>symbol: </b>", point$seq_name, "<br/>",
+                    "<b>transcript: </b>", point$transcript_ID, "<br/>",
+                    "<b>seq_pos: </b>", point$seq_pos, "<br/>",
+                    "<b>variants: </b>", point$variants)))
+    )
+  })
+
 
 #### tab5.aln_plot ####
   tab5.aln_plot <- reactive({
@@ -698,7 +806,7 @@ server <- function(input, output, session){
                                  delayType = "debounce"))
   })
 
-  #### aln_plot_hover ####
+#### aln_plot_hover ####
   output$aln_plot_hover <- renderUI({
     hover <- input$plot_hover
     point <- nearPoints(aln_df(), coordinfo = hover, xvar = "aln_pos",
