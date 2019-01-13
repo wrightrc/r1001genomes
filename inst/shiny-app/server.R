@@ -30,6 +30,58 @@ parseFilterText <- function (textIn) {
 }
 
 
+
+
+
+#' Add SNPs and indels to an alignment data frame
+#'
+#'Coppied and modified from VCF_Utils.R
+#'
+#'Original:
+#'  aln_df <- dplyr::left_join(x = aln_df, y = temp,
+#'                             by = c("seq_name" = rlang::quo_name(seq_name),
+#'                                    "seq_pos" = rlang::quo_name(seq_pos)))
+#'
+#' Modified:
+#'   aln_df <- dplyr::left_join(x = aln_df, y = temp,
+#'                              by = c("seq_name" = rlang::quo_name(seq_name),
+#'                                     "Codon_Number" = rlang::quo_name(seq_pos)))
+#'                                     ^^^^^^^^^^^^^^
+#'
+addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
+                           seq_pos = Codon_Number, effect = Effect,
+                           variant = Amino_Acid_Change,
+                           effect_order = SNPeff_order){
+  seq_name <- dplyr::enquo(seq_name)
+  seq_pos <- dplyr::enquo(seq_pos)
+  effect <- dplyr::enquo(effect)
+  variant <- dplyr::enquo(variant)
+  #devtools::use_package("rlang")
+  temp <- SNPs %>%
+    dplyr::group_by(!!seq_name, !!seq_pos) %>%
+    dplyr::summarise(effects = {switch(as.character(length(unique(!!effect))),
+                                       "0" = NA,
+                                       "1" = unique(!!effect),
+                                       paste(sort(unique(!!effect)),
+                                             collapse = " & "))},
+                     variants = {switch(as.character(length(unique(!!variant))),
+                                        "0" = NA,
+                                        "1" = unique(!!variant),
+                                        paste(sort(unique(!!variant)),
+                                              collapse = " & "))},
+                     strength = max(effect_order[which(effect_order$effect %in% unique(!!effect)), "strength"]))
+  temp[[rlang::quo_name(seq_pos)]] <- as.character(x = temp[[rlang::quo_name(seq_pos)]])
+  aln_df <- dplyr::left_join(x = aln_df, y = temp,
+                             by = c("seq_name" = rlang::quo_name(seq_name),
+                                    "Codon_Number" = rlang::quo_name(seq_pos)))
+  aln_df$seq_name <- as.factor(aln_df$seq_name)
+  aln_df$effects <- gsub(pattern = "_variant", replacement = "",
+                         x = aln_df$effects)
+  return(aln_df)
+}
+
+
+
 enableBookmarking(store = "url")
 
 server <- function(input, output, session){
@@ -600,6 +652,9 @@ server <- function(input, output, session){
     vcf <- ldply(.data = all.VCFList()[input$tab5.transcript_ID],
                  .fun = subset, !is.na(Transcript_ID) & gt_GT != "0|0")
     vcf <- getCodingDiv(vcf)
+    if(type()==1){
+      aln_df$Codon_Number <- as.character(as.integer((as.numeric(aln_df$seq_pos)+2)/3))
+    } else aln_df$Codon_Number <- aln_df$seq_pos
     aln_df <- addSNPsToAlnDF(aln_df, vcf)
     aln_df <- left_join(aln_df, dplyr::select(all.Genes(), "tair_locus",
                                        "tair_symbol", "transcript_ID"),
@@ -653,6 +708,8 @@ server <- function(input, output, session){
 
 ### tab5.cond_aln_plot ####
   tab5.cond_aln_plot <- reactive({
+    x_label <- c("base position in alignment",
+                 "codon position in alignment")[type()]
     p <-ggplot(aln_df(), aes(x = aln_pos, y = seq_name)) +
       geom_raster(mapping = aes(fill = strength,
                                 alpha = gap)) +
@@ -674,7 +731,7 @@ server <- function(input, output, session){
                                                 title.hjust = 0.5)) +
       scale_y_discrete(expand = c(0,0)) +
       scale_x_continuous(expand = c(0,0)) +  # expand increases distance from axis
-      labs(x = "codon position in alignment", y = "", fill = "variant effect") +
+      labs(x = x_label, y = "", fill = "variant effect") +
       theme_logo(base_family = "Helvetica") +
       theme(panel.grid = element_blank(),
             panel.grid.minor = element_blank(),
