@@ -34,4 +34,4 @@ Imports: vcfR, biomaRt, VariantAnnotation, stringr,
 Suggests: knitr, ggrepel, ggpmisc, ggseqlogo, cowplot
 License: Artistic-2.0
 VignetteBuilder: knitr
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

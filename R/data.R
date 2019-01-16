@@ -16,7 +16,7 @@
 #'   \item{Sequenced.by}{institution which sequenced the accession}
 #' }
 #'
-#' @source <http://1001genomes.org/accessions.html>
+#' @source \url{http://1001genomes.org/accessions.html}
 "accessions"
 
 
