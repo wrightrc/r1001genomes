@@ -183,6 +183,8 @@ library(r1001genomes)
 library(DT)
 library(dplyr)
 library(biomaRt)
+library(ggplot2)
+library(viridis)
 ```
 
 This downloads the gene model from ENSEMBL plants.
@@ -429,40 +431,47 @@ map <- leaflet()
                             radius=6, popup= ~popup, stroke=FALSE, fillOpacity=0.85)
     }
 
+      
+    
     # add the legend to the map
-    map <- addLegend(map, position="bottomright", pal=pallet,
+    legMap <- leaflet(height = 500)
+    legMap <- addLegend(legMap, position="topleft", pal=pallet,
                      values=AFB2_missense$SNPs, title="Marker Colors", opacity=1)
 
+    
+    
     # add layer control to map to turn on or off groups of points
     map <- addLayersControl(map, overlayGroups=c(groupnames, "NA"),
                             options = layersControlOptions(collapsed = TRUE),
                             position="bottomleft")
 
     map
+    legMap
 ```
-You can also use the `ggmap` function from the package of the same name to create maps. The "ggrepel" package also helps to handle overlapping labels.
-
-```{r}
-library(ggplot2)
-library(ggmap)
-library(ggrepel)
-
-europe <- get_map(location = 'europe', zoom = 4)
-michigan <- get_map(location = 'michigan', zoom = 5)
-
-
-ggmap(europe) + xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "darkgrey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "204", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), fill = "white", point.padding = unit(0.5, "lines"), segment.size = 1) 
-
-ggmap(michigan) + xlab('longitude') + ylab('latitude') + geom_point(data = AFB2_missense, aes(x = Long, y = Lat), alpha = 0.5, shape = 18, color = "darkgrey") + geom_label_repel(data = subset(AFB2_missense, grepl(pattern = "516", AFB2_missense$SNPs)), mapping = aes(label = Name, x = Long, y = Lat), point.padding = unit(0.5, "lines"), segment.size = 1) 
-
-```
-
-
-
 
 
 </div><!--panel end------------------------------------------------------------>
 <!--=========================================================================-->
+
+
+
+# Browsing Variants  
+description
+
+<!--=========================================================================-->
+<div  class="using-app-insert"><!--panel start--------------------------------->
+## Tab title
+some text and picture
+
+</div><!--panel end------------------------------------------------------------>
+<div  class="using-R-insert"><!--panel start----------------------------------->
+## Using R
+some text and code snippet
+</div><!--panel end------------------------------------------------------------>
+<!--=========================================================================-->
+
+
+
 
 # References
 

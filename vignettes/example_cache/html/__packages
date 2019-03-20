@@ -11,3 +11,6 @@ XVector
 Biostrings
 RSQLite
 DECIPHER
+ggplot2
+viridisLite
+viridis
