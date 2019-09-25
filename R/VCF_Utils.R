@@ -494,7 +494,7 @@ Nucleotide_diversity <- function (tidyVCF, approxMissingRefGt=TRUE){
   GT_Frequencies <- dplyr::group_by(GT_Frequencies, POS)
   if (approxMissingRefGt){
     # add a row at each position, with frequency determined by the .approxRefGt() function
-    GT_Frequencies <- do(GT_Frequencies, add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=.approxRefGt(.)))
+    GT_Frequencies <- dplyr::do(GT_Frequencies, tibble::add_row(., POS=.$POS[1], gt_GT="0|0approx", freq=.approxRefGt(.)))
   }
   diversityByPOS <- dplyr::summarise(GT_Frequencies, Diversity = .calcDiversity(freq))
   output <- dplyr::full_join(tidyVCF, diversityByPOS, by="POS")
@@ -667,6 +667,8 @@ getCodingDiv <- function(data){
 #' @return plot object
 #' @export
 #'
+#' @import ggplot2
+#'
 #' @examples
 #' geneInfo <- getGeneInfo(genes = c("AT3G62980", "AT3G26810"))
 #'
@@ -691,7 +693,7 @@ plotCodingDiv <- function(uniqueCodingVars){
     scale_y_log10(breaks=c(0.001, 0.01, 0.1),limits=c(0.001, 1)) +
     ylab("nucleotide diversity, log scale") +
     xlab("codon") +
-    scale_color_viridis(option = "A", discrete = TRUE) +
+    viridis::scale_color_viridis(option = "A", discrete = TRUE) +
     theme(panel.background = element_rect(fill = "grey85", color = "grey85"))
   return(plot)
 }
@@ -817,7 +819,7 @@ labelBySNPs <- function(data, collapse=TRUE) {
 #' @examples
 #' IDs <- c("AT3G62980.1", "AT3G26810.1")
 #' alignment <- alignCDS(IDs)
-#' browseSeqs(alignment[[2]])
+#' alignment[[2]]
 alignCDS <- function(IDs, primary_only = TRUE, all = FALSE, verbose = FALSE) {
   #use_package("BSgenome.Athaliana.TAIR.TAIR9", "imports")
   Athaliana <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
@@ -870,12 +872,12 @@ makeAlnDF <- function(alignment){
   aln_df$seq_name <- aln_df$transcript_ID
   aln_df <- aln_df %>% dplyr::group_by(seq_name) %>% dplyr::mutate(
     seq_pos = {
-      matches <- which(letter %in% c(LETTERS, letters, "*"))
-      gaps <- which(letter %in% c("-"))
-      seqPos <- vector(length = length(letter))
+      matches <- base::which(letter %in% c(LETTERS, letters, "*"))
+      gaps <- base::which(letter %in% c("-"))
+      seqPos <- base::vector(length = length(letter))
       seqPos[gaps] <- "-"
       seqPos[matches] <- 1:length(matches)
-      return(seqPos)
+      seqPos
     })
   return(aln_df)
 }
@@ -1145,13 +1147,13 @@ addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
 makeChunksDF <- function(aln_df){
   chunks <- data.frame("chunk" = levels(aln_df$chunk)) %>%
     tidyr::separate(col = "chunk", into = c("start", "end"), sep = ",", remove=FALSE)
-  chunks$start <- if_else(condition = str_detect(chunks$start, "\\("),
-                          true = as.numeric(str_extract(chunks$start, "\\d+"))
-                          + 1, false = as.numeric(str_extract(chunks$start,
+  chunks$start <- dplyr::if_else(condition = stringr::str_detect(chunks$start, "\\("),
+                          true = as.numeric(stringr::str_extract(chunks$start, "\\d+"))
+                          + 1, false = as.numeric(stringr::str_extract(chunks$start,
                                                               "\\d+")))
-  chunks$end <- if_else(condition = str_detect(chunks$end, "\\)"),
-                        true = as.numeric(str_extract(chunks$end, "\\d+")) - 1,
-                        false = as.numeric(str_extract(chunks$end, "\\d+")))
+  chunks$end <- dplyr::if_else(condition = stringr::str_detect(chunks$end, "\\)"),
+                        true = as.numeric(stringr::str_extract(chunks$end, "\\d+")) - 1,
+                        false = as.numeric(stringr::str_extract(chunks$end, "\\d+")))
   return(chunks)
 }
 

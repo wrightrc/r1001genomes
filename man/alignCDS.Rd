@@ -26,5 +26,5 @@ Make an alignment of Coding sequences
 \examples{
 IDs <- c("AT3G62980.1", "AT3G26810.1")
 alignment <- alignCDS(IDs)
-browseSeqs(alignment[[2]])
+alignment[[2]]
 }
