@@ -891,7 +891,7 @@ makeAlnDF <- function(alignment){
 #' @param by_aln_SNPs a named list of character objects with each equivalency
 #' representing matching columns in `aln_df` (on the LHS) and `SNPs`
 #' (on the RHS), e.g. `"seq_name" = "transcript_id"`
-#' @param effect_order a \code[data.frame] containing an integer vector named 'strength' representing the strength of the effect, paired with a character vector named 'effect' of possible effects. This will be used to order single and multiple effects.
+#' @param effect_order a \code{data.frame} containing an integer vector named 'strength' representing the strength of the effect, paired with a character vector named 'effect' of possible effects. This will be used to order single and multiple effects.
 #'
 #' @return aln_df with the addition of a `variants` column containing a string
 #'  listing the variant types at each position
