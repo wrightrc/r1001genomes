@@ -13,5 +13,6 @@ Runs the app
 Run 1001 genomes browser shiny app
 }
 \examples{
-run1001genomes()
+#not run
+#run1001genomes()
 }

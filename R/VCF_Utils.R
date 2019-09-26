@@ -10,7 +10,8 @@
 #' @export
 #'
 #' @examples
-#' run1001genomes()
+#' #not run
+#' #run1001genomes()
 run1001genomes <- function() {
   appDir <- system.file("shiny-app", package = "r1001genomes")
   if (appDir == "") {
@@ -911,7 +912,7 @@ makeAlnDF <- function(alignment){
 #' vcf <- plyr::ldply(.data = vcf, .fun = subset,
 #'   !is.na(Transcript_ID) & gt_GT != "0|0")
 #' coding_vcf <- getCodingDiv(vcf)
-#' (aln_df, coding_vcf, seq_name = Transcript_ID,
+#' addSNPsToAlnDF(aln_df = aln_df, SNPs = coding_vcf, seq_name = Transcript_ID,
 #' seq_pos = Codon_Number)
 #'
 addSNPsToAlnDF <- function(aln_df, SNPs, seq_name = Transcript_ID,
@@ -1133,6 +1134,9 @@ addAlnPosToAnno <- function(anno_df, aln_df, intersect_only = TRUE){
 #'
 #' @return a chunks data frame containing the start, end, and chunk name for
 #' each chunk of the alignment
+#'
+#' @importFrom magrittr "%>%"
+#'
 #' @export
 #'
 #' @examples
@@ -1170,6 +1174,7 @@ makeChunksDF <- function(aln_df){
 #' @return anno_df with the addition of chunks columns (and potentially extra
 #' rows) for facetting
 #' @export
+#' @importFrom magrittr "%>%"
 #'
 #' @examples
 #' ## first make a gene info DF
