@@ -708,8 +708,8 @@ server <- function(input, output, session){
     # print(paste("hover$coords_img:", hover$coords_img))
     # print(paste("hover$range:", hover$range))
     #
-    # left_pct <- (hover$coords_img$x- hover$range$left) /
-    #   (hover$range$right - hover$range$left)
+     left_pct <- (hover$coords_img$x- hover$range$left) /
+       (hover$range$right - hover$range$left)
     # print(left_pct)
     # top_pct <- (hover$coords_img$y - hover$range$top) /
     #   (hover$range$bottom - hover$range$top)
@@ -737,10 +737,10 @@ server <- function(input, output, session){
           style <- paste0("position:absolute; z-index:100;
                     background-color: rgba(245, 245, 245, 0.85); ",
                     "right:", (hover$range$right - hover$coords_img$x)/2.16, "px; top:",
-                    (hover$coords_img$y)/2.12, "px;")
+                    (hover$coords_img$y)/2.17, "px;")
 
     # actual tooltip created as wellPanel
-    absolutePanel(
+    wellPanel(
       style = style,
       p(HTML(paste0("<b>symbol: </b>", point$seq_name, "<br/>",
                     "<b>transcript: </b>", point$transcript_ID, "<br/>",
