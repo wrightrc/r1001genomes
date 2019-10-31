@@ -701,20 +701,30 @@ server <- function(input, output, session){
                         maxpoints = 1, addDist = TRUE)
     if (nrow(point) == 0) return(NULL)
 
-    # calculate point position INSIDE the image as percent of total dimensions
-    # from left (horizontal) and from top (vertical)
-    left_pct <- (hover$x - hover$domain$left) /
-      (hover$domain$right - hover$domain$left)
-    top_pct <- (hover$domain$top - hover$y) /
-      (hover$domain$top - hover$domain$bottom)
-
-    # calculate distance from left and bottom side of the picture in pixels
-    left_px <- hover$range$left + left_pct *
-      (hover$range$right - hover$range$left)
-    right_px <- (1-left_pct) *
-      (hover$range$right - hover$range$left)
-    top_px <- hover$range$top + top_pct *
-      (hover$range$bottom - hover$range$top)
+    # # calculate point position INSIDE the image as percent of total dimensions
+    # # from left (horizontal) and from top (vertical)
+    # # https://gallery.shinyapps.io/093-plot-interaction-basic/
+    # # Range and coords_img seem to match up
+    # print(paste("hover$coords_img:", hover$coords_img))
+    # print(paste("hover$range:", hover$range))
+    #
+    # left_pct <- (hover$coords_img$x- hover$range$left) /
+    #   (hover$range$right - hover$range$left)
+    # print(left_pct)
+    # top_pct <- (hover$coords_img$y - hover$range$top) /
+    #   (hover$range$bottom - hover$range$top)
+    # print(top_pct)
+    #
+    # # calculate distance from left and bottom side of the picture in pixels
+    # left_px <- hover$range$left + left_pct *
+    #   (hover$range$right - hover$range$left)
+    # print(left_px)
+    # right_px <- (1-left_pct) *
+    #   (hover$range$right - hover$range$left)
+    # print(right_px)
+    # top_px <- hover$range$top + top_pct *
+    #   (hover$range$bottom - hover$range$top)
+    # print(top_px)
 
     # create style property fot tooltip
     # background color is set so tooltip is a bit transparent
@@ -722,13 +732,15 @@ server <- function(input, output, session){
     if(left_pct < .70)
     style <- paste0("position:absolute; z-index:100;
                     background-color: rgba(245, 245, 245, 0.85); ",
-                    "left:", left_px + 2, "px; top:", top_px + 2, "px;") else
+                    "left:", hover$coords_img$x/2.17,
+                    "px; top:", hover$coords_img$y/2.17, "px;") else
           style <- paste0("position:absolute; z-index:100;
                     background-color: rgba(245, 245, 245, 0.85); ",
-                    "right:", right_px + 10, "px; top:", top_px + 2, "px;")
+                    "right:", (hover$range$right - hover$coords_img$x)/2.16, "px; top:",
+                    (hover$coords_img$y)/2.12, "px;")
 
     # actual tooltip created as wellPanel
-    wellPanel(
+    absolutePanel(
       style = style,
       p(HTML(paste0("<b>symbol: </b>", point$seq_name, "<br/>",
                     "<b>transcript: </b>", point$transcript_ID, "<br/>",
