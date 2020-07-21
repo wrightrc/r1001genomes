@@ -17,6 +17,7 @@ library(dplyr)
 library(cowplot)
 library(viridis)
 library(gginnards)
+library(formattable)
 
 parseInput <- function (textIn) {
   names <- str_extract_all(textIn, "AT[1-5]G[0-9]{5}")
@@ -538,12 +539,10 @@ server <- function(input, output, session){
     }
   )
 
+  ## Tab 6 #########################
 
-  ##                                        _________
-  ##                                      /   tab5   \
-  ## --------------------------------------           ----------------
-  ## Tab 5 #########################
 
+## Tab 5 #########################
 
 #### tab5.selectGene ####
   output$tab5.selectGene <- renderUI({
@@ -631,7 +630,7 @@ server <- function(input, output, session){
       anno_df$positions$seq_name <- factor(anno_df$positions$tair_symbol,
                        levels = levels(as.factor(aln_df()$tair_symbol)))
     }
-    print(anno_df)
+    #print(anno_df)
     return(anno_df)
   })
 

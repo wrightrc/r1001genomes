@@ -258,7 +258,17 @@ ui <- function(request){ fluidPage(
                )
 
       ),
-
+      # ## Tab 6 - Condensed Alignment ################################################
+      # tabPanel("Condensed Alignment",
+      #          tags$div(class="output-format",
+      #                   tags$h3("Condensed Sequence Alignment"),
+      #                   tags$h5("Alignment made with",tags$a(href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-015-0749-z", target = "_blank", "DECIPHER"), ". The x-axis is the position within the alignment. Hover over the alignment to see details (ggplot2 tooltip by", tags$a(href = "https://gitlab.com/snippets/16220", target = "_blank", "Pawel"), ")"),
+      #                   tags$div(
+      #                     style = "position:relative",
+      #                     uiOutput("plot.ui"),
+      #                     uiOutput("c_aln_plot_hover")),
+      #                   plotOutput('c_aln_plot_legend', height = "200px")
+      #          )),
       ## Tab 5 - Alignments #########################################################
       tabPanel("Alignments",
                #tags$br(),
@@ -285,12 +295,10 @@ ui <- function(request){ fluidPage(
                # but perhaps the side scrolling div will come in handy again
                # tags$div(class = "wrapper",
                #          tags$div(class = "scrolls",
-               #            htmlOutput("tab5.BrowseSeqs", inline = TRUE)
-               #   )
-               # ),
-      ),
+               #            htmlOutput("tab5.BrowseSeqs", inline = TRUE))
+              ),
+      ## About Tab ######################################################
       tabPanel("About",
-               ## About Tab ######################################################
                #tags$br(),
                column(6,
                       tags$div(class="output-format",
