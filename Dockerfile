@@ -18,6 +18,8 @@ RUN R -e 'install.packages("cowplot")'
 
 RUN R -e 'install.packages("devtools")'
 
+RUN R -e 'install.packages("gginnards")'
+
 RUN R -e 'install.packages("ggmap")'
 
 RUN R -e 'install.packages("ggpmisc")'
